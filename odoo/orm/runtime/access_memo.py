@@ -289,6 +289,7 @@ class AccessMemo:
         "_observing",
         "_registered",
         "_rewatch",
+        "_translated",
         "_verdicts",
         "_watchers",
     )
@@ -309,6 +310,7 @@ class AccessMemo:
         ] = {}
         self._rewatch: list[tuple[Field[typing.Any], Environment, bool]] = []
         self._observed: defaultdict[str, set[Fact]] = defaultdict(set)
+        self._translated: dict[tuple[typing.Any, str], bool] = {}
 
     def _sync(self, registry: Registry) -> None:
         epoch = registry.cache_epoch
@@ -351,6 +353,24 @@ class AccessMemo:
             _debug.logic("access_memo.rule_untrackable", model=model_name, uid=env.uid)
         return facts
 
+    def reads_translated(self, env: Environment, model_name: str) -> bool:
+        # whether the model's read rules can answer differently in another
+        # language: they read a translated field, or cannot be tracked
+        self._sync(env.registry)
+        key = (env._read_access_key, model_name)
+        try:
+            return self._translated[key]
+        except KeyError:
+            pass
+        facts = self.read_facts(env, model_name)
+        registry = env.registry
+        answer = self._translated[key] = facts is None or any(
+            (field := registry[fact_model]._fields.get(fname)) is not None
+            and bool(field.translate)
+            for fact_model, fname in facts
+        )
+        return answer
+
     def _watch(self, entry: WatchEntry, facts: Facts, models: Collection[str]) -> None:
         if facts is None:
             self._everything.add(entry)
@@ -358,12 +378,15 @@ class AccessMemo:
         for model_name in {model_name for model_name, _fname in facts} | set(models):
             self._watchers[model_name].add(entry)
 
-    @staticmethod
     def _verdicts_key(
-        env: Environment, model_name: str
+        self, env: Environment, model_name: str
     ) -> tuple[typing.Any, str, str | None]:
-        # a condition on a translated field reads the env's language
-        return (env._read_access_key, model_name, env.lang)
+        # a condition on a translated field reads the env's language; rules
+        # that read none answer the same in every language
+        lang = env.lang
+        if lang == "en_US" or (lang and not self.reads_translated(env, model_name)):
+            lang = None
+        return (env._read_access_key, model_name, lang)
 
     def read_verdicts(self, env: Environment, model_name: str) -> RecordVerdicts:
         self._sync(env.registry)

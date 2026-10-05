@@ -501,13 +501,21 @@ class Environment(Mapping[str, "BaseModel"]):
             self.registry.access_policy.rule_context(self),
         )
 
-    def _access_scope(self) -> typing.Any:
+    def _access_scope(self, model_name: str | None = None) -> typing.Any:
         if self.su:
             return True
         acting = self.context.get(ACTING_PARTNER_KEY)
         # a rule's condition on a translated field reads the language: a user
-        # slot read in another one is a slot of its own
-        if (lang := self.context.get("lang")) and lang != "en_US":
+        # slot read in another one is a slot of its own, unless the model's
+        # rules read no translated field
+        if (
+            (lang := self.context.get("lang"))
+            and lang != "en_US"
+            and (
+                model_name is None
+                or self.transaction.access_memo.reads_translated(self, model_name)
+            )
+        ):
             return (self._access_scope_of_user(), self.privileges, acting, lang)
         if acting:
             return (self._access_scope_of_user(), self.privileges, acting)
@@ -656,7 +664,7 @@ class Environment(Mapping[str, "BaseModel"]):
             elif key == "access":
                 if field.compute and field.compute_sudo:
                     return None
-                return self._access_scope()
+                return self._access_scope(field.comodel_name)
             elif key == "lang":
                 return get_context("lang") or "en_US"
             elif key == "active_test":
