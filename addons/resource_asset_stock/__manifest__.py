@@ -1,6 +1,6 @@
 {
     "name": "Serialized Asset Inventory",
-    "version": "1.0",
+    "version": "1.1",
     "category": "Hidden",
     "summary": "Create and locate physical assets from serialized stock lots",
     "description": "Links tracked product lots to assets and derives asset locations from inventory. Scrapping the corresponding stock disposes of the asset through its lifecycle action.",

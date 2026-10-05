@@ -1,6 +1,6 @@
 {
     "name": "Asset GPS - Operators and Trips",
-    "version": "19.0.1.8.0",
+    "version": "19.0.1.9.0",
     "oldest_upgradable_version": "19.0.1.5.1",
     "category": "Supply Chain/IoT",
     "summary": "Add operator dimensions and trip reporting to asset GPS tracking",

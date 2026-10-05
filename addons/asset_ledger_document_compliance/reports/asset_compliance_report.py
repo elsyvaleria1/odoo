@@ -90,9 +90,9 @@ class AssetComplianceReport(models.Model):
                     sq.location_id
                 FROM resource_asset ra
                 JOIN resource_resource rr ON rr.id = ra.resource_id
-                JOIN product_product pp ON pp.id = ra.product_id
+                JOIN product_product pp ON pp.id = rr.product_id
                 JOIN product_template pt ON pt.id = pp.product_tmpl_id
-                LEFT JOIN product_trace sl ON sl.id = ra.trace_id
+                LEFT JOIN product_trace sl ON sl.id = rr.trace_id
                 LEFT JOIN stock_quant sq ON sq.trace_id = sl.id AND sq.quantity > 0
                 WHERE rr.kind_id IS NOT NULL
                     AND ra.active = true

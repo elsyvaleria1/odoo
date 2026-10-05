@@ -13,7 +13,8 @@ class EsgEmployeeCommutingReport(models.Model):
             "product.product": ["product_tmpl_id"],
             "product.template": ["co2"],
             "res.company": ["weekly_days_at_office"],
-            "resource.asset.vehicle": ["company_id", "product_id", "resource_id"],
+            "resource.resource": ["product_id"],
+            "resource.asset.vehicle": ["company_id", "resource_id"],
             "resource.assignment": [
                 "active",
                 "assignee_id",
@@ -96,8 +97,9 @@ class EsgEmployeeCommutingReport(models.Model):
                            date_trunc('day', a.date_end) AS date_end
                       FROM resource_assignment a
                       JOIN resource_asset_vehicle v ON v.resource_id = a.resource_id
+                      JOIN resource_resource vr ON vr.id = v.resource_id
                       JOIN hr_employee e ON e.resource_id = a.assignee_id
-                      LEFT JOIN product_product p ON p.id = v.product_id
+                      LEFT JOIN product_product p ON p.id = vr.product_id
                       LEFT JOIN product_template t ON t.id = p.product_tmpl_id
                      WHERE a.custody_role = 'operator' AND a.active
                 ) log

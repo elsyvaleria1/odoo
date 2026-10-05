@@ -3,7 +3,7 @@ import base64
 from odoo import Command
 from odoo.tests.common import TransactionCase
 
-from ..models.resource_asset import DOCUMENT_LINKS
+from ..models.resource_resource import DOCUMENT_LINKS
 from .common import create_test_template
 
 
@@ -582,10 +582,10 @@ class TestStockLotDocuments(TransactionCase):
                 self.assertEqual(lot.asset_id[link.name_field], expected)
 
     def test_document_link_fields_keep_their_declaration(self):
-        asset_model = self.env["resource.asset"]
-        described = asset_model.fields_get(list(DOCUMENT_LINKS))
+        resource_model = self.env["resource.resource"]
+        described = resource_model.fields_get(list(DOCUMENT_LINKS))
         for field_name in DOCUMENT_LINKS:
-            field = asset_model._fields[field_name]
+            field = resource_model._fields[field_name]
             with self.subTest(field=field_name):
                 self.assertEqual(described[field_name]["type"], "many2one")
                 self.assertEqual(described[field_name]["relation"], "document.document")

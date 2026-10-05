@@ -6,3 +6,4 @@ from . import resource_asset_kind
 from . import resource_asset_kind_position
 from . import resource_asset_log
 from . import resource_asset_part
+from . import resource_resource

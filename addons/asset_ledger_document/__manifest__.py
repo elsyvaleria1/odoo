@@ -1,6 +1,6 @@
 {
     "name": "Asset Ledger Documents",
-    "version": "19.0.1.10.0",
+    "version": "19.0.1.11.0",
     "oldest_upgradable_version": "19.0.1.10.0",
     "category": "Productivity/Documents",
     "summary": "Expose linked asset documents and asset-specific document references",

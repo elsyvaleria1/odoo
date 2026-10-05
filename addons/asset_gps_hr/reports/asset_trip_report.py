@@ -21,12 +21,11 @@ class AssetTripReport(models.Model):
             "hr.version": ["department_id"],
             "resource.asset": ["resource_id"],
             "resource.asset.vehicle": [
-                "fuel_cost_per_km",
                 "license_plate",
                 "name",
                 "resource_id",
             ],
-            "resource.resource": ["tz"],
+            "resource.resource": ["fuel_cost_per_km", "tz"],
             "resource.gps.binding": [
                 "resource_id",
                 "device_id",
@@ -222,9 +221,9 @@ class AssetTripReport(models.Model):
                 COALESCE(gps.odometer_end, 0) AS odometer_end,
                 GREATEST(COALESCE(gps.odometer_end, 0) - COALESCE(gps.odometer_start, 0), 0) AS distance,
                 p.work_hours_status,
-                COALESCE(a.fuel_cost_per_km, 0) AS fuel_cost_per_km,
+                COALESCE(tracked_resource.fuel_cost_per_km, 0) AS fuel_cost_per_km,
                 GREATEST(COALESCE(gps.odometer_end, 0) - COALESCE(gps.odometer_start, 0), 0)
-                    * COALESCE(a.fuel_cost_per_km, 0) AS fuel_amount
+                    * COALESCE(tracked_resource.fuel_cost_per_km, 0) AS fuel_amount
             FROM periods p
             -- Join with operator-vehicle history based on date overlap
             JOIN vehicle_operator_history voh

@@ -1,6 +1,6 @@
 {
     "name": "Asset Products and Part History",
-    "version": "1.5",
+    "version": "1.6",
     "oldest_upgradable_version": "1.5",
     "category": "Hidden",
     "summary": "Track product-based assets, cost logs and installed parts",

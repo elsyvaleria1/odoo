@@ -1,6 +1,6 @@
 {
     "name": "Asset Ledger",
-    "version": "19.0.1.48.0",
+    "version": "19.0.1.49.0",
     "oldest_upgradable_version": "19.0.1.44.0",
     "category": "Supply Chain/Inventory",
     "summary": "Link stock lots to assets and track their tags, meters and service activity",

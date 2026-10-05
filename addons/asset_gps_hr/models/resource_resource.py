@@ -1,8 +1,8 @@
 from odoo import fields, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     fuel_cost_per_km = fields.Monetary(
         help="Fuel cost billed per kilometer driven outside work hours. Used "

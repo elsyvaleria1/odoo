@@ -19,16 +19,6 @@ def _literal_context(context):
 class ResourceAsset(models.Model):
     _inherit = "resource.asset"
 
-    product_id = fields.Many2one(
-        comodel_name="product.product",
-        string="Model",
-        index="btree_not_null",
-        domain="[('asset_kind_id', '!=', False)]",
-        help="The model this unit is an instance of. Its template carries the spec sheet.",
-    )
-    product_tmpl_id = fields.Many2one(
-        related="product_id.product_tmpl_id",
-    )
     log_ids = fields.One2many(
         comodel_name="resource.log",
         inverse_name="asset_id",
@@ -53,18 +43,10 @@ class ResourceAsset(models.Model):
         help="Logs booked against this asset, whatever their state. An archived log is not counted.",
     )
 
-    # the kind is the resource's; a product that names one gives it, before the
-    # create picks the kind's table, and again when the asset changes product
     @api.onchange("product_id")
     def _onchange_product_id_kind(self) -> None:
         if self.product_id.asset_kind_id:
             self.kind_id = self.product_id.asset_kind_id
-
-    def _fill_kind_from_product(self, vals) -> None:
-        if vals.get("product_id") and not vals.get("kind_id"):
-            product = self.env["product.product"].browse(vals["product_id"])
-            if product.asset_kind_id:
-                vals["kind_id"] = product.asset_kind_id.id
 
     def _compute_part_flagged_count(self) -> None:
         counts = dict(
@@ -172,12 +154,7 @@ class ResourceAsset(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        # the kind picks the table the asset is created in
         for vals in vals_list:
-            self._fill_kind_from_product(vals)
+            self.env["resource.resource"]._fill_kind_from_product(vals)
         return super().create(vals_list)
-
-    def _write_concrete(self, vals):
-        if "product_id" in vals:
-            vals = dict(vals)
-            self._fill_kind_from_product(vals)
-        return super()._write_concrete(vals)

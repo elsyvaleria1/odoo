@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from .resource_asset import DOCUMENT_LINKS
+from .resource_resource import DOCUMENT_LINKS
 
 
 class ProductTrace(models.Model):

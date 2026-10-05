@@ -10,33 +10,6 @@ _logger = logging.getLogger(__name__)
 class ResourceAsset(models.Model):
     _inherit = "resource.asset"
 
-    location = fields.Char(
-        string="Asset Location",
-        help="Location of the asset (garage, ...)",
-    )
-    # Not `tag_ids`: a vehicle already carries that name for fleet tags, and a
-    # write through the root reaches the concrete model, so asset tags written
-    # on a vehicle would land in the fleet relation.
-    asset_tag_ids = fields.Many2many(
-        comodel_name="resource.tag",
-        relation="resource_asset_tag_rel",
-        column1="asset_id",
-        column2="tag_id",
-        string="Asset Tags",
-    )
-    value_residual = fields.Monetary(copy=False)
-    account_prefix = fields.Char(
-        tracking=True,
-        help="This fields is required by Accounting to group according to its needs.",
-    )
-    area = fields.Integer(
-        help="Surface area of the asset. The unit follows the system setting, so "
-        "read area_uom_name rather than assuming square metres."
-    )
-    area_uom_name = fields.Char(
-        string="Area Unit",
-        compute="_compute_area_uom_name",
-    )
     service_activity = fields.Selection(
         selection=[
             ("none", "None"),
@@ -68,11 +41,6 @@ class ResourceAsset(models.Model):
     )
 
     _bool_search_inclusion_operator = staticmethod(_bool_search_inclusion_operator)
-
-    def _compute_area_uom_name(self) -> None:
-        self.area_uom_name = self.env[
-            "product.template"
-        ]._get_area_uom_name_from_ir_config_parameter()
 
     @api.model
     def _get_seed_log_category(self, log_type):

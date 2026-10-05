@@ -1,8 +1,8 @@
 from odoo import api, fields, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     trace_id = fields.Many2one(
         comodel_name="product.trace",
@@ -19,13 +19,13 @@ class ResourceAsset(models.Model):
         index="btree_not_null",
         readonly=False,
         domain="[('usage', '=', 'internal')]",
-        help="Where the asset is kept: its serial's location when it has one, set by hand otherwise.",
+        help="Where the thing is kept: its serial's location when it has one, set by hand otherwise.",
     )
 
     @api.depends("trace_id.location_id")
     def _compute_location_id(self):
-        for asset in self:
-            if asset.trace_id:
-                asset.location_id = asset.trace_id.location_id
+        for resource in self:
+            if resource.trace_id:
+                resource.location_id = resource.trace_id.location_id
             else:
-                asset.location_id = asset.location_id
+                resource.location_id = resource.location_id
