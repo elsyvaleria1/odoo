@@ -33,3 +33,5 @@ access_resource_identifier_asset_user,resource.identifier.asset.user,resource.mo
 access_resource_meter_asset_user,resource.meter.asset.user,resource.model_resource_meter,group_asset_user,permission,cud,,,
 access_resource_meter_reading_asset_user,resource.meter.reading.asset.user,resource.model_resource_meter_reading,group_asset_user,permission,ud,,,
 access_resource_meter_reading_employee,resource.meter.reading.employee,resource.model_resource_meter_reading,base.group_user,permission,c,,,
+resource_resource_rule_follows_asset_write,resource.resource: whoever may write an asset writes the resource it extends,resource.model_resource_resource,base.group_user,permission,u,,,"[('asset_id', 'access', 'write')]"
+resource_resource_rule_follows_asset_unlink,resource.resource: whoever may delete an asset deletes the resource it extends,resource.model_resource_resource,base.group_user,permission,d,,,"[('asset_id', 'access', 'unlink')]"

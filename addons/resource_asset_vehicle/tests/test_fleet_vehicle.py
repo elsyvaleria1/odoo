@@ -506,8 +506,8 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         self.assertEqual(vehicle.license_plate, "RTY-1")
 
 
-class TestAVehicleThreadsOnTheRoot(TransactionCase):
-    def test_the_vehicle_model_reads_and_writes_the_root_thread(self):
+class TestAVehicleThreadsOnItsResource(TransactionCase):
+    def test_the_vehicle_model_reads_and_writes_its_resource_thread(self):
         Asset = self.env["resource.asset"]
         Vehicle = self.env["resource.asset.vehicle"]
         van = Asset.create(
@@ -518,12 +518,12 @@ class TestAVehicleThreadsOnTheRoot(TransactionCase):
         )
         van.message_post(body="through the root")
         vehicle = Vehicle.browse(van.id)
-        self.assertEqual(vehicle._get_reference_model_name(), "resource.asset")
+        self.assertEqual(vehicle._get_reference_model_name(), "resource.resource")
         self.assertEqual(vehicle.message_ids, van.message_ids)
         vehicle.message_ids = [
             (0, 0, {"body": "through the vehicle", "message_type": "comment"})
         ]
-        self.assertEqual(set(van.message_ids.mapped("model")), {"resource.asset"})
+        self.assertEqual(set(van.message_ids.mapped("model")), {"resource.resource"})
         self.assertEqual(len(van.message_ids), len(vehicle.message_ids))
         self.assertIn(van, Asset.search([("message_ids.body", "ilike", "vehicle")]))
         self.assertIn(
@@ -532,14 +532,16 @@ class TestAVehicleThreadsOnTheRoot(TransactionCase):
         views = Vehicle.get_views([[False, "form"]])
         self.assertEqual(
             views["models"]["resource.asset.vehicle"].get("thread_model"),
-            "resource.asset",
+            "resource.resource",
         )
-        self.assertNotIn(
-            "thread_model",
-            Asset.get_views([[False, "form"]])["models"]["resource.asset"],
+        self.assertEqual(
+            Asset.get_views([[False, "form"]])["models"]["resource.asset"].get(
+                "thread_model"
+            ),
+            "resource.resource",
         )
 
-    def test_a_tracked_write_through_either_model_records_the_root(self):
+    def test_a_tracked_write_through_either_model_records_its_resource(self):
         Asset = self.env["resource.asset"]
         Vehicle = self.env["resource.asset.vehicle"]
         van = Asset.create(
@@ -558,11 +560,13 @@ class TestAVehicleThreadsOnTheRoot(TransactionCase):
         vehicle.activity_schedule("mail.mail_activity_data_todo", summary="Probe")
         tracked = van.message_ids.filtered("tracking_value_ids")
         self.assertEqual(len(tracked), 2)
-        self.assertEqual(set(tracked.mapped("model")), {"resource.asset"})
+        self.assertEqual(set(tracked.mapped("model")), {"resource.resource"})
         self.assertEqual(
-            set(van.message_follower_ids.mapped("res_model")), {"resource.asset"}
+            set(van.message_follower_ids.mapped("res_model")), {"resource.resource"}
         )
-        self.assertEqual(set(van.activity_ids.mapped("res_model")), {"resource.asset"})
+        self.assertEqual(
+            set(van.activity_ids.mapped("res_model")), {"resource.resource"}
+        )
         self.assertEqual(vehicle.activity_ids, van.activity_ids)
 
     def flush_tracking(self):

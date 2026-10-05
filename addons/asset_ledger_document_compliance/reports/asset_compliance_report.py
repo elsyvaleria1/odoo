@@ -77,7 +77,8 @@ class AssetComplianceReport(models.Model):
     )
 
     def _with_cte(self) -> SQL:
-        return SQL("""
+        return SQL(
+            """
             assets AS (
                 SELECT
                     pt.id as product_tmpl_id,
@@ -105,7 +106,7 @@ class AssetComplianceReport(models.Model):
                     dd.date_verification
                 FROM assets a
                 JOIN document_document dd ON (
-                    dd.res_model = 'resource.asset'
+                    dd.res_model = %(asset_reference)s
                     AND dd.res_id = a.asset_id
                     AND dd.active = true
                 )
@@ -173,7 +174,9 @@ class AssetComplianceReport(models.Model):
                     ar.document_type_id,
                     ar.is_mandatory
             )
-            """)
+            """,
+            asset_reference=self.env["resource.asset"]._get_reference_model_name(),
+        )
 
     def _get_fields_select(self) -> dict:
         return {
@@ -283,7 +286,7 @@ class AssetComplianceReport(models.Model):
     @api.readonly
     def action_view_asset_documents(self) -> dict:
         self.check_singleton()
-
+        reference = self.env["resource.asset"]._get_reference_model_name()
         return {
             "name": f"Documents: {self.product_name}",
             "type": "ir.actions.act_window",
@@ -293,7 +296,7 @@ class AssetComplianceReport(models.Model):
                 "|",
                 ("product_tmpl_id", "=", self.product_tmpl_id.id),
                 "&",
-                ("res_model", "=", "resource.asset"),
+                ("res_model", "=", reference),
                 (
                     ("res_id", "=", self.asset_id.id)
                     if self.asset_id
@@ -302,7 +305,7 @@ class AssetComplianceReport(models.Model):
             ],
             "context": {
                 "default_asset_id": self.product_tmpl_id.id,
-                "default_res_model": "resource.asset" if self.asset_id else False,
+                "default_res_model": reference if self.asset_id else False,
                 "default_res_id": self.asset_id.id if self.asset_id else False,
             },
         }

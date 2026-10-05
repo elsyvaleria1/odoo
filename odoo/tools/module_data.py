@@ -549,6 +549,265 @@ def _repoint_references(
                 cr.execute(SQL("DELETE FROM %s WHERE %s", SQL.identifier(table), row))
 
 
+def rekey_records(
+    cr: BaseCursor, models: Collection[str], table: str, moves: Mapping[int, int]
+) -> None:
+    # A row keyed anew carries every stored reference to it along. A
+    # table-inheritance tree has no foreign key to follow, so the references
+    # are the ones reflected in ir_model_fields: Many2one and Many2many columns,
+    # (model, res_id) pairs, reference values, and tracked Many2one values.
+    # `models` names every model whose records are rows of `table`, which a
+    # table inheriting it in PostgreSQL holds too.
+    moves = {old: new for old, new in moves.items() if old != new}
+    if not moves:
+        return
+    models = list(models)
+    olds, news = list(moves), list(moves.values())
+    _debug.lifecycle(
+        "module_data.rekey_records", models=models, table=table, moves=len(moves)
+    )
+    # a foreign key into the rows refuses their new ids before the columns
+    # holding it follow, which the fields below rekey; it is restored as it
+    # was, so a reference no field explains fails here rather than dangle
+    foreign_keys = _foreign_keys_into_tree(cr, table)
+    for referencing, name, __ in foreign_keys:
+        cr.execute(
+            SQL(
+                "ALTER TABLE %s DROP CONSTRAINT %s",
+                SQL.identifier(referencing),
+                SQL.identifier(name),
+            )
+        )
+    _rekey_column(cr, table, "id", olds, news)
+    cr.execute(
+        SQL(
+            "SELECT setval(pg_get_serial_sequence(%s, 'id'), "
+            "GREATEST((SELECT max(id) FROM %s), 1))",
+            table,
+            SQL.identifier(table),
+        )
+    )
+    cr.execute(
+        "SELECT model, name, ttype, relation_table, column1, column2, relation, "
+        "company_dependent FROM ir_model_fields "
+        "WHERE store AND (relation = ANY(%(models)s) "
+        "OR (model = ANY(%(models)s) AND ttype = 'many2many') "
+        "OR ttype IN ('many2one_reference', 'reference'))",
+        {"models": models},
+    )
+    rekeyed = set()
+    for (
+        model,
+        name,
+        ttype,
+        relation_table,
+        column1,
+        column2,
+        relation,
+        cd,
+    ) in cr.fetchall():
+        if ttype == "many2one" and relation in models:
+            target = (_table_of(model, cr), name, SQL())
+            if cd:
+                raise ValueError(
+                    f"rekey_records: {model}.{name} is company-dependent; its "
+                    "references are values of a jsonb column, which this does not rekey"
+                )
+        elif ttype == "many2many" and relation in models:
+            target = (relation_table, column2, SQL())
+        elif ttype == "many2many":
+            target = (relation_table, column1, SQL())
+        elif ttype == "many2one_reference":
+            condition = _model_condition_of(cr, _table_of(model, cr), name, models)
+            if condition is None:
+                continue
+            target = (_table_of(model, cr), name, condition)
+        elif ttype == "reference":
+            _rekey_reference_values(cr, _table_of(model, cr), name, models, moves)
+            continue
+        else:
+            continue
+        if target[:2] in rekeyed or not column_exists(cr, target[0], target[1]):
+            continue
+        rekeyed.add(target[:2])
+        _rekey_column(cr, *target[:2], olds, news, target[2])
+    if table_exists(cr, "mail_tracking_value"):
+        tracked = SQL(
+            " AND field_id IN (SELECT id FROM ir_model_fields "
+            "WHERE ttype = 'many2one' AND relation = ANY(%s))",
+            models,
+        )
+        for column in ("old_value_integer", "new_value_integer"):
+            _rekey_column(cr, "mail_tracking_value", column, olds, news, tracked)
+    for referencing, name, definition in foreign_keys:
+        cr.execute(
+            SQL(
+                "ALTER TABLE %s ADD CONSTRAINT %s %s",
+                SQL.identifier(referencing),
+                SQL.identifier(name),
+                SQL(definition),
+            )
+        )
+
+
+def rehome_references(
+    cr: BaseCursor,
+    models: Collection[str],
+    into: str,
+    *,
+    keep: Collection[str] = ("ir.model.data",),
+) -> None:
+    # A record that became its parent's row extended (`_inherits_shared_id`)
+    # files its messages, followers, activities and attachments under its
+    # parent's model, with the same id. An external id still names the record.
+    models = list(models)
+    cr.execute(
+        "SELECT model, name FROM ir_model_fields "
+        "WHERE ttype = 'many2one_reference' AND store AND model <> ALL(%s)",
+        [list(keep)],
+    )
+    for model, name in cr.fetchall():
+        table = _table_of(model, cr)
+        found = _model_column_of(cr, table, name)
+        if found is None:
+            continue
+        column, is_id = found
+        if is_id:
+            cr.execute(
+                SQL(
+                    "UPDATE %s SET %s = (SELECT id FROM ir_model WHERE model = %s) "
+                    "WHERE %s IN (SELECT id FROM ir_model WHERE model = ANY(%s))",
+                    SQL.identifier(table),
+                    SQL.identifier(column),
+                    into,
+                    SQL.identifier(column),
+                    models,
+                )
+            )
+        else:
+            cr.execute(
+                SQL(
+                    "UPDATE %s SET %s = %s WHERE %s = ANY(%s)",
+                    SQL.identifier(table),
+                    SQL.identifier(column),
+                    into,
+                    SQL.identifier(column),
+                    models,
+                )
+            )
+    _debug.lifecycle("module_data.rehome_references", models=models, into=into)
+
+
+def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, str]]:
+    cr.execute(
+        """
+        WITH RECURSIVE tree(oid) AS (
+            SELECT %s::regclass::oid
+             UNION
+            SELECT inherit.inhrelid FROM pg_inherits inherit
+              JOIN tree ON inherit.inhparent = tree.oid
+        )
+        SELECT con.conrelid::regclass::text, con.conname, pg_get_constraintdef(con.oid)
+          FROM pg_constraint con JOIN tree ON con.confrelid = tree.oid
+         WHERE con.contype = 'f'
+        """,
+        [table],
+    )
+    return cr.fetchall()
+
+
+def _model_column_of(
+    cr: BaseCursor, table: str, res_column: str
+) -> tuple[str, bool] | None:
+    # a Many2oneReference names its model beside it, by name in a char column
+    # (res_id <-> res_model or model, cause_res_id <-> cause_model) or as an
+    # ir_model id (calendar_event.res_model_id): the column, and whether it is an id
+    prefix = res_column.removesuffix("res_id")
+    columns = get_table_columns(cr, table)
+    for base in (f"{prefix}res_model", f"{prefix}model"):
+        for candidate, is_id in ((base, False), (f"{base}_id", True)):
+            column = columns.get(candidate)
+            if column and (column["udt_name"] == "int4") == is_id:
+                return candidate, is_id
+    return None
+
+
+def _model_condition_of(
+    cr: BaseCursor, table: str, res_column: str, models: list[str]
+) -> SQL | None:
+    found = _model_column_of(cr, table, res_column)
+    if found is None:
+        return None
+    column, is_id = found
+    if is_id:
+        return SQL(
+            " AND %s IN (SELECT id FROM ir_model WHERE model = ANY(%s))",
+            SQL.identifier(column),
+            models,
+        )
+    return SQL(" AND %s = ANY(%s)", SQL.identifier(column), models)
+
+
+def _rekey_column(
+    cr: BaseCursor,
+    table: str,
+    column: str,
+    olds: list[int],
+    news: list[int],
+    where: SQL | None = None,
+) -> None:
+    where = where or SQL()
+    # through negative ids: a row may take an id another holds until that one
+    # moves too, and a unique key on the column would refuse the overlap
+    cr.execute(
+        SQL(
+            "UPDATE %s t SET %s = -m.new FROM unnest(%s::int[], %s::int[]) m(old, new) "
+            "WHERE t.%s = m.old%s",
+            SQL.identifier(table),
+            SQL.identifier(column),
+            olds,
+            news,
+            SQL.identifier(column),
+            where,
+        )
+    )
+    cr.execute(
+        SQL(
+            "UPDATE %s SET %s = -%s WHERE %s < 0%s",
+            SQL.identifier(table),
+            SQL.identifier(column),
+            SQL.identifier(column),
+            SQL.identifier(column),
+            where,
+        )
+    )
+
+
+def _rekey_reference_values(
+    cr: BaseCursor,
+    table: str,
+    column: str,
+    models: list[str],
+    moves: Mapping[int, int],
+) -> None:
+    if not column_exists(cr, table, column):
+        return
+    for model in models:
+        cr.execute(
+            SQL(
+                "UPDATE %s t SET %s = %s || m.new FROM unnest(%s::int[], %s::int[]) "
+                "m(old, new) WHERE t.%s = %s || m.old",
+                SQL.identifier(table),
+                SQL.identifier(column),
+                f"{model},",
+                list(moves),
+                list(moves.values()),
+                SQL.identifier(column),
+                f"{model},",
+            )
+        )
+
+
 def _moved_identifier(cr: BaseCursor, table: str, suffix: str) -> str:
     """Name a constraint or index of ``table`` that ended in ``suffix``.
 

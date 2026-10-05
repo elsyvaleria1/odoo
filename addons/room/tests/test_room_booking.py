@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from freezegun import freeze_time
 from psycopg import IntegrityError
+from psycopg.errors import CheckViolation
 
 from odoo.exceptions import ValidationError
 from odoo.tests.common import tagged
@@ -57,34 +58,17 @@ class TestRoomBooking(RoomCommon):
                 self._booking_vals("Overlapping meeting", self.resources[0], 10, 11)
             )
 
-    def test_rebinding_a_room_initializes_its_new_kiosk(self):
-        old_resource = self.resources[0]
+    def test_a_room_is_its_resource_and_cannot_move_onto_another(self):
         replacement = self.env["resource.resource"].create(
             {"name": "Replacement room", "type": "material"}
         )
-        self.rooms[0].resource_id = replacement
-        self.assertTrue(replacement.access_token)
-        self.assertTrue(replacement.short_code)
-        self.assertIn(self.room_type, replacement.appointment_type_ids)
-        self.assertTrue(replacement.enforce_booking_limit)
-        self.assertEqual(self.bookings[0].reservation_ids.resource_id, old_resource)
-
-    def test_old_kiosk_does_not_receive_booking_updates_after_rebinding(self):
-        old_resource = self.resources[0]
-        replacement = self.env["resource.resource"].create(
-            {"name": "Replacement room", "type": "material"}
-        )
-        with patch.object(type(self.env["bus.bus"]), "_sendone", autospec=True) as send:
+        with (
+            mute_logger("odoo.db.cursor", "odoo.sql_db"),
+            self.assertRaises(CheckViolation),
+            self.env.cr.savepoint(),
+        ):
             self.rooms[0].resource_id = replacement
-            self.assertTrue(
-                any(
-                    call.args[2] == f"room#{old_resource.id}/reload"
-                    for call in send.call_args_list
-                )
-            )
-            send.reset_mock()
-            self.bookings[0].name = "Historical private meeting"
-            self.assertFalse(send.called)
+            self.rooms[0].flush_recordset()
 
     def test_archiving_a_room_reloads_its_kiosk_and_stops_booking_updates(self):
         resource = self.resources[0]

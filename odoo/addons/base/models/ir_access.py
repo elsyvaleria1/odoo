@@ -292,12 +292,12 @@ def access_edges(model: models.BaseModel, domain: Domain) -> Iterator[tuple[str,
             )
         if field is not None and field.name == "id":
             yield owner._name, condition.value
-        elif field is not None and field.is_many2one:
+        elif field is not None and (field.is_many2one or field.is_one2one):
             yield field.comodel_name, condition.value
         else:
             raise ValueError(
-                f"The 'access' operator works only for many2one and 'id' fields, "
-                f"not {owner._name}.{condition.field_expr}"
+                f"The 'access' operator works only for many2one, one2one and 'id' "
+                f"fields, not {owner._name}.{condition.field_expr}"
             )
 
 

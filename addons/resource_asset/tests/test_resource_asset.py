@@ -83,7 +83,7 @@ class TestResourceAsset(TransactionCase):
         self.assertIn(child, whole.child_ids)
         self.assertIn(child, self.Asset.search([("parent_id", "=", whole.id)]))
 
-    def test_asset_editor_changes_membership_without_resource_edit_rights(self):
+    def test_an_asset_editor_changes_membership_and_its_writer_the_resource(self):
         user = new_test_user(
             self.env, login="component_editor", groups="resource_asset.group_asset_user"
         )
@@ -91,8 +91,17 @@ class TestResourceAsset(TransactionCase):
         child = self._truck("Member").with_user(user)
         child.parent_id = whole
         self.assertEqual(child.parent_id, whole)
+        # the asset is its resource's row extended: the resource is written
+        # by whoever may write the asset, which a member's editor need not
         with self.assertRaises(AccessError):
             child.resource_id.capacity = 2
+        manager = new_test_user(
+            self.env,
+            login="component_manager",
+            groups="resource_asset.group_asset_manager",
+        )
+        child.resource_id.with_user(manager).capacity = 3
+        self.assertEqual(child.resource_id.capacity, 3)
         created = (
             self.Asset.with_user(user)
             .with_context(default_parent_id=whole.id)

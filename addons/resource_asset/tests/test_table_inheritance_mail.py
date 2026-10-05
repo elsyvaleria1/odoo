@@ -23,18 +23,18 @@ class TestAssetSubtypeThread(TransactionCase):
     def _device(self):
         return self.Device.create({"name": "Scanner", "kind_id": self.kind.id})
 
-    def test_the_creator_follows_the_row_under_the_root_name(self):
+    def test_the_creator_follows_the_row_under_its_resource(self):
         device = self.Device.with_user(self.user).create(
             {"name": "Scanner", "kind_id": self.kind.id}
         )
         followers = self.env["mail.followers"].search([("res_id", "=", device.id)])
-        self.assertEqual(followers.mapped("res_model"), ["resource.asset"])
+        self.assertEqual(followers.mapped("res_model"), ["resource.resource"])
         self.assertEqual(device.message_partner_ids, self.user.partner_id)
 
     def test_the_subtype_fetches_the_messages_posted_on_its_row(self):
         device = self._device()
         message = device.message_post(body="Serviced", message_type="comment")
-        self.assertEqual(message.model, "resource.asset")
+        self.assertEqual(message.model, "resource.resource")
         fetched = self.env["mail.message"]._message_fetch(None, thread=device)
         self.assertIn(message, fetched["messages"])
         searched = self.env["mail.message"]._message_fetch(
@@ -45,7 +45,7 @@ class TestAssetSubtypeThread(TransactionCase):
     def test_deleting_the_subtype_row_deletes_its_activities(self):
         device = self._device()
         activity = device.activity_schedule("mail.mail_activity_data_todo")
-        self.assertEqual(activity.res_model, "resource.asset")
+        self.assertEqual(activity.res_model, "resource.resource")
         device.unlink()
         self.assertFalse(activity.exists())
 
@@ -84,7 +84,7 @@ class TestAssetSubtypeThread(TransactionCase):
             {
                 "name": "manual.txt",
                 "raw": b"manual",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": root.id,
             }
         )

@@ -437,7 +437,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
 
         # Check sequence number and advance the smallest one.
         self.env.cr.execute(
-            "SELECT currval('resource_asset_id_seq'), currval('account_account_id_seq')"
+            "SELECT currval('resource_resource_id_seq'), currval('account_account_id_seq')"
         )
         fleet_vehicle_max_id, account_account_max_id = self.env.cr.fetchone()
         # In theory, account sequence will always be bigger but the test should be able to run on a db that already
@@ -445,7 +445,8 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         # of those 2 sequences accordingly
         if fleet_vehicle_max_id < account_account_max_id:
             self.env.cr.execute(
-                "SELECT setval('resource_asset_id_seq', %s)", [account_account_max_id]
+                "SELECT setval('resource_resource_id_seq', %s)",
+                [account_account_max_id],
             )
         elif fleet_vehicle_max_id > account_account_max_id:
             self.env.cr.execute(
@@ -453,7 +454,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             )
 
         self.env.cr.execute(
-            "SELECT currval('resource_asset_id_seq'), currval('account_account_id_seq')"
+            "SELECT currval('resource_resource_id_seq'), currval('account_account_id_seq')"
         )
         fleet_vehicle_max_id, account_account_max_id = self.env.cr.fetchone()
         assert fleet_vehicle_max_id == account_account_max_id, (

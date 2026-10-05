@@ -70,10 +70,14 @@ class MixinResource(models.AbstractModel):
         Resource = self._get_resource_model_as_system()
         resources_vals_list = []
         for vals in vals_list:
+            delegated = self._pop_delegated_resource_vals(vals)
             if not vals.get("resource_id"):
-                resources_vals_list.append(  # noqa: PERF401 — vals.pop() side effect
-                    self._prepare_resource_values(vals, vals.pop("tz", False))
+                resources_vals_list.append(
+                    delegated
+                    | self._prepare_resource_values(vals, vals.pop("tz", False))
                 )
+            elif delegated:
+                vals.update(delegated)
         if resources_vals_list:
             resources = Resource.create(resources_vals_list)
             resources_iter = iter(resources.ids)
@@ -142,6 +146,34 @@ class MixinResource(models.AbstractModel):
         owned.exists().unlink()
         return result
 
+    def _unlink_inherits_shared_parents(self, parents):
+        if self._resource_owns:
+            parents = parents.with_privilege(
+                "resource.privilege_owner_deletes_resource",
+                reason="deleting what owns a resource deletes the resource",
+            )
+        super()._unlink_inherits_shared_parents(parents)
+
+    def _pop_delegated_resource_vals(self, vals: ValuesType) -> ValuesType:
+        """The resource fields a host that delegates to its resource is given.
+
+        A record created through one of its own delegating children (a board
+        on an asset) carries the resource's defaults down the chain; the
+        resource it is born with takes them, under the host's own values, and
+        never a type other than the host's.
+        """
+        if self._inherits.get("resource.resource") != "resource_id":
+            return {}
+        delegated = {
+            name: vals.pop(name)
+            for name in list(vals)
+            if (field := self._fields.get(name))
+            and field.inherited
+            and field.related_field.model_name == "resource.resource"
+        }
+        delegated.pop("type", None)
+        return delegated
+
     @api.model
     def _normalize_calendar_vals(self, vals: ValuesType) -> ValuesType:
         return self.env["resource.calendar"]._normalize_calendar_vals(
@@ -184,7 +216,7 @@ class MixinResource(models.AbstractModel):
                     )
             return
         resource_ids = resources.ids
-        namespace = self._get_reference_model_name()
+        namespace = self._get_root_model_name()
         for owner_model in self._resource_owner_models():
             owners = self.env[owner_model].sudo().with_context(active_test=False)
             if owners.search_count(  # noqa: E8507  one query per owner model, not per resource

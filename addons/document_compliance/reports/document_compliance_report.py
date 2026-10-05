@@ -111,9 +111,12 @@ class DocumentComplianceReport(models.Model):
         }
 
     def _get_entities_union(self) -> str:
+        # a document names its entity by the entity's reference model, which
+        # for a record that extends another's row is that other model
         parts = [
-            f"SELECT '{model}' AS entity_type, t.id AS entity_id, "
-            f"t.company_id FROM {table} t WHERE t.active = true"
+            f"SELECT '{model}' AS entity_type, "
+            f"'{self.env[model]._get_reference_model_name()}' AS entity_reference, "
+            f"t.id AS entity_id, t.company_id FROM {table} t WHERE t.active = true"
             for model, table in self._get_entity_model_map().items()
         ]
         return "\n                UNION ALL\n                ".join(parts)
@@ -188,7 +191,7 @@ class DocumentComplianceReport(models.Model):
                 JOIN document_type dt
                     ON {type_scope}
                 LEFT JOIN document_document dd
-                    ON dd.res_model = e.entity_type
+                    ON dd.res_model = e.entity_reference
                     AND dd.res_id = e.entity_id
                     AND dd.document_type_id = dt.id
                     AND dd.active = true
@@ -287,18 +290,18 @@ class DocumentComplianceReport(models.Model):
     @api.readonly
     def action_view_documents(self):
         self.check_singleton()
-
+        reference = self.env[self.entity_type]._get_reference_model_name()
         return {
             "name": f"Documents: {self.entity_name}",
             "type": "ir.actions.act_window",
             "res_model": "document.document",
             "view_mode": "kanban,list",
             "domain": [
-                ("res_model", "=", self.entity_type),
+                ("res_model", "=", reference),
                 ("res_id", "=", self.entity_id),
             ],
             "context": {
-                "default_res_model": self.entity_type,
+                "default_res_model": reference,
                 "default_res_id": self.entity_id,
             },
         }

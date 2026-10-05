@@ -224,7 +224,7 @@ class MailFollowers(models.Model):
         for res_model, res_ids in to_invalidate.items():
             if res_model not in self.env:
                 continue
-            for model_name in (res_model, *self.env._table_inheritance_tree(res_model)):
+            for model_name in self.env["base"]._get_model_names_filed_as(res_model):
                 records = self.env[model_name].browse(res_ids)
                 fnames = [
                     fname for fname in self._FOLLOWED_FNAMES if fname in records._fields

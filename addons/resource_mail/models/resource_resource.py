@@ -2,7 +2,8 @@ from odoo import fields, models
 
 
 class ResourceResource(models.Model):
-    _inherit = "resource.resource"
+    _name = "resource.resource"
+    _inherit = ["resource.resource", "mixin.mail.thread", "mixin.mail.activity"]
 
     im_status = fields.Char(related="user_id.im_status")
 

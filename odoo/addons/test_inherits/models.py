@@ -22,6 +22,10 @@ class TestUnit(models.Model):
         readonly=True,
     )
     size = fields.Integer()
+    badge_id = fields.One2one(
+        comodel_name="test.unit.badge",
+        inverse_name="unit_id",
+    )
 
     @api.depends("name")
     def _compute_surname(self):
@@ -191,3 +195,15 @@ class TestCrate(models.Model):
         ondelete="cascade",
     )
     label = fields.Char()
+
+
+class TestUnitBadge(models.Model):
+    _name = "test.unit.badge"
+    _description = "Test Unit Badge"
+
+    name = fields.Char()
+    unit_id = fields.Many2one(
+        comodel_name="test.unit",
+        index="unique",
+        ondelete="cascade",
+    )

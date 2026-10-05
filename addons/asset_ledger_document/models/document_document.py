@@ -17,23 +17,33 @@ class Documents(models.Model):
 
     @api.depends("res_id", "res_model")
     def _compute_asset_id(self) -> None:
+        # an asset's documents are filed under its resource, whose other
+        # documents (a person's) name no asset
         asset_model = self.env["resource.asset"]
+        reference = asset_model._get_reference_model_name()
+        filed = self.filtered(lambda d: d.res_model == reference and d.res_id)
+        asset_ids = set(asset_model.browse(filed.mapped("res_id")).exists().ids)
         for document in self:
             document.asset_id = (
-                document.res_model == asset_model._name
+                document in filed
+                and document.res_id in asset_ids
                 and asset_model.browse(document.res_id)
             )
 
     @api.model
     def _search_asset_id(self, operator: str, value: Any) -> Domain:
         lot = self.env["resource.asset"]
+        reference = lot._get_reference_model_name()
         if operator == "in":
             values = list(value)
             sentinels = []
             if any(v is True for v in values):
                 sentinels.append(Domain("asset_id", "not in", [False]))
             if any(v is False for v in values):
-                sentinels.append(Domain("res_model", "!=", lot._name))
+                sentinels.append(
+                    Domain("res_model", "!=", reference)
+                    | Domain("res_id", "not in", lot._search([]))
+                )
             value = OrderedSet(v for v in values if not isinstance(v, bool))
             if sentinels:
                 return Domain.OR([*sentinels, self._search_asset_id(operator, value)])
@@ -58,4 +68,4 @@ class Documents(models.Model):
             Domain.FALSE
             if query_model.is_empty()
             else Domain("res_id", "in", query_model)
-        ) & Domain("res_model", "=", lot._name)
+        ) & Domain("res_model", "=", reference)

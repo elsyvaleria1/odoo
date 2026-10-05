@@ -94,9 +94,8 @@ class IrAttachment(models.Model):
         for model_name, res_ids in by_model.items():
             if model_name not in self.env:
                 continue
-            for tree_model_name in (
-                model_name,
-                *self.env._table_inheritance_tree(model_name),
+            for tree_model_name in self.env["base"]._get_model_names_filed_as(
+                model_name
             ):
                 model = self.env[tree_model_name]
                 if "message_attachment_count" in model._fields:

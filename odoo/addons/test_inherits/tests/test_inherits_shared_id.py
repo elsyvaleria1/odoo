@@ -57,3 +57,14 @@ class TestInheritsSharedId(common.TransactionCase):
         self.assertNotEqual(copy.id, crate.id)
         self.assertEqual(copy.id, copy.unit_id.id)
         self.assertEqual(copy.label, "fragile")
+
+    def test_a_one2one_of_the_parent_reads_through_the_record(self):
+        crate = self.env["test.crate"].create({"name": "Crate"})
+        badge = self.env["test.unit.badge"].create(
+            {"name": "B-1", "unit_id": crate.unit_id.id}
+        )
+        self.assertEqual(crate.badge_id, badge)
+        self.assertEqual(
+            crate.read(["badge_id"])[0]["badge_id"],
+            crate.unit_id.read(["badge_id"])[0]["badge_id"],
+        )

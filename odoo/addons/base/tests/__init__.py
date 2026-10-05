@@ -73,6 +73,7 @@ from . import test_report_paperformat_audit
 from . import test_menu
 from . import test_misc
 from . import test_module
+from . import test_module_data_rekey_records
 from . import test_module_data_rename_model
 from . import test_module_data_rename_field
 from . import test_module_data_rename_module

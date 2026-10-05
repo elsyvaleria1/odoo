@@ -691,9 +691,11 @@ class RecomputeMixin(_ModelStubs):
                         model_field = invf.model_field
                         assert model_field is not None
                         rec_ids: OrderedSet[int] = OrderedSet()
+                        # a row is referenced under its model's reference name
+                        reference = model._get_reference_model_name()
                         for rec in self:
                             try:
-                                if rec[model_field] == field.model_name:
+                                if rec[model_field] == reference:
                                     rec_ids.add(rec[invf.name])
                             except MissingError:
                                 continue

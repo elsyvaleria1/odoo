@@ -119,7 +119,7 @@ class ResourceAsset(models.Model):
                 )
                 document.sudo().write(
                     {
-                        "res_model": "resource.asset",
+                        "res_model": asset._get_reference_model_name(),
                         "res_id": asset.id,
                         "is_editable_attachment": True,
                     },

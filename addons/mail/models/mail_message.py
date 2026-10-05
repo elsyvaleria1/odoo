@@ -1231,7 +1231,10 @@ class MailMessage(models.Model):
             records=sum(len(ids) for ids in ids_by_model.values()),
         )
         for rec_model, rec_ids in ids_by_model.items():
-            self.env[rec_model].browse(rec_ids).invalidate_recordset(list(fnames))
+            for model_name in self.env["base"]._get_model_names_filed_as(rec_model):
+                model = self.env[model_name]
+                if names := [fname for fname in fnames if fname in model._fields]:
+                    model.browse(rec_ids).invalidate_recordset(names)
 
     def _thread_pointers(self) -> list[tuple[Self, str, int]]:
         return [

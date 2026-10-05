@@ -315,7 +315,7 @@ class TestStockLotDocuments(TransactionCase):
         self.document.create(
             {
                 "name": "Test Document 1",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": vehicle_lot.asset_id.id,
                 "folder_id": self.folder_fleet.id,
             }
@@ -323,7 +323,7 @@ class TestStockLotDocuments(TransactionCase):
         self.document.create(
             {
                 "name": "Test Document 2",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": vehicle_lot.asset_id.id,
                 "folder_id": self.folder_fleet.id,
             }
@@ -435,7 +435,7 @@ class TestStockLotDocuments(TransactionCase):
         document = self.document.create(
             {
                 "name": "Counted Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": vehicle_lot.asset_id.id,
                 "folder_id": self.folder_fleet.id,
             }
@@ -509,7 +509,7 @@ class TestStockLotDocuments(TransactionCase):
                 document = self._tagged_document(f"{field_name}.pdf", link.tag_xmlid)
                 lot.write({field_name: document.id})
 
-                self.assertEqual(document.res_model, "resource.asset")
+                self.assertEqual(document.res_model, "resource.resource")
                 self.assertEqual(document.res_id, lot.asset_id.id)
                 self.assertTrue(document.is_editable_attachment)
 
@@ -618,7 +618,7 @@ class TestStockLotDocuments(TransactionCase):
             .create(
                 {
                     "name": "shared.txt",
-                    "res_model": "resource.asset",
+                    "res_model": "resource.resource",
                     "res_id": lot.asset_id.id,
                     "datas": base64.b64encode(b"shared"),
                 }
@@ -657,7 +657,7 @@ class TestStockLotDocuments(TransactionCase):
             .create(
                 {
                     "name": "tagged.txt",
-                    "res_model": "resource.asset",
+                    "res_model": "resource.resource",
                     "res_id": lot.asset_id.id,
                     "datas": base64.b64encode(b"tagged"),
                 }

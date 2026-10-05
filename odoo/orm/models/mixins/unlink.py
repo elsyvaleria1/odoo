@@ -111,13 +111,18 @@ class UnlinkMixin(_ModelStubs):
 
         self._log_unlinked_ids(deleted_ids)
         if shared_parents:
-            # the record was its parent's row extended: it goes with its parent
-            typing.cast("BaseModel", shared_parents).unlink()
+            self._unlink_inherits_shared_parents(
+                typing.cast("BaseModel", shared_parents)
+            )
 
         prof.stop("invalidate")
         self._log_unlink_profile(prof, len(deleted_ids))
 
         return True
+
+    def _unlink_inherits_shared_parents(self, parents: BaseModel) -> None:
+        # the record was its parent's row extended: it goes with its parent
+        parents.exists().unlink()
 
     def _unlink_inheritance_rows_cascaded(self) -> None:
         referrers = self.env.registry.cascades_into_inheritance_trees.get(self._name)

@@ -25,7 +25,10 @@ class MixinTableInheritanceRoot(models.AbstractModel):
     _description = "Table Inheritance Root"
 
     def _get_reference_model_name(self) -> str:
-        return self._get_root_model_name()
+        root = self.env[self._get_root_model_name()]
+        if parent := root._get_inherits_shared_parent():
+            return self.env[parent]._get_reference_model_name()
+        return root._name
 
     @api.model
     def _get_model_names_in_tree(self) -> frozenset[str]:

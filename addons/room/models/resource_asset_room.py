@@ -61,14 +61,7 @@ class ResourceAssetRoom(models.Model):
         self._update_bookable_rooms()
 
     def _write_concrete(self, vals):
-        previous_resources = (
-            self.resource_id if "resource_id" in vals else self.env["resource.resource"]
-        )
         res = super()._write_concrete(vals)
-        if "resource_id" in vals:
-            self._update_bookable_rooms()
-            for resource in previous_resources - self.resource_id:
-                resource._notify_booking_view("reload")
         if {"name", "description", "active"} & vals.keys():
             for room in self.resource_id.filtered("access_token"):
                 room._notify_booking_view("reload")

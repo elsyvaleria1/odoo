@@ -974,11 +974,11 @@ class ResourceResource(models.Model):
     @api.model
     @tools.ormcache("owns", cache="stable")
     def _get_host_model_names(self, owns=None) -> tuple[str, ...]:
-        """Declared business representations, deduplicated by their namespace."""
+        """Declared business representations, deduplicated by their table-inheritance root."""
         return tuple(
             sorted(
                 {
-                    self.env[name]._get_reference_model_name()
+                    self.env[name]._get_root_model_name()
                     for name, model in self.env.registry.items()
                     if not model._abstract
                     and not model._transient

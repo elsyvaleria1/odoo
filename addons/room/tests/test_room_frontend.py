@@ -38,21 +38,6 @@ class TestRoomFrontend(RoomCommon, HttpCase):
         self.assertEqual(blocks[0]["start_datetime"], "2023-05-16 08:00:00")
         self.assertTrue(blocks[0]["readonly"])
 
-    def test_old_kiosk_links_stop_working_when_a_room_is_rebound(self):
-        old_code = self.resources[0].short_code
-        old_token = self.resources[0].access_token
-        replacement = self.env["resource.resource"].create(
-            {"name": "Replacement room", "type": "material"}
-        )
-        self.rooms[0].resource_id = replacement
-        self.authenticate(None, None)
-        self.assertEqual(self.url_open(f"/room/{old_code}/book").status_code, 404)
-        with self.assertRaises(JsonRpcException):
-            self.call_jsonrpc(f"/room/{old_token}/get_existing_bookings", {})
-        self.assertEqual(
-            self.url_open(f"/room/{replacement.short_code}/book").status_code, 200
-        )
-
     @freeze_time("2023-05-15 11:15:00")
     def test_room_frontend(self):
         self.authenticate(None, None)

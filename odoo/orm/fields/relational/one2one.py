@@ -131,6 +131,11 @@ class One2one(One2many):
     ) -> None:
         if not records_commands_list:
             return
+        if not self.store:
+            # a related copy (one a delegating child inherits) has no inverse
+            # of its own: it holds the value its parent's field computed
+            super().write_real(records_commands_list, create)
+            return
         model, comodel = self._get_writer_models(records_commands_list)
         inverse = self._get_inverse_name()
         inverse_field = comodel._fields[inverse]

@@ -969,11 +969,12 @@ def access_condition_target(
         )
     if field.name == "id":
         comodel_name = model._name
-    elif field.is_many2one and field.comodel_name:
+    elif (field.is_many2one or field.is_one2one) and field.comodel_name:
+        # a one2one names one record, as a many2one does from its own side
         comodel_name = field.comodel_name
     else:
         raise condition._prepare_condition_error(
-            "The 'access' operator works only for many2one and 'id' fields"
+            "The 'access' operator works only for many2one, one2one and 'id' fields"
         )
     if condition.value not in ACCESS_OPERATIONS:
         raise condition._prepare_condition_error(

@@ -367,6 +367,22 @@ class Base(models.AbstractModel):
     def mail_get_reference_model_name(self) -> str:
         return self._get_reference_model_name()
 
+    @api.model
+    @tools.ormcache("reference_name", cache="stable")
+    def _get_model_names_filed_as(self, reference_name: str) -> tuple[str, ...]:
+        # every model whose records a message, a follower or an attachment
+        # names `reference_name`: the model, a table-inheritance tree's members,
+        # and a model sharing its parent's id, whose cached threads all change
+        # together
+        return tuple(
+            sorted(
+                name
+                for name, model in self.env.registry.items()
+                if not model._abstract
+                and self.env[name]._get_reference_model_name() == reference_name
+            )
+        )
+
     def _mail_get_partners(
         self, introspect_fields: bool = False
     ) -> dict[int, ResPartner]:

@@ -31,6 +31,12 @@ class ResourceAsset(models.Model):
         "mixin.avatar",
         "mixin.resource",
     ]
+    _inherits = {"resource.resource": "resource_id"}
+    _inherits_shared_id = "resource_id"
+    # an asset's row is governed by the asset's rules: it writes its resource
+    # as the system (`_write_through_resource`), and its other resource fields
+    # are read under the resource's rules
+    _inherits_rules = False
     _table_inheritance_root = "resource_asset"
     _resource_type = "material"
     # A write through the root reaches each row's concrete model, so a kind's
@@ -40,6 +46,10 @@ class ResourceAsset(models.Model):
     _order = "name, id"
     _check_company_auto = True
 
+    resource_id = fields.Many2one(
+        delegate=True,
+        ondelete="cascade",
+    )
     name = fields.Char(  # noqa: E8529  identity column of a delegated record: the asset, SAF-T and compliance reports read it in raw SQL across three repos
         related="resource_id.name",
         store=True,

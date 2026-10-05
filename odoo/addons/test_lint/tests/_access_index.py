@@ -765,10 +765,12 @@ def _validate(model_name: str, node: ast.AST) -> list[str]:
         if target is None:
             continue
         if condition.operator == "access":
-            if len(parts) != 1 or not (part == "id" or target.type == "Many2one"):
+            if len(parts) != 1 or not (
+                part == "id" or target.type in ("Many2one", "One2one")
+            ):
                 problems.append(
-                    f"'access' takes a many2one or 'id' of the model, not "
-                    f"{condition.path}"
+                    f"'access' takes a many2one, a one2one or 'id' of the model, "
+                    f"not {condition.path}"
                 )
             elif _string(condition.value) not in OPERATIONS.values():
                 problems.append(f"'access' takes an operation, not {condition.path}")

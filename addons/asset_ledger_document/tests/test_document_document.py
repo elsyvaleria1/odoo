@@ -38,7 +38,7 @@ class TestDocumentsDocument(TransactionCase):
         document = self.document_model.create(
             {
                 "name": "Test Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -82,7 +82,7 @@ class TestDocumentsDocument(TransactionCase):
         document = self.document_model.create(
             {
                 "name": "Test Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -102,7 +102,7 @@ class TestDocumentsDocument(TransactionCase):
         document = self.document_model.create(
             {
                 "name": "Test Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -129,7 +129,7 @@ class TestDocumentsDocument(TransactionCase):
         document_with_lot = self.document_model.create(
             {
                 "name": "Test Document With Lot",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -152,7 +152,7 @@ class TestDocumentsDocument(TransactionCase):
         document1 = self.document_model.create(
             {
                 "name": "Document 1",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -161,7 +161,7 @@ class TestDocumentsDocument(TransactionCase):
         document2 = self.document_model.create(
             {
                 "name": "Document 2",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -194,7 +194,7 @@ class TestDocumentsDocument(TransactionCase):
         linked = self.document_model.create(
             {
                 "name": "Linked Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -251,7 +251,7 @@ class TestDocumentsDocument(TransactionCase):
         linked = self.document_model.create(
             {
                 "name": "Linked Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -280,7 +280,7 @@ class TestDocumentsDocument(TransactionCase):
         linked = self.document_model.create(
             {
                 "name": "Linked Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }
@@ -305,7 +305,7 @@ class TestDocumentsDocument(TransactionCase):
         linked = self.document_model.create(
             {
                 "name": "Linked Document",
-                "res_model": "resource.asset",
+                "res_model": "resource.resource",
                 "res_id": self.vehicle_lot.asset_id.id,
                 "folder_id": self.test_folder.id,
             }

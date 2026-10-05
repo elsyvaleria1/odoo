@@ -663,10 +663,11 @@ class MixinMailThread(models.AbstractModel):
         messages._check_unlink_before_their_records()
         result = super().unlink()
         # the chatter goes as the superuser, so only once the record has: a
-        # caller refused the record keeps it
-        messages.unlink()
-        followers.unlink()
-        scheduled.unlink()
+        # caller refused the record keeps it. A record that shares its parent's
+        # id shares its chatter, which may have gone with that parent.
+        messages.exists().unlink()
+        followers.exists().unlink()
+        scheduled.exists().unlink()
         return result
 
     def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
