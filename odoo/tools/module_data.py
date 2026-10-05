@@ -12,6 +12,7 @@ from psycopg.types.json import Json
 from odoo.db.schema import (
     column_exists,
     drop_columns,
+    drop_views_depending_on_table,
     get_default_constraint_name,
     get_table_columns,
     get_tables_existing,
@@ -909,7 +910,13 @@ def lift_columns(
         [source],
     )
     lifted = [column for column, __ in pairs]
-    for (table,) in cr.fetchall():
+    tables = [table for (table,) in cr.fetchall()]
+    # a view reading the column, on any table of the tree, is its module's to
+    # rebuild at init; the root's drop cascades to the children's columns
+    for table in tables:
+        for column in lifted:
+            drop_views_depending_on_table(cr, table, column)
+    for table in tables:
         for column in lifted:
             cr.execute(
                 SQL(

@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (4712 methods, 942 classes, 173 files)
+# All base tests (4713 methods, 942 classes, 173 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -166,7 +166,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_ui_view_authoring.py` | `post_install`, `-at_install` | 1 | 7 | TransactionCase |
 | `test_mixin_merge.py` | `post_install`, `-at_install` | 2 | 8 | TransactionCase |
 | `test_mixin_recurrence_rrule.py` | `post_install`, `-at_install` | 3 | 17 | TransactionCase |
-| `test_module_data_rekey_records.py` | `post_install`, `-at_install` | 4 | 15 | TransactionCase |
+| `test_module_data_rekey_records.py` | `post_install`, `-at_install` | 4 | 16 | TransactionCase |
 | `test_module_data_rename_field.py` | `post_install`, `-at_install` | 5 | 11 | TransactionCase |
 | `test_module_data_rename_model.py` | `post_install`, `-at_install` | 5 | 19 | TransactionCase |
 | `test_module_data_rename_module.py` | `post_install`, `-at_install` | 1 | 11 | TransactionCase |
@@ -291,7 +291,7 @@ These run in **both** at_install and post_install phases by default.
 |--------|-------|
 | Total test files | 173 |
 | Total test classes | 942 |
-| Total test methods | 4712 |
+| Total test methods | 4713 |
 | Files with @tagged | 106 (61%) |
 | Files without @tagged | 67 (39%) |
 | Classes using post_install | 340 |

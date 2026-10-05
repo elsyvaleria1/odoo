@@ -302,6 +302,22 @@ class TestLiftColumns(TransactionCase):
             [(1, 10), (2, 20), (3, 30)],
         )
 
+    def test_a_view_reading_the_column_on_any_table_of_the_tree_is_dropped(self):
+        self.env.cr.execute(
+            "CREATE VIEW probe_crate_sizes AS SELECT id, size FROM probe_crate"
+        )
+        lift_columns(self.env.cr, "probe_box", "probe_shelf", ["size"])
+        self.assertEqual(
+            self._rows(
+                "SELECT count(*) FROM pg_class WHERE relname = 'probe_crate_sizes'"
+            ),
+            [(0,)],
+        )
+        self.assertEqual(
+            self._rows("SELECT id, size FROM probe_shelf ORDER BY id"),
+            [(1, 10), (2, 20), (3, 30)],
+        )
+
     def test_a_value_with_nowhere_to_go_drops_nothing(self):
         self.env.cr.execute("INSERT INTO probe_box VALUES (4, 40, NULL)")
         with self.assertRaisesRegex(ValueError, "1 row"):
