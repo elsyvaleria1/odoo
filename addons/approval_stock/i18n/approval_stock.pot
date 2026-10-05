@@ -124,7 +124,7 @@ msgstr ""
 
 #. module: approval_stock
 #: model:ir.model,name:approval_stock.model_approval_request
-#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__approval_request_id
+#: model:ir.model.fields,field_description:approval_stock.field_resource_log__approval_request_id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_request_id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_request_id
 #: model:ir.model.fields.selection,name:approval_stock.selection__resource_asset_log__source__approval
@@ -166,7 +166,7 @@ msgid "Approval request refused. Transfer can be modified."
 msgstr ""
 
 #. module: approval_stock
-#: model:ir.model.fields,help:approval_stock.field_resource_asset_log__approval_request_id
+#: model:ir.model.fields,help:approval_stock.field_resource_log__approval_request_id
 msgid "Approval request this log entry was booked from."
 msgstr ""
 

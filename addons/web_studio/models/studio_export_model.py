@@ -51,7 +51,7 @@ PRESET_MODELS_DEFAULTS = [
     ("mail.activity", {"is_demo_data": True}),
     ("mail.activity.type", {"is_demo_data": True}),
     ("mail.template", {}),
-    ("resource.asset.kind", {}),
+    ("resource.kind", {}),
     ("resource.asset", {}),
     ("mrp.bom", {"is_demo_data": True}),
     ("mrp.bom.line", {"is_demo_data": True}),

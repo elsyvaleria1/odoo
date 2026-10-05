@@ -41,7 +41,7 @@ class MaintenanceOrder(models.Model):
         store=True,
     )
     asset_log_ids = fields.One2many(
-        comodel_name="resource.asset.log",
+        comodel_name="resource.log",
         inverse_name="maintenance_order_id",
         string="Service Logs",
         readonly=True,
@@ -162,7 +162,7 @@ class MaintenanceOrder(models.Model):
         self.filtered(lambda order: order.state == "confirmed").action_start()
 
     def _mark_returned(self, return_picking) -> None:
-        Log = self.env["resource.asset.log"]
+        Log = self.env["resource.log"]
         _debug.lifecycle(
             "maintenance_equipment_returned",
             orders=self,

@@ -169,7 +169,7 @@ class TestMaintenanceResources(TransactionCase):
         technician = self.env["res.users"].create(
             {"name": "Kind tech", "login": "kind_tech"}
         )
-        kind = self.env["resource.asset.kind"].create(
+        kind = self.env["resource.kind"].create(
             {
                 "name": "Panels",
                 "code": "panels_probe",

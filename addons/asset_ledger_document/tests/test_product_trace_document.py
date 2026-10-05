@@ -11,11 +11,11 @@ class TestStockLotDocuments(TransactionCase):
     def _set_kind_documents(self, kind_xmlid, folder=None, tags=None, centralize=None):
         """The folder, tags and switch a kind of asset files its documents under."""
         kind = self.env.ref(kind_xmlid)
-        setting = self.env["resource.asset.kind.document"].search(
+        setting = self.env["resource.kind.document"].search(
             [("kind_id", "=", kind.id), ("company_id", "=", self.company.id)], limit=1
         )
         if not setting:
-            setting = self.env["resource.asset.kind.document"].create(
+            setting = self.env["resource.kind.document"].create(
                 {"kind_id": kind.id, "company_id": self.company.id}
             )
         values = {}

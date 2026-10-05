@@ -1,7 +1,7 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
 resource_assignment_rule_system,resource.assignment: administrators manage every assignment,resource.model_resource_assignment,base.group_system,permission,cud,,,
-access_resource_asset_kind_user,resource.asset.kind.user,model_resource_asset_kind,base.group_user,permission,r,,,
-access_resource_asset_kind_manager,resource.asset.kind.manager,model_resource_asset_kind,group_asset_manager,permission,cud,,,
+access_resource_asset_kind_user,resource.asset.kind.user,model_resource_kind,base.group_user,permission,r,,,
+access_resource_asset_kind_manager,resource.asset.kind.manager,model_resource_kind,group_asset_manager,permission,cud,,,
 resource_asset_kind_visibility_rule,Assets: only the kinds the user is enabled for,model_resource_asset,group_asset_user,permission,cu,,,"[('kind_id', 'not in', user._get_hidden_asset_kinds())]"
 resource_asset_kind_visibility_rule_group_asset_manager,Assets: only the kinds the user is enabled for,model_resource_asset,group_asset_manager,permission,cud,,,"[('kind_id', 'not in', user._get_hidden_asset_kinds())]"
 access_resource_asset_employee,resource.asset.employee,model_resource_asset,base.group_user,permission,r,,,

@@ -25,10 +25,8 @@ TAG_XMLID_BY_FOLDER_XMLID = {
 
 def _documents_product_asset_post_init(env) -> None:
     """Give each kind of asset the folder this module used to keep per bucket."""
-    settings = env["resource.asset.kind.document"]
-    existing = {
-        (row.kind_id.id, row.company_id.id) for row in settings.search([])
-    }
+    settings = env["resource.kind.document"]
+    existing = {(row.kind_id.id, row.company_id.id) for row in settings.search([])}
     vals_list = []
     for company in env["res.company"].search([]):
         for folder_xmlid, kind_xmlids in KIND_BY_FOLDER_XMLID.items():

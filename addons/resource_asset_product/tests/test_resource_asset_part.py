@@ -9,12 +9,12 @@ class TestResourceAssetPart(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Part = cls.env["resource.asset.part"]
-        cls.kind = cls.env["resource.asset.kind"].create(
+        cls.Part = cls.env["resource.part"]
+        cls.kind = cls.env["resource.kind"].create(
             {"name": "Parts Truck", "code": "parts_truck"}
         )
         cls.tyres = cls.env["product.category"].create({"name": "Tyres"})
-        cls.left, cls.right = cls.env["resource.asset.kind.position"].create(
+        cls.left, cls.right = cls.env["resource.kind.position"].create(
             [
                 {
                     "kind_id": cls.kind.id,
@@ -244,4 +244,4 @@ class TestResourceAssetPartReference(TransactionCase):
             ]._get_fields_ondelete_unenforced()
             if ondelete == "restrict"
         }
-        self.assertIn(("resource.asset.part", "asset_id"), restricting)
+        self.assertIn(("resource.part", "asset_id"), restricting)

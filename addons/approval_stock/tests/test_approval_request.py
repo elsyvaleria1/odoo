@@ -178,7 +178,7 @@ class TestApprovalRequestAssetLog(TransactionCase):
 
         action = request.action_create_asset_log()
 
-        log = self.env["resource.asset.log"].browse(action["res_id"])
+        log = self.env["resource.log"].browse(action["res_id"])
         self.assertEqual(log.asset_id, vehicle.asset_id)
         self.assertEqual(log.trace_id, vehicle)
         self.assertEqual(log.odometer, 4200)

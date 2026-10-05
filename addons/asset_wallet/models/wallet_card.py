@@ -39,7 +39,7 @@ class WalletCard(models.Model):
             return {}
         spend = {}
         rows = (
-            self.env["resource.asset.log"]
+            self.env["resource.log"]
             .sudo()
             ._read_group(
                 [

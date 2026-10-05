@@ -181,7 +181,7 @@ class TestFleetVehicle(TransactionCase):
 
     def test_a_service_is_a_ledger_line(self):
         vehicle = self._vehicle()
-        self.env["resource.asset.log"].create(
+        self.env["resource.log"].create(
             {
                 "asset_id": vehicle.id,
                 "product_id": self.env.ref(
@@ -192,9 +192,7 @@ class TestFleetVehicle(TransactionCase):
         )
         self.assertEqual(vehicle.service_count, 1)
         action = vehicle.action_view_services()
-        self.assertEqual(
-            self.env["resource.asset.log"].search(action["domain"]).amount, 150
-        )
+        self.assertEqual(self.env["resource.log"].search(action["domain"]).amount, 150)
 
     def test_mail_to_drivers_reaches_the_driver_partner(self):
         partner = self.env["res.partner"].create(
@@ -240,9 +238,7 @@ class TestVehicleIsItsOwnModel(TransactionCase):
         self.assertIn("resource.asset.vehicle", self.Asset._get_model_names_in_tree())
 
     def test_a_kind_whose_code_names_no_model_is_a_plain_asset(self):
-        drone = self.env["resource.asset.kind"].create(
-            {"name": "Drone", "code": "drone"}
-        )
+        drone = self.env["resource.kind"].create({"name": "Drone", "code": "drone"})
 
         self.assertEqual(self.Asset._get_model_for_kind(drone), "resource.asset")
 

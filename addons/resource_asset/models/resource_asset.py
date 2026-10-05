@@ -63,7 +63,7 @@ class ResourceAsset(models.Model):
         readonly=False,
     )
     kind_id = fields.Many2one(
-        comodel_name="resource.asset.kind",
+        comodel_name="resource.kind",
         index=True,
         required=True,
         ondelete="restrict",
@@ -382,7 +382,7 @@ class ResourceAsset(models.Model):
         crossover."""
         if "resource_calendar_id" in vals:
             return False
-        kind = self.env["resource.asset.kind"].browse(vals.get("kind_id"))
+        kind = self.env["resource.kind"].browse(vals.get("kind_id"))
         shared = "company_id" in vals and not vals["company_id"]
         return not kind.scheduled or shared
 
@@ -630,7 +630,7 @@ class ResourceAsset(models.Model):
         return root
 
     def _create_in_kind_models(self, vals_list) -> Self | None:
-        Kind = self.env["resource.asset.kind"]
+        Kind = self.env["resource.kind"]
         by_model = defaultdict(list)
         for index, vals in enumerate(vals_list):
             kind = Kind.browse(vals.get("kind_id"))
@@ -649,7 +649,7 @@ class ResourceAsset(models.Model):
         return self.browse(created[index] for index in range(len(vals_list)))
 
     def _check_kind_stays_in_this_table(self, kind_id) -> None:
-        kind = self.env["resource.asset.kind"].browse(kind_id)
+        kind = self.env["resource.kind"].browse(kind_id)
         target = self._get_model_for_kind(kind)
         for model_name in self._get_model_names_concrete().values():
             if model_name != target:
@@ -738,7 +738,7 @@ class ResourceAsset(models.Model):
         return [row[0] for row in self.env.cr.fetchall()]
 
     def _check_kind_belongs_to_this_model(self, vals_list) -> None:
-        Kind = self.env["resource.asset.kind"]
+        Kind = self.env["resource.kind"]
         for vals in vals_list:
             kind = Kind.browse(vals.get("kind_id"))
             if not kind:

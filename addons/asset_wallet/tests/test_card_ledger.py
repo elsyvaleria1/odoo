@@ -12,7 +12,7 @@ class TestCardLedger(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.fuel_product = cls.env.ref("asset_ledger.product_product_fuel_debit")
         cls.toll_product = cls.env.ref("asset_ledger.product_product_highway_debit")
         issuer = cls.env["res.partner"].create({"name": "Card issuer"})

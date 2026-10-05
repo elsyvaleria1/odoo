@@ -20,9 +20,9 @@ msgid "Archived"
 msgstr "Archivado"
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__asset_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__asset_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__asset_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
 msgid "Asset"
@@ -47,7 +47,7 @@ msgid "Closed"
 msgstr "Cerrado"
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__date
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
 msgid "Date"
 msgstr "Fecha"
@@ -122,7 +122,7 @@ msgid "Parts"
 msgstr "Refacciones"
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__position_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__position_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
 msgid "Position"
 msgstr "Posición"
@@ -146,9 +146,9 @@ msgid "Reset to Planned"
 msgstr "Restablecer a planeado"
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__state
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__state
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__state
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
 msgid "State"
 msgstr "Estado"
@@ -159,8 +159,8 @@ msgid "Type"
 msgstr "Tipo"
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__vendor_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__vendor_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__vendor_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__vendor_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
 msgid "Vendor"
 msgstr "Proveedor"

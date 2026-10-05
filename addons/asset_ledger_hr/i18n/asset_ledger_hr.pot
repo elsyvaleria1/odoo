@@ -46,7 +46,7 @@ msgid ""
 msgstr ""
 
 #. module: asset_ledger_hr
-#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_asset_log__asset_manager_id
+#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_log__asset_manager_id
 #: model_terms:ir.ui.view,arch_db:asset_ledger_hr.view_search_product_asset_log_hr
 msgid "Asset Manager"
 msgstr ""
@@ -57,14 +57,14 @@ msgid "Assignments"
 msgstr ""
 
 #. module: asset_ledger_hr
-#: model:ir.model.fields,help:asset_ledger_hr.field_resource_asset_log__asset_manager_id
+#: model:ir.model.fields,help:asset_ledger_hr.field_resource_log__asset_manager_id
 msgid ""
 "Employee managing the asset when this log entry was created. Snapshot value;"
 " does not change when the asset's current manager changes."
 msgstr ""
 
 #. module: asset_ledger_hr
-#: model:ir.model.fields,help:asset_ledger_hr.field_resource_asset_log__operator_id
+#: model:ir.model.fields,help:asset_ledger_hr.field_resource_log__operator_id
 msgid ""
 "Employee operating the asset when this log entry was created. Snapshot "
 "value; does not change when the asset's current operator changes."
@@ -96,7 +96,7 @@ msgid "No Operator"
 msgstr ""
 
 #. module: asset_ledger_hr
-#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_asset_log__operator_id
+#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_log__operator_id
 #: model_terms:ir.ui.view,arch_db:asset_ledger_hr.view_search_product_asset_log_hr
 msgid "Operator"
 msgstr ""

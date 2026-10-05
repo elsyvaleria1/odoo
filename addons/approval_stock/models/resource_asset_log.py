@@ -2,7 +2,7 @@ from odoo import fields, models
 
 
 class ProductAssetLog(models.Model):
-    _inherit = "resource.asset.log"
+    _inherit = "resource.log"
 
     source = fields.Selection(
         selection_add=[("approval", "Approval Request")],

@@ -24,13 +24,11 @@ class TestLogProvenance(TransactionCase):
         )
 
     def _sources(self):
-        field = self.env["resource.asset.log"]._fields["source"]
+        field = self.env["resource.log"]._fields["source"]
         return dict(field.get_description(self.env)["selection"])
 
     def test_a_hand_written_log_says_it_was_hand_written(self):
-        log = self.env["resource.asset.log"].create(
-            {"asset_id": self.asset.asset_id.id}
-        )
+        log = self.env["resource.log"].create({"asset_id": self.asset.asset_id.id})
         self.assertEqual(log.source, "manual")
 
     def test_every_declared_source_has_a_label(self):

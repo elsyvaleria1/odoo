@@ -324,7 +324,7 @@ class TestCustodyReadsFromTheLedger(TestCustodyAssignment):
         self.asset.operator_employee_id = self.other
         self.assertEqual(self._open("operator").assignee_id, self.other.resource_id)
         self.assertEqual(self.lot.operator_id, self.other)
-        log = self.env["resource.asset.log"].search(
+        log = self.env["resource.log"].search(
             [("asset_id", "=", self.asset.id), ("source", "=", "assignment")],
             order="id desc",
             limit=1,

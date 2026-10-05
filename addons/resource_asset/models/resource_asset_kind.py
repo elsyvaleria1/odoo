@@ -2,7 +2,7 @@ from odoo import fields, models
 
 
 class ResourceAssetKind(models.Model):
-    _name = "resource.asset.kind"
+    _name = "resource.kind"
     _description = "Asset Kind"
     _inherit = ["mixin.catalog"]
     _order = "sequence, name, id"

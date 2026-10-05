@@ -221,7 +221,7 @@ class TestMaintenanceTransfer(TransactionCase):
         back_again = self._return(sent_again)
         self.assertTrue(back_again._is_maintenance_return())
         self.assertEqual(
-            self.env["resource.asset.log"].search_count(
+            self.env["resource.log"].search_count(
                 [("maintenance_order_id", "=", order.id)]
             ),
             1,

@@ -3,7 +3,7 @@
 
     <record id="resource_asset_part_view_form_stock" model="ir.ui.view">
         <field name="name">resource.asset.part.form.stock</field>
-        <field name="model">resource.asset.part</field>
+        <field name="model">resource.part</field>
         <field
             name="inherit_id"
             ref="resource_asset_product.resource_asset_part_view_form" />

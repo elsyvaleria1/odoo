@@ -5,7 +5,7 @@ from odoo.exceptions import UserError
 
 
 class ResourceAssetLog(models.Model):
-    _inherit = "resource.asset.log"
+    _inherit = "resource.log"
 
     source = fields.Selection(
         selection_add=[("bill", "Vendor Bill")],

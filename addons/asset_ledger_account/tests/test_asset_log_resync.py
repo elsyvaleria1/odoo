@@ -127,7 +127,7 @@ class TestAssetLogResync(AccountTestInvoicingCommon):
         )
 
     def test_a_manual_log_is_not_touched_by_the_resync(self):
-        log = self.env["resource.asset.log"].create(
+        log = self.env["resource.log"].create(
             {
                 "asset_id": self.asset.asset_id.id,
                 "vendor_id": self.vendor.id,
@@ -147,9 +147,7 @@ class TestAssetLogResync(AccountTestInvoicingCommon):
         self.assertEqual(log.product_id, self.service)
 
     def test_a_manual_log_still_gets_the_default_date(self):
-        log = self.env["resource.asset.log"].create(
-            {"asset_id": self.asset.asset_id.id}
-        )
+        log = self.env["resource.log"].create({"asset_id": self.asset.asset_id.id})
 
         self.assertTrue(
             log.date,

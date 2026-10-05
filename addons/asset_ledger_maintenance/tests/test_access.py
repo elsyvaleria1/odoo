@@ -133,7 +133,7 @@ class TestMaintenanceAccess(TransactionCase):
 
     def test_a_technician_without_plan_rights_closes_a_distance_plan_order(self):
         self.plan.write({"distance_interval": 1000, "user_id": self.plain_user.id})
-        self.env["resource.asset.log"].create(
+        self.env["resource.log"].create(
             {
                 "asset_id": self.lot.asset_id.id,
                 "date": fields.Date.today(),

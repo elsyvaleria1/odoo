@@ -48,7 +48,7 @@ class TestOdometerTrigger(TransactionCase):
         )
 
     def _read_odometer(self, value):
-        self.env["resource.asset.log"].create(
+        self.env["resource.log"].create(
             {
                 "asset_id": self.asset.asset_id.id,
                 "date": fields.Date.today(),

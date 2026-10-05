@@ -280,7 +280,7 @@
                 name="date"
                 eval="(DateTime.now() - timedelta(days=20)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
-        <record id="log_service_1" model="resource.asset.log">
+        <record id="log_service_1" model="resource.log">
             <field name="asset_id" ref="vehicle_1" />
             <field name="product_id" ref="type_service_service_7" />
             <field name="amount">250</field>
@@ -290,7 +290,7 @@
                 name="date"
                 eval="(DateTime.now() - timedelta(days=120)).strftime('%Y-%m-%d')" />
         </record>
-        <record id="log_service_2" model="resource.asset.log">
+        <record id="log_service_2" model="resource.log">
             <field name="asset_id" ref="vehicle_1" />
             <field name="product_id" ref="type_service_service_2" />
             <field name="amount">80</field>
@@ -300,7 +300,7 @@
                 name="date"
                 eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')" />
         </record>
-        <record id="log_service_3" model="resource.asset.log">
+        <record id="log_service_3" model="resource.log">
             <field name="asset_id" ref="vehicle_2" />
             <field name="product_id" ref="type_service_service_3" />
             <field name="amount">420</field>
@@ -310,7 +310,7 @@
                 name="date"
                 eval="(DateTime.now() - timedelta(days=60)).strftime('%Y-%m-%d')" />
         </record>
-        <record id="log_service_4" model="resource.asset.log">
+        <record id="log_service_4" model="resource.log">
             <field name="asset_id" ref="vehicle_3" />
             <field name="product_id" ref="type_service_service_7" />
             <field name="amount">190</field>

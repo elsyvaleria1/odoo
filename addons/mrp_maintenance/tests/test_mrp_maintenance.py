@@ -28,7 +28,7 @@ class TestMrpMaintenance(common.TransactionCase):
         cls.main_company.resource_calendar_id = calendar
         cls.technician_user_id = cls.env.ref("base.user_root")
         cls.maintenance_team_id = cls.env.ref("maintenance.equipment_team_maintenance")
-        cls.kind_id = cls.env["resource.asset.kind"].create(
+        cls.kind_id = cls.env["resource.kind"].create(
             {
                 "name": "Monitors - Test",
                 "code": "monitor_test",

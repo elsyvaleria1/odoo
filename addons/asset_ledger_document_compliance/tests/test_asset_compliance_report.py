@@ -22,7 +22,7 @@ class TestAssetComplianceReportFields(TransactionCase):
         field = self.Report._fields.get("asset_kind_id")
 
         self.assertIsNotNone(field)
-        self.assertEqual(field.comodel_name, "resource.asset.kind")
+        self.assertEqual(field.comodel_name, "resource.kind")
 
     def test_compliance_status_selection_values(self):
         field = self.Report._fields.get("compliance_status")

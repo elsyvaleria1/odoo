@@ -10,7 +10,7 @@ class WizardResourceAssetPartClearFlag(models.TransientModel):
 
     # FIELDS
     part_ids = fields.Many2many(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         string="Parts",
         required=True,
     )

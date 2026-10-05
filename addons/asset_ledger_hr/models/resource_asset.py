@@ -76,9 +76,9 @@ class ResourceAsset(models.Model):
 
     def _book_operator_assignment(self):
         if not self:
-            return self.env["resource.asset.log"]
+            return self.env["resource.log"]
         return (
-            self.env["resource.asset.log"]
+            self.env["resource.log"]
             .sudo()
             .create([asset._prepare_operator_assignment_data() for asset in self])
         )

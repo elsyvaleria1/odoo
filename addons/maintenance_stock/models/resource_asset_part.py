@@ -8,7 +8,7 @@ _debug = DebugLog(__name__)
 
 
 class ResourceAssetPart(models.Model):
-    _inherit = "resource.asset.part"
+    _inherit = "resource.part"
 
     # FIELDS
     stock_location_id = fields.Many2one(

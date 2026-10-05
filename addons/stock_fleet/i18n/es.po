@@ -540,7 +540,7 @@ msgid "Archived"
 msgstr "Archivado"
 
 #. module: stock_fleet
-#: model:ir.model,name:stock_fleet.model_resource_asset_log
+#: model:ir.model,name:stock_fleet.model_resource_log
 msgid "Asset Log"
 msgstr "Bitácora del activo"
 
@@ -1098,7 +1098,7 @@ msgid "Signed Slip to Receive"
 msgstr "Remisión firmada por recibir"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_log__source
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_log__source
 msgid "Source"
 msgstr "Origen"
 
@@ -1214,7 +1214,7 @@ msgid "The vehicle's ledger refused the return odometer: %(error)s"
 msgstr "La bitácora del vehículo rechazó el odómetro de regreso: %(error)s"
 
 #. module: stock_fleet
-#: model:ir.model.constraint,message:stock_fleet.constraint_resource_asset_log_picking_batch_uniq
+#: model:ir.model.constraint,message:stock_fleet.constraint_resource_log_picking_batch_uniq
 msgid "This trip has already recorded its return odometer."
 msgstr "Este viaje ya registró su odómetro de regreso."
 
@@ -1268,7 +1268,7 @@ msgid "Transfers"
 msgstr "Transferencias"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_log__picking_batch_id
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_log__picking_batch_id
 #: model:ir.model.fields,field_description:stock_fleet.field_wizard_stock_picking_unbatch_correction__batch_id
 #: model:ir.model.fields.selection,name:stock_fleet.selection__resource_asset_log__source__delivery
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form_trip
@@ -1408,7 +1408,7 @@ msgid "Trip corrections"
 msgstr "Correcciones de viaje"
 
 #. module: stock_fleet
-#: model:ir.model.fields,help:stock_fleet.field_resource_asset_log__picking_batch_id
+#: model:ir.model.fields,help:stock_fleet.field_resource_log__picking_batch_id
 msgid "Trip whose return odometer this reading is."
 msgstr "Viaje al que corresponde esta lectura como odómetro de regreso."
 
@@ -1557,7 +1557,7 @@ msgstr ""
 "en los lotes cuyo tipo de operación no despacha."
 
 #. module: stock_fleet
-#: model:ir.model.fields,help:stock_fleet.field_resource_asset_log__source
+#: model:ir.model.fields,help:stock_fleet.field_resource_log__source
 msgid ""
 "Which producer wrote this row. Every asset cost and every odometer reading "
 "in the system is a log line, so the ledger has one provenance axis. Each "

@@ -6,7 +6,7 @@ class TestResourceAssetTag(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Tag = cls.env["resource.asset.tag"]
+        cls.Tag = cls.env["resource.tag"]
         cls.urgent, cls.leased = cls.Tag.create(
             [{"name": "Urgent"}, {"name": "Leased"}]
         )

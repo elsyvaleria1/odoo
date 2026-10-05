@@ -2,7 +2,7 @@ from odoo import api, models
 
 
 class ResourceAssetLog(models.Model):
-    _inherit = "resource.asset.log"
+    _inherit = "resource.log"
 
     @api.depends(
         "account_move_line_id.non_deductible_tax_value",

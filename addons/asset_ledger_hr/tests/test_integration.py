@@ -16,7 +16,7 @@ class TestAssetManagementWorkflows(TransactionCase):
         super().setUpClass()
         ensure_publish_date_field(cls.env)
         cls.ProductTrace = cls.env["product.trace"]
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
         cls.ProductTemplate = cls.env["product.template"]
         cls.ProductProduct = cls.env["product.product"]
         cls.HrEmployee = cls.env["hr.employee"]

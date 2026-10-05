@@ -3,7 +3,7 @@
 
     <record id="fleet_vehicle_service_view_list" model="ir.ui.view">
         <field name="name">resource.asset.log.list.fleet</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <list string="Services">
@@ -26,7 +26,7 @@
 
     <record id="fleet_vehicle_service_view_form" model="ir.ui.view">
         <field name="name">resource.asset.log.form.fleet</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <form string="Service">
@@ -84,7 +84,7 @@
 
     <record id="fleet_vehicle_service_view_search" model="ir.ui.view">
         <field name="name">resource.asset.log.search.fleet</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <search string="Services">
@@ -128,7 +128,7 @@
 
     <record id="fleet_vehicle_cost_view_pivot" model="ir.ui.view">
         <field name="name">resource.asset.log.pivot.fleet</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <pivot string="Costs" sample="1">
@@ -141,7 +141,7 @@
 
     <record id="fleet_vehicle_cost_view_graph" model="ir.ui.view">
         <field name="name">resource.asset.log.graph.fleet</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <graph string="Costs" sample="1" stacked="1">
@@ -154,7 +154,7 @@
 
     <record id="fleet_vehicle_service_action" model="ir.actions.act_window">
         <field name="name">Services</field>
-        <field name="res_model">resource.asset.log</field>
+        <field name="res_model">resource.log</field>
         <field name="view_mode">list,form,pivot,graph</field>
         <field name="search_view_id" ref="fleet_vehicle_service_view_search" />
         <field
@@ -177,7 +177,7 @@
 
     <record id="fleet_costs_reporting_action" model="ir.actions.act_window">
         <field name="name">Costs</field>
-        <field name="res_model">resource.asset.log</field>
+        <field name="res_model">resource.log</field>
         <field name="view_mode">graph,pivot</field>
         <field name="search_view_id" ref="fleet_vehicle_service_view_search" />
         <field

@@ -87,7 +87,7 @@ Asset Log Integration
 
 Automatic history tracking:
 
-* Creates ``resource.asset.log`` entries when maintenance is completed
+* Creates ``resource.log`` entries when maintenance is completed
 * Records maintenance type, duration, vendor, and timing metrics
 * Links logs to the originating maintenance request
 

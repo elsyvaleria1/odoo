@@ -213,7 +213,7 @@ class MaintenanceOrder(models.Model):
         help="Duration in hours.",
     )
     part_ids = fields.One2many(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         inverse_name="maintenance_order_id",
         string="Parts",
         copy=False,

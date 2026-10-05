@@ -23,7 +23,7 @@ class MrpWorkcenter(models.Model):
 
     @api.depends("asset_id", "theoretical_fuel_efficiency")
     def _compute_asset_fuel_efficiency(self) -> None:
-        asset_log_model = self.env["resource.asset.log"]
+        asset_log_model = self.env["resource.log"]
         for wc in self:
             if not wc.asset_id:
                 wc.actual_fuel_efficiency = 0.0

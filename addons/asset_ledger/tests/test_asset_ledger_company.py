@@ -20,7 +20,7 @@ class TestAssetLedgerCompany(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.owner = cls.env["res.company"].create({"name": "Ledger owner"})
         cls.other = cls.env["res.company"].create({"name": "Somebody else"})
         cls.env.user.company_ids = [
@@ -129,7 +129,7 @@ class TestAssetLedgerCompany(TransactionCase):
         # Planted the way production got its own: a write that bypassed the
         # field, leaving a split the constraint can only report, never prevent.
         self.env.cr.execute(
-            "UPDATE resource_asset_log SET company_id = %s WHERE id = %s",
+            "UPDATE resource_log SET company_id = %s WHERE id = %s",
             (self.other.id, stale.id),
         )
         self.env.invalidate_all()

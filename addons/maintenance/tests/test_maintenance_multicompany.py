@@ -9,7 +9,7 @@ class TestMaintenanceMulticompany(TransactionCase):
         # Use full models
         Asset = self.env["resource.asset"]
         MaintenanceOrder = self.env["maintenance.order"]
-        Kind = self.env["resource.asset.kind"]
+        Kind = self.env["resource.kind"]
         ResUsers = self.env["res.users"]
         ResCompany = self.env["res.company"]
         MaintenanceTeam = self.env["team.team"]

@@ -24,7 +24,7 @@ class CronGpsOdometerBase(StockLotGpsTestBase):
             }
         )
         cls.device.odometer_initial_offset = 0.0
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.GpsLog = cls.env["device.data.log.gps"]
 
     def _reading(self, device, odometer, days_ago=1):

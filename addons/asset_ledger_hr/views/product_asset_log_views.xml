@@ -3,7 +3,7 @@
 
     <record id="view_search_product_asset_log_hr" model="ir.ui.view">
         <field name="name">resource.asset.log.hr.search</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="inherit_id" ref="asset_ledger.view_search_product_asset_log" />
         <field name="arch" type="xml">
             <field name="vendor_id" position="after">
@@ -26,7 +26,7 @@
 
     <record id="view_list_product_asset_log_hr" model="ir.ui.view">
         <field name="name">resource.asset.log.hr.list</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="inherit_id" ref="asset_ledger.view_list_product_asset_log" />
         <field name="arch" type="xml">
             <field name="asset_id" position="after">
@@ -46,7 +46,7 @@
 
     <record id="view_kanban_product_asset_log_hr" model="ir.ui.view">
         <field name="name">resource.asset.log.hr.kanban</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="inherit_id" ref="asset_ledger.view_kanban_product_asset_log" />
         <field name="arch" type="xml">
             <!-- [last()] is applied per parent context, not to the flattened result, so
@@ -62,7 +62,7 @@
 
     <record id="view_form_product_asset_log_hr" model="ir.ui.view">
         <field name="name">resource.asset.log.hr.form</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="inherit_id" ref="asset_ledger.view_form_product_asset_log" />
         <field name="arch" type="xml">
             <field name="asset_id" position="after">

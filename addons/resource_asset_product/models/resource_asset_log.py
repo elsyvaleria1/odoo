@@ -22,7 +22,7 @@ ENTRY_STATES = frozenset({"new", "running", "done"})
 
 
 class ResourceAssetLog(models.Model):
-    _name = "resource.asset.log"
+    _name = "resource.log"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _description = "Asset Log"
     _order = "date desc, id desc"
@@ -241,13 +241,13 @@ class ResourceAssetLog(models.Model):
         # sudo: same reason as the caller -- the whole point is the rows the
         # writer cannot see. Nothing read here reaches the user-facing message.
         logs = (
-            self.env["resource.asset.log"]
+            self.env["resource.log"]
             .sudo()
             .search([("asset_id", "=", asset.id)], order="company_id, id")
         )
         by_company = {}
         for log in logs:
-            by_company.setdefault(log.company_id, self.env["resource.asset.log"])
+            by_company.setdefault(log.company_id, self.env["resource.log"])
             by_company[log.company_id] |= log
         _logger.warning(
             "Asset %s (id=%s) has logs booked across %d companies, so every "

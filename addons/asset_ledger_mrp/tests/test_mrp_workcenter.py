@@ -24,7 +24,7 @@ class TestWorkcenterMachinery(TransactionCase):
         cls.fuel_product = cls.env.ref("asset_ledger.product_product_fuel_debit")
 
     def _log(self, date, odometer, litres):
-        return self.env["resource.asset.log"].create(
+        return self.env["resource.log"].create(
             {
                 "asset_id": self.asset.asset_id.id,
                 "product_id": self.fuel_product.id,

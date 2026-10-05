@@ -2,13 +2,13 @@ from odoo import fields, models
 
 
 class ResourceAssetKindPosition(models.Model):
-    _name = "resource.asset.kind.position"
+    _name = "resource.kind.position"
     _description = "Asset Part Position"
     _order = "kind_id, sequence, id"
 
     # FIELDS
     kind_id = fields.Many2one(
-        comodel_name="resource.asset.kind",
+        comodel_name="resource.kind",
         index=True,
         required=True,
         ondelete="cascade",

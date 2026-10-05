@@ -14,4 +14,4 @@ class AccountAccount(models.Model):
     )
 
     def _selection_asset_log_type(self):
-        return self.env["resource.asset.log"]._selection_log_type()
+        return self.env["resource.log"]._selection_log_type()

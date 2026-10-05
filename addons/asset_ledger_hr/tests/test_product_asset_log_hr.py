@@ -14,7 +14,7 @@ class TestProductAssetLogHR(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         ensure_publish_date_field(cls.env)
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
         cls.ProductTrace = cls.env["product.trace"]
         cls.ProductTemplate = cls.env["product.template"]
         cls.HrEmployee = cls.env["hr.employee"]
@@ -90,7 +90,7 @@ class TestProductAssetLogHR(TransactionCase):
         self.assertTrue(field_info.store)
 
         self.env.cr.execute(
-            "SELECT operator_id FROM resource_asset_log WHERE id = %s", (log.id,)
+            "SELECT operator_id FROM resource_log WHERE id = %s", (log.id,)
         )
         result = self.env.cr.fetchone()
         self.assertEqual(result[0], self.operator.id)
@@ -107,7 +107,7 @@ class TestProductAssetLogHR(TransactionCase):
         self.assertTrue(field_info.store)
 
         self.env.cr.execute(
-            "SELECT asset_manager_id FROM resource_asset_log WHERE id = %s",
+            "SELECT asset_manager_id FROM resource_log WHERE id = %s",
             (log.id,),
         )
         result = self.env.cr.fetchone()
@@ -333,7 +333,7 @@ class TestOperatorTimeline(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         ensure_publish_date_field(cls.env)
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.category = cls.env.ref(
             "asset_ledger.product_category_operator_assignment",
         )

@@ -124,7 +124,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_furniture__active
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__active
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__active
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__active
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__active
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__active
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_property__active
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_telecom__active
@@ -235,7 +235,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier__asset_id
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__asset_ids
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__asset_ids
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__asset_id
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter_reading__asset_id
 #: model:ir.model.fields,field_description:resource_asset.field_resource_resource__asset_id
@@ -244,7 +244,7 @@ msgid "Asset"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__asset_count
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__asset_count
 msgid "Asset Count"
 msgstr ""
 
@@ -286,7 +286,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_equipment__asset_properties
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_furniture__asset_properties
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__asset_properties
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__asset_properties_definition
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__asset_properties_definition
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__asset_properties
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_property__asset_properties
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_telecom__asset_properties
@@ -304,7 +304,7 @@ msgid "Assets"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,help:resource_asset.field_resource_asset_kind__scheduled
+#: model:ir.model.fields,help:resource_asset.field_resource_kind__scheduled
 msgid ""
 "Assets of this kind run on a shift and take their company's working hours; "
 "otherwise they are available around the clock."
@@ -424,7 +424,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_furniture__kind_code
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__code
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__kind_code
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__code
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__code
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__kind_code
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_property__kind_code
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_telecom__kind_code
@@ -484,7 +484,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier__create_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__create_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__create_uid
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__create_uid
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__create_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__create_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__create_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter_reading__create_uid
@@ -501,7 +501,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier__create_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__create_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__create_date
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__create_date
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__create_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__create_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__create_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter_reading__create_date
@@ -606,7 +606,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model,name:resource_asset.model_resource_asset_device
-#: model:resource.asset.kind,name:resource_asset.kind_device
+#: model:resource.kind,name:resource_asset.kind_device
 msgid "Device"
 msgstr ""
 
@@ -665,7 +665,7 @@ msgid "Draft"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.constraint,message:resource_asset.constraint_resource_asset_kind_code_uniq
+#: model:ir.model.constraint,message:resource_asset.constraint_resource_kind_code_uniq
 msgid "Each asset kind code must be unique."
 msgstr ""
 
@@ -694,7 +694,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model,name:resource_asset.model_resource_asset_equipment
-#: model:resource.asset.kind,name:resource_asset.kind_equipment
+#: model:resource.kind,name:resource_asset.kind_equipment
 msgid "Equipment"
 msgstr ""
 
@@ -724,7 +724,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model,name:resource_asset.model_resource_asset_furniture
-#: model:resource.asset.kind,name:resource_asset.kind_furniture
+#: model:resource.kind,name:resource_asset.kind_furniture
 msgid "Furniture"
 msgstr ""
 
@@ -802,7 +802,7 @@ msgid "IMEI"
 msgstr ""
 
 #. module: resource_asset
-#: model:resource.asset.kind,name:resource_asset.kind_it
+#: model:resource.kind,name:resource_asset.kind_it
 msgid "IT Asset"
 msgstr ""
 
@@ -1016,7 +1016,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier__write_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__write_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__write_uid
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__write_uid
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__write_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__write_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__write_uid
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter_reading__write_uid
@@ -1033,7 +1033,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier__write_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__write_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__write_date
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__write_date
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__write_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__write_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__write_date
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter_reading__write_date
@@ -1086,7 +1086,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model,name:resource_asset.model_resource_asset_machinery
-#: model:resource.asset.kind,name:resource_asset.kind_machinery
+#: model:resource.kind,name:resource_asset.kind_machinery
 msgid "Machinery"
 msgstr ""
 
@@ -1220,7 +1220,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_furniture__name
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__name
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_it__name
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__name
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__name
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_machinery__name
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__name
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_property__name
@@ -1469,7 +1469,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model,name:resource_asset.model_resource_asset_property
-#: model:resource.asset.kind,name:resource_asset.kind_property
+#: model:resource.kind,name:resource_asset.kind_property
 msgid "Property"
 msgstr ""
 
@@ -1506,12 +1506,12 @@ msgid "Readings"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__enforce_identifiers
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__enforce_identifiers
 msgid "Refuse Incomplete Assets"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,help:resource_asset.field_resource_asset_kind__enforce_identifiers
+#: model:ir.model.fields,help:resource_asset.field_resource_kind__enforce_identifiers
 msgid ""
 "Refuse an asset of this kind that is missing a required identifier, instead "
 "of only reporting the gap. Off by default: a unit usually arrives before its"
@@ -1536,7 +1536,7 @@ msgid "Required For"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__identifier_type_ids
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__identifier_type_ids
 msgid "Required Identifiers"
 msgstr ""
 
@@ -1570,7 +1570,7 @@ msgid "Running Hours"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__scheduled
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__scheduled
 msgid "Scheduled"
 msgstr ""
 
@@ -1582,7 +1582,7 @@ msgstr ""
 
 #. module: resource_asset
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_identifier_type__sequence
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__sequence
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__sequence
 #: model:ir.model.fields,field_description:resource_asset.field_resource_asset_meter__sequence
 msgid "Sequence"
 msgstr ""
@@ -1659,7 +1659,7 @@ msgid "Telecom"
 msgstr ""
 
 #. module: resource_asset
-#: model:resource.asset.kind,name:resource_asset.kind_telecom
+#: model:resource.kind,name:resource_asset.kind_telecom
 msgid "Telecom Equipment"
 msgstr ""
 
@@ -1674,7 +1674,7 @@ msgid "The asset's operator has been updated"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,help:resource_asset.field_resource_asset_kind__group_id
+#: model:ir.model.fields,help:resource_asset.field_resource_kind__group_id
 msgid ""
 "The group a user needs to see assets of this kind and the menus that open "
 "them. Empty: every asset user sees them."
@@ -1715,7 +1715,7 @@ msgid "Timezone"
 msgstr ""
 
 #. module: resource_asset
-#: model:resource.asset.kind,name:resource_asset.kind_tool
+#: model:resource.kind,name:resource_asset.kind_tool
 msgid "Tool"
 msgstr ""
 
@@ -1825,7 +1825,7 @@ msgid "Value"
 msgstr ""
 
 #. module: resource_asset
-#: model:resource.asset.kind,name:resource_asset.kind_vehicle
+#: model:resource.kind,name:resource_asset.kind_vehicle
 msgid "Vehicle"
 msgstr ""
 
@@ -1854,7 +1854,7 @@ msgid "Vendor Reference"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,field_description:resource_asset.field_resource_asset_kind__group_id
+#: model:ir.model.fields,field_description:resource_asset.field_resource_kind__group_id
 msgid "Visible To"
 msgstr ""
 
@@ -1871,7 +1871,7 @@ msgid "Warranty Expiration Date"
 msgstr ""
 
 #. module: resource_asset
-#: model:ir.model.fields,help:resource_asset.field_resource_asset_kind__identifier_type_ids
+#: model:ir.model.fields,help:resource_asset.field_resource_kind__identifier_type_ids
 msgid ""
 "What an asset of this kind is expected to carry. A gap is reported on the "
 "asset; it refuses the asset only where the kind enforces it."

@@ -19,7 +19,7 @@ class AccountMoveLine(models.Model):
     )
     need_asset = fields.Boolean(compute="_compute_need_asset")
     asset_log_ids = fields.One2many(
-        comodel_name="resource.asset.log",
+        comodel_name="resource.log",
         inverse_name="account_move_line_id",
         string="Asset Logs",
         export_string_translation=False,
@@ -27,7 +27,7 @@ class AccountMoveLine(models.Model):
     )
 
     asset_part_ids = fields.One2many(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         inverse_name="account_move_line_id",
         string="Asset Parts",
         help="The installed parts this bill line charges.",
@@ -81,7 +81,7 @@ class AccountMoveLine(models.Model):
             return
         # sudo: the biller may hold no right on the serial behind the line, and
         # the log needs the asset that serial carries.
-        self.env["resource.asset.log"].sudo().create(
+        self.env["resource.log"].sudo().create(
             [line.sudo()._prepare_asset_log() for line in to_create],
         )
 

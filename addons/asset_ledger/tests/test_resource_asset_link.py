@@ -60,7 +60,7 @@ class TestResourceAssetLink(TransactionCase):
     def test_odometer_follows_the_ledger(self):
         lot = self._lot()
         fuel = self.env.ref("asset_ledger.product_category_fuel")
-        log_model = self.env["resource.asset.log"]
+        log_model = self.env["resource.log"]
         log_model.create(
             {
                 "asset_id": lot.asset_id.id,
@@ -100,7 +100,7 @@ class TestResourceAssetLink(TransactionCase):
         has to fall with it. Nothing links a meter reading to the log that
         produced it, so the correction is recorded rather than erased."""
         lot = self._lot(name="PK-UNLINK")
-        log_model = self.env["resource.asset.log"]
+        log_model = self.env["resource.log"]
         fuel = self.env.ref("asset_ledger.product_product_fuel_debit")
         first = log_model.create(
             {
@@ -139,7 +139,7 @@ class TestResourceAssetLink(TransactionCase):
         measurement, so the meter keeps its last reading and the lot, which
         reads the meter now, keeps showing it."""
         lot = self._lot(name="PK-UNLINK-LAST")
-        log = self.env["resource.asset.log"].create(
+        log = self.env["resource.log"].create(
             {
                 "asset_id": lot.asset_id.id,
                 "product_id": self.env.ref(

@@ -108,7 +108,7 @@ class ProductTrace(models.Model):
     )
 
     log_ids = fields.One2many(
-        comodel_name="resource.asset.log",
+        comodel_name="resource.log",
         inverse_name="trace_id",
     )
     odometer_uom_id = fields.Many2one(
@@ -220,7 +220,7 @@ class ProductTrace(models.Model):
                 # Retyping the product retypes its units on purpose, table
                 # and all; an ordinary write refuses to move a row.
                 asset = asset._retype(
-                    self.env["resource.asset.kind"].browse(changed.pop("kind_id"))
+                    self.env["resource.kind"].browse(changed.pop("kind_id"))
                 )
             if changed:
                 asset.write(changed)
@@ -251,7 +251,7 @@ class ProductTrace(models.Model):
             lot.currency_id = lot.company_id.currency_id or fallback
 
     def _get_log_model(self):
-        return self.env["resource.asset.log"].with_context(active_test=True)
+        return self.env["resource.log"].with_context(active_test=True)
 
     _bool_search_inclusion_operator = staticmethod(_bool_search_inclusion_operator)
 

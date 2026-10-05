@@ -18,7 +18,7 @@ class TestStockLotHR(TransactionCase):
         super().setUpClass()
         ensure_publish_date_field(cls.env)
         cls.ProductTrace = cls.env["product.trace"]
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
         cls.ProductTemplate = cls.env["product.template"]
         cls.HrEmployee = cls.env["hr.employee"]
 
@@ -446,7 +446,7 @@ class TestStockLotHR(TransactionCase):
                 "company_id": self.env.company.id,
             }
         )
-        log = user_env["resource.asset.log"].search(
+        log = user_env["resource.log"].search(
             [("trace_id", "=", lot.id), ("source", "=", "assignment")]
         )
 
@@ -590,7 +590,7 @@ class TestStockLotHR(TransactionCase):
 
         action = asset.action_view_logs_assignation()
 
-        self.assertEqual(action["res_model"], "resource.asset.log")
+        self.assertEqual(action["res_model"], "resource.log")
         self.assertIn(("asset_id", "=", asset.asset_id.id), action["domain"])
         self.assertIn(("log_type", "=", "operator"), action["domain"])
         self.assertEqual(action["context"]["default_asset_id"], asset.asset_id.id)
@@ -799,7 +799,7 @@ class TestStockLotHR(TransactionCase):
         asset.write({"operator_id": self.employee1.id})
 
         action = asset.action_view_logs_assignation()
-        logs = self.env["resource.asset.log"].search(
+        logs = self.env["resource.log"].search(
             action["domain"], order="create_date asc"
         )
 

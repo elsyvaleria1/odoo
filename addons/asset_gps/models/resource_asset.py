@@ -67,7 +67,7 @@ class ResourceAsset(models.Model):
         """
         split = self.browse()
         for asset, companies in (
-            self.env["resource.asset.log"]
+            self.env["resource.log"]
             .sudo()
             ._read_group(
                 [("asset_id", "in", assets.ids)],
@@ -96,7 +96,7 @@ class ResourceAsset(models.Model):
             tracked -= split
             if not tracked:
                 return
-        log_model = self.env["resource.asset.log"]
+        log_model = self.env["resource.log"]
         # Snapshot dates belong to the resource's local day. Resources in the
         # same company may work in different timezones.
         today_by_asset = {

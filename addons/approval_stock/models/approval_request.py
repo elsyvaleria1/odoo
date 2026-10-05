@@ -58,7 +58,7 @@ class ApprovalRequest(models.Model):
     )
     odometer = fields.Float(help="Current odometer reading of the vehicle")
     asset_log_ids = fields.One2many(
-        comodel_name="resource.asset.log",
+        comodel_name="resource.log",
         inverse_name="approval_request_id",
         readonly=True,
         help="Asset logs booked from this approval request",
@@ -171,11 +171,11 @@ class ApprovalRequest(models.Model):
         if self.asset_log_ids:
             return self._action_open_asset_log(self.asset_log_ids[0])
 
-        log = self.env["resource.asset.log"].create(self._prepare_asset_log())
+        log = self.env["resource.log"].create(self._prepare_asset_log())
 
         self.message_post(
             body=Markup(
-                "Asset log created: <a href='/web#id=%s&model=resource.asset.log'>%s</a>"
+                "Asset log created: <a href='/web#id=%s&model=resource.log'>%s</a>"
             )
             % (log.id, escape(log.display_name)),
         )
@@ -185,7 +185,7 @@ class ApprovalRequest(models.Model):
         return {
             "name": log.display_name,
             "type": "ir.actions.act_window",
-            "res_model": "resource.asset.log",
+            "res_model": "resource.log",
             "res_id": log.id,
             "view_mode": "form",
             "target": "current",
@@ -228,7 +228,7 @@ class ApprovalRequest(models.Model):
         return {
             "name": self.env._("Asset Logs for %s", self.asset_id.display_name),
             "type": "ir.actions.act_window",
-            "res_model": "resource.asset.log",
+            "res_model": "resource.log",
             "view_mode": "list,form",
             "context": clean_context(self.env.context),
             "domain": domain,

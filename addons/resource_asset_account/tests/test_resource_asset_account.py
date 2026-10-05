@@ -116,10 +116,10 @@ class TestAssetPartBillHold(AccountTestInvoicingCommon):
         cls.env.user.group_ids |= cls.env.ref("resource_asset.group_asset_manager")
         cls.company = cls.company_data["company"]
         cls.expense = cls.company_data["default_account_expense"]
-        cls.kind = cls.env["resource.asset.kind"].create(
+        cls.kind = cls.env["resource.kind"].create(
             {"name": "Held Truck", "code": "held_truck"}
         )
-        cls.position = cls.env["resource.asset.kind.position"].create(
+        cls.position = cls.env["resource.kind.position"].create(
             {
                 "kind_id": cls.kind.id,
                 "name": "Alternator",
@@ -137,7 +137,7 @@ class TestAssetPartBillHold(AccountTestInvoicingCommon):
         )
 
     def _install(self, day, **vals):
-        return self.env["resource.asset.part"].create(
+        return self.env["resource.part"].create(
             {
                 "asset_id": self.asset.id,
                 "position_id": self.position.id,

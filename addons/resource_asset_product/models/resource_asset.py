@@ -30,12 +30,12 @@ class ResourceAsset(models.Model):
         related="product_id.product_tmpl_id",
     )
     log_ids = fields.One2many(
-        comodel_name="resource.asset.log",
+        comodel_name="resource.log",
         inverse_name="asset_id",
         groups="resource_asset.group_asset_user",
     )
     part_ids = fields.One2many(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         inverse_name="asset_id",
         string="Parts",
         domain=[("state", "in", ("installed", "removed"))],
@@ -67,7 +67,7 @@ class ResourceAsset(models.Model):
 
     def _compute_part_flagged_count(self) -> None:
         counts = dict(
-            self.env["resource.asset.part"]._read_group(
+            self.env["resource.part"]._read_group(
                 [("asset_id", "in", self.ids), ("review_state", "=", "flagged")],
                 ["asset_id"],
                 ["__count"],
@@ -77,7 +77,7 @@ class ResourceAsset(models.Model):
             asset.part_flagged_count = counts.get(asset, 0)
 
     def _get_log_model(self):
-        return self.env["resource.asset.log"].with_context(active_test=True)
+        return self.env["resource.log"].with_context(active_test=True)
 
     def _get_log_counts_by_type(self):
         counts = defaultdict(lambda: defaultdict(int))

@@ -480,7 +480,7 @@ class StockPickingBatch(models.Model):
         self.check_singleton()
         # The reading is the system's, not the driver's: a driver may close a trip
         # without rights on the vehicle ledger.
-        Log = self.env["resource.asset.log"].sudo()
+        Log = self.env["resource.log"].sudo()
         if not self.vehicle_id:
             return Log
         if self.odometer_return <= self.vehicle_id.odometer:

@@ -3,7 +3,7 @@ from odoo.fields import Domain
 
 
 class ResourceAssetPart(models.Model):
-    _inherit = "resource.asset.part"
+    _inherit = "resource.part"
 
     # FIELDS
     source = fields.Selection(

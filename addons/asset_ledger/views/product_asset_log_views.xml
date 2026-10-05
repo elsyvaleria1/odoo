@@ -3,7 +3,7 @@
 
     <record id="view_search_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.search</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <search string="Asset Logs">
                 <field name="asset_id" />
@@ -85,7 +85,7 @@
 
     <record id="view_list_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.list</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <list string="Asset Logs" multi_edit="1" expand="1">
                 <field name="company_id" column_invisible="True" />
@@ -127,7 +127,7 @@
 
     <record id="view_kanban_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.kanban</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <kanban default_group_by="state">
                 <field name="asset_id" />
@@ -189,7 +189,7 @@
 
     <record id="view_graph_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.graph</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <graph string="Service Costs Per Month" sample="1">
                 <field name="date" interval="month" />
@@ -201,7 +201,7 @@
 
     <record id="view_pivot_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.pivot</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <pivot>
                 <field name="currency_id" invisible="1" />
@@ -215,7 +215,7 @@
 
     <record id="view_form_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.form</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <form string="Asset Log">
                 <field name="active" invisible="1" />
@@ -312,7 +312,7 @@
 
     <record id="view_activity_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.activity</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="arch" type="xml">
             <activity string="Asset Services">
                 <templates>
@@ -336,7 +336,7 @@
 
     <record id="action_product_asset_log" model="ir.actions.act_window">
         <field name="name">Asset Logs</field>
-        <field name="res_model">resource.asset.log</field>
+        <field name="res_model">resource.log</field>
         <field name="view_mode">list,kanban,form,graph,pivot,activity</field>
         <field name="context">{'search_default_groupby_product_category_id': 1}</field>
         <field name="help" type="html">
@@ -352,7 +352,7 @@
 
     <record id="action_property_service_logs" model="ir.actions.act_window">
         <field name="name">Property Service Logs</field>
-        <field name="res_model">resource.asset.log</field>
+        <field name="res_model">resource.log</field>
         <field name="view_mode">list,kanban,form,graph,pivot,activity</field>
         <field name="domain">[('asset_id.kind_code', '=', 'property')]</field>
         <field name="context">{'search_default_groupby_asset_id': 1}</field>

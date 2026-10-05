@@ -13,7 +13,7 @@ class TestAssetDocuments(TransactionCase):
         cls.asset = cls.env["resource.asset"].create(
             {"name": "Van", "kind_id": cls.kind.id}
         )
-        cls.setting = cls.env["resource.asset.kind.document"].create(
+        cls.setting = cls.env["resource.kind.document"].create(
             {"kind_id": cls.kind.id, "company_id": cls.env.company.id}
         )
 
@@ -40,7 +40,7 @@ class TestAssetDocuments(TransactionCase):
     def test_one_row_per_kind_and_company(self):
         with self.assertRaises(UniqueViolation):
             with self.env.cr.savepoint():
-                self.env["resource.asset.kind.document"].create(
+                self.env["resource.kind.document"].create(
                     {"kind_id": self.kind.id, "company_id": self.env.company.id}
                 )
 
@@ -51,9 +51,7 @@ class TestAssetDocuments(TransactionCase):
         self.assertEqual(self.asset._get_document_tags(), tag)
 
     def test_a_kind_folder_is_never_someone_s_own_folder(self):
-        kind = self.env["resource.asset.kind"].create(
-            {"name": "Trailer", "code": "trailer"}
-        )
+        kind = self.env["resource.kind"].create({"name": "Trailer", "code": "trailer"})
         someone = new_test_user(
             self.env,
             "trailer_owner",
@@ -65,7 +63,7 @@ class TestAssetDocuments(TransactionCase):
             .create({"name": "Trailer", "type": "folder", "user_folder_id": "MY"})
         )
         self.assertTrue(personal.owner_id)
-        setting = self.env["resource.asset.kind.document"].create(
+        setting = self.env["resource.kind.document"].create(
             {"kind_id": kind.id, "company_id": self.env.company.id}
         )
         self.assertNotEqual(setting.folder_id, personal)
@@ -76,7 +74,7 @@ class TestAssetDocuments(TransactionCase):
         assets = self.env["resource.asset"].create(
             [{"name": f"Van {i}", "kind_id": self.kind.id} for i in range(6)]
         )
-        Setting = type(self.env["resource.asset.kind.document"])
+        Setting = type(self.env["resource.kind.document"])
         searches = []
         search = Setting.search
 

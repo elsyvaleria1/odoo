@@ -63,7 +63,7 @@ class AccountMove(models.Model):
     def _hold_flagged_asset_parts(self) -> None:
         # sudo: binding a bill line to the parts it charges follows from posting it.
         parts = (
-            self.env["resource.asset.part"]
+            self.env["resource.part"]
             .sudo()
             .search(
                 [

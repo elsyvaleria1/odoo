@@ -7,7 +7,7 @@ class TestRepairAsset(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
-        cls.position = cls.env["resource.asset.kind.position"].create(
+        cls.position = cls.env["resource.kind.position"].create(
             {
                 "kind_id": cls.vehicle.id,
                 "name": "Water pump",

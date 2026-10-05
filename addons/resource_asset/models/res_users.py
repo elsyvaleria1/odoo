@@ -8,13 +8,11 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
     def _get_asset_kinds_gated(self):
-        return (
-            self.env["resource.asset.kind"].sudo().search([("group_id", "!=", False)])
-        )
+        return self.env["resource.kind"].sudo().search([("group_id", "!=", False)])
 
     def _get_enabled_asset_kinds(self):
         self.check_singleton()
-        kinds = self.env["resource.asset.kind"].sudo().search([])
+        kinds = self.env["resource.kind"].sudo().search([])
         if self.has_group("resource_asset.group_asset_manager"):
             return kinds.ids
         enabled = [

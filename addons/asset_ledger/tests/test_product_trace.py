@@ -17,7 +17,7 @@ class TestProductTrace(TransactionCase):
         has_publish_date = ensure_publish_date_field(cls.env)
 
         cls.ProductTrace = cls.env["product.trace"]
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
         cls.ProductTemplate = cls.env["product.template"]
         cls.ProductProduct = cls.env["product.product"]
         cls.Partner = cls.env["res.partner"]
@@ -452,7 +452,7 @@ class TestProductTrace(TransactionCase):
 
         action = asset.action_view_logs_service()
 
-        self.assertEqual(action["res_model"], "resource.asset.log")
+        self.assertEqual(action["res_model"], "resource.log")
         self.assertIn(("asset_id", "=", asset.asset_id.id), action["domain"])
         self.assertIn(("log_type", "=", "service"), action["domain"])
         self.assertEqual(action["context"]["default_asset_id"], asset.asset_id.id)
@@ -468,7 +468,7 @@ class TestProductTrace(TransactionCase):
 
         action = asset.action_view_logs_all()
 
-        self.assertEqual(action["res_model"], "resource.asset.log")
+        self.assertEqual(action["res_model"], "resource.log")
         self.assertEqual(action["domain"], [("asset_id", "=", asset.asset_id.id)])
         self.assertEqual(action["context"]["default_asset_id"], asset.asset_id.id)
 
@@ -579,7 +579,7 @@ class TestProductTrace(TransactionCase):
 
         action = asset.action_view_logs_fuel()
 
-        self.assertEqual(action["res_model"], "resource.asset.log")
+        self.assertEqual(action["res_model"], "resource.log")
         self.assertIn(("asset_id", "=", asset.asset_id.id), action["domain"])
         self.assertIn(("log_type", "=", "fuel"), action["domain"])
         self.assertEqual(action["context"]["default_asset_id"], asset.asset_id.id)

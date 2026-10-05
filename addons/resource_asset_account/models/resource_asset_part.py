@@ -7,7 +7,7 @@ _debug = DebugLog(__name__)
 
 
 class ResourceAssetPart(models.Model):
-    _inherit = "resource.asset.part"
+    _inherit = "resource.part"
 
     # FIELDS
     account_move_line_id = fields.Many2one(

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="log_insurance_civic_001" model="resource.asset.log">
+    <record id="log_insurance_civic_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
@@ -24,7 +24,7 @@
             name="notes">Comprehensive coverage including collision and liability</field>
     </record>
 
-    <record id="log_insurance_f150_001" model="resource.asset.log">
+    <record id="log_insurance_f150_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
@@ -47,7 +47,7 @@
             name="notes">Commercial vehicle insurance with increased liability coverage</field>
     </record>
 
-    <record id="log_insurance_model3_001" model="resource.asset.log">
+    <record id="log_insurance_model3_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
@@ -69,7 +69,7 @@
         <field name="notes">Electric vehicle insurance with battery coverage</field>
     </record>
 
-    <record id="log_fuel_civic_001" model="resource.asset.log">
+    <record id="log_fuel_civic_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
@@ -87,7 +87,7 @@
         <field name="notes">Premium gasoline fill-up at Shell Station</field>
     </record>
 
-    <record id="log_fuel_civic_002" model="resource.asset.log">
+    <record id="log_fuel_civic_002" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
@@ -102,7 +102,7 @@
         <field name="notes">Monthly fuel card reload</field>
     </record>
 
-    <record id="log_fuel_f150_001" model="resource.asset.log">
+    <record id="log_fuel_f150_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
@@ -120,7 +120,7 @@
         <field name="notes">Diesel fill-up for construction site work</field>
     </record>
 
-    <record id="log_fuel_transit_001" model="resource.asset.log">
+    <record id="log_fuel_transit_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_transit_001'))]" />
@@ -138,7 +138,7 @@
         <field name="notes">Regular delivery route fuel purchase</field>
     </record>
 
-    <record id="log_highway_civic_001" model="resource.asset.log">
+    <record id="log_highway_civic_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
@@ -153,7 +153,7 @@
         <field name="notes">Monthly highway pass reload</field>
     </record>
 
-    <record id="log_highway_f150_001" model="resource.asset.log">
+    <record id="log_highway_f150_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
@@ -168,7 +168,7 @@
         <field name="notes">Toll charges for route 101</field>
     </record>
 
-    <record id="log_maintenance_civic_001" model="resource.asset.log">
+    <record id="log_maintenance_civic_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
@@ -185,7 +185,7 @@
             name="notes">Regular oil change and filter replacement - Synthetic 5W-30</field>
     </record>
 
-    <record id="log_repair_f150_001" model="resource.asset.log">
+    <record id="log_repair_f150_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
@@ -202,7 +202,7 @@
             name="notes">Front brake pads and rotors replacement. Heavy duty parts used.</field>
     </record>
 
-    <record id="log_repair_transit_001" model="resource.asset.log">
+    <record id="log_repair_transit_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_transit_001'))]" />
@@ -219,7 +219,7 @@
             name="notes">All four tires replaced - Commercial grade Michelin tires</field>
     </record>
 
-    <record id="log_maintenance_model3_001" model="resource.asset.log">
+    <record id="log_maintenance_model3_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_model3_001'))]" />
@@ -236,7 +236,7 @@
             name="notes">First scheduled service - Tire rotation, brake check, software update</field>
     </record>
 
-    <record id="log_maintenance_tractor_001" model="resource.asset.log">
+    <record id="log_maintenance_tractor_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_tractor_001'))]" />
@@ -253,7 +253,7 @@
             name="notes">Annual preventive maintenance - Engine service, hydraulic system check, PTO inspection</field>
     </record>
 
-    <record id="log_repair_forklift_001" model="resource.asset.log">
+    <record id="log_repair_forklift_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_forklift_001'))]" />
@@ -269,7 +269,7 @@
         <field name="notes">Industrial battery replacement - 48V 500Ah</field>
     </record>
 
-    <record id="log_scheduled_civic_001" model="resource.asset.log">
+    <record id="log_scheduled_civic_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_civic_001'))]" />
@@ -284,7 +284,7 @@
         <field name="notes">Scheduled tire rotation at 16,000 km</field>
     </record>
 
-    <record id="log_scheduled_f150_001" model="resource.asset.log">
+    <record id="log_scheduled_f150_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_f150_001'))]" />
@@ -299,7 +299,7 @@
         <field name="notes">Annual vehicle safety inspection required by law</field>
     </record>
 
-    <record id="log_insurance_office_001" model="resource.asset.log">
+    <record id="log_insurance_office_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_office_building_001'))]" />
@@ -321,7 +321,7 @@
             name="notes">Commercial property insurance - Coverage includes fire, flood, liability, and business interruption</field>
     </record>
 
-    <record id="log_maintenance_office_001" model="resource.asset.log">
+    <record id="log_maintenance_office_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_office_building_001'))]" />
@@ -337,7 +337,7 @@
             name="notes">Quarterly HVAC system maintenance - Filter replacement, coolant check, system calibration</field>
     </record>
 
-    <record id="log_maintenance_office_002" model="resource.asset.log">
+    <record id="log_maintenance_office_002" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_office_building_001'))]" />
@@ -352,7 +352,7 @@
         <field name="notes">Annual elevator safety inspection and certification</field>
     </record>
 
-    <record id="log_insurance_warehouse_001" model="resource.asset.log">
+    <record id="log_insurance_warehouse_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_warehouse_001'))]" />
@@ -374,7 +374,7 @@
             name="notes">Industrial property insurance - Warehouse and inventory coverage</field>
     </record>
 
-    <record id="log_repair_warehouse_001" model="resource.asset.log">
+    <record id="log_repair_warehouse_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_warehouse_001'))]" />
@@ -390,7 +390,7 @@
             name="notes">Emergency roof repair - Section C leak repair and waterproofing</field>
     </record>
 
-    <record id="log_maintenance_warehouse_001" model="resource.asset.log">
+    <record id="log_maintenance_warehouse_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_warehouse_001'))]" />
@@ -406,7 +406,7 @@
             name="notes">Annual fire suppression system testing and certification</field>
     </record>
 
-    <record id="log_farmland_tax_001" model="resource.asset.log">
+    <record id="log_farmland_tax_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_farmland_001'))]" />
@@ -425,7 +425,7 @@
         <field name="notes">Annual agricultural property tax payment</field>
     </record>
 
-    <record id="log_repair_farmland_001" model="resource.asset.log">
+    <record id="log_repair_farmland_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_farmland_001'))]" />
@@ -441,7 +441,7 @@
             name="notes">Irrigation system pump replacement and pipe section repairs</field>
     </record>
 
-    <record id="log_insurance_retail_001" model="resource.asset.log">
+    <record id="log_insurance_retail_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_retail_store_001'))]" />
@@ -463,7 +463,7 @@
             name="notes">Retail property insurance - Building and tenant liability coverage</field>
     </record>
 
-    <record id="log_repair_retail_001" model="resource.asset.log">
+    <record id="log_repair_retail_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_retail_store_001'))]" />
@@ -479,7 +479,7 @@
             name="notes">Parking lot resurfacing - 150 space capacity, new asphalt and line painting</field>
     </record>
 
-    <record id="log_scheduled_retail_001" model="resource.asset.log">
+    <record id="log_scheduled_retail_001" model="resource.log">
         <field
             name="asset_id"
             search="[('trace_id', '=', ref('asset_ledger.stock_lot_retail_store_001'))]" />

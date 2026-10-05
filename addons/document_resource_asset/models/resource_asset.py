@@ -24,7 +24,7 @@ class ResourceAsset(models.Model):
         for asset in self:
             asset.document_centralized = settings.get(
                 (asset.kind_id.id, asset._documents_company().id),
-                self.env["resource.asset.kind.document"],
+                self.env["resource.kind.document"],
             ).centralize
 
     def _documents_company(self):
@@ -36,7 +36,7 @@ class ResourceAsset(models.Model):
         self.check_singleton()
         return self._document_settings_by_kind().get(
             (self.kind_id.id, self._documents_company().id),
-            self.env["resource.asset.kind.document"],
+            self.env["resource.kind.document"],
         )
 
     def _document_settings_by_kind(self) -> dict:
@@ -45,7 +45,7 @@ class ResourceAsset(models.Model):
         if not assets:
             return {}
         rows = (
-            self.env["resource.asset.kind.document"]
+            self.env["resource.kind.document"]
             .sudo()
             .search(
                 [

@@ -208,7 +208,7 @@ class TestMaintenanceKindsAndDashboards(TransactionCase):
         cls.technician = cls.env["res.users"].create(
             {"name": "Kind Technician", "login": "kind_technician"}
         )
-        cls.kind = cls.env["resource.asset.kind"].create(
+        cls.kind = cls.env["resource.kind"].create(
             {
                 "name": "Probe kind",
                 "code": "probe_kind",
@@ -431,7 +431,7 @@ class TestMaintenanceAssetAccess(TransactionCase):
         asset = self.env["resource.asset"].create(
             {"name": "Lathe", "kind_id": self.env.ref("resource_asset.kind_tool").id}
         )
-        kind = self.env["resource.asset.kind"].create(
+        kind = self.env["resource.kind"].create(
             {
                 "name": "Machines",
                 "code": "machines_probe",

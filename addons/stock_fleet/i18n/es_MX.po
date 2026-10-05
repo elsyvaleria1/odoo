@@ -201,7 +201,7 @@ msgid "Archived"
 msgstr "Archivado"
 
 #. module: stock_fleet
-#: model:ir.model,name:stock_fleet.model_resource_asset_log
+#: model:ir.model,name:stock_fleet.model_resource_log
 msgid "Asset Log"
 msgstr "Bitácora del activo"
 
@@ -407,7 +407,7 @@ msgstr "Despachado por"
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_product_product__display_name
 #: model:ir.model.fields,field_description:stock_fleet.field_product_template__display_name
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_log__display_name
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_log__display_name
 #: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__display_name
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_move__display_name
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_move_line__display_name
@@ -491,7 +491,7 @@ msgstr "Retenida por Crédito"
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_product_product__id
 #: model:ir.model.fields,field_description:stock_fleet.field_product_template__id
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_log__id
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_log__id
 #: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_vehicle__id
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_move__id
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_move_line__id
@@ -910,7 +910,7 @@ msgid "Signed Slip to Receive"
 msgstr "OUT firmada por recibir"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_log__source
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_log__source
 msgid "Source"
 msgstr "Origen"
 
@@ -1021,7 +1021,7 @@ msgid "Third Party Provider"
 msgstr "Proveedor externo"
 
 #. module: stock_fleet
-#: model:ir.model.constraint,message:stock_fleet.constraint_resource_asset_log_picking_batch_uniq
+#: model:ir.model.constraint,message:stock_fleet.constraint_resource_log_picking_batch_uniq
 msgid "This trip has already recorded its return odometer."
 msgstr "Este viaje ya registró su odómetro de cierre."
 
@@ -1095,7 +1095,7 @@ msgid "Transport Management"
 msgstr "Gestión de transporte"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_resource_asset_log__picking_batch_id
+#: model:ir.model.fields,field_description:stock_fleet.field_resource_log__picking_batch_id
 #: model:ir.model.fields,field_description:stock_fleet.field_wizard_stock_picking_unbatch_correction__batch_id
 #: model:ir.model.fields.selection,name:stock_fleet.selection__resource_asset_log__source__delivery
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form_trip
@@ -1214,7 +1214,7 @@ msgid "Trip corrections"
 msgstr "Correcciones de viaje"
 
 #. module: stock_fleet
-#: model:ir.model.fields,help:stock_fleet.field_resource_asset_log__picking_batch_id
+#: model:ir.model.fields,help:stock_fleet.field_resource_log__picking_batch_id
 msgid "Trip whose return odometer this reading is."
 msgstr "Viaje al que pertenece esta lectura de odómetro de cierre."
 
@@ -1404,7 +1404,7 @@ msgid "Where the trip stands, read from its departure and return stamps. Empty o
 msgstr "En qué punto va el viaje, según sus marcas de salida y regreso. Vacío en lotes cuyo tipo de operación no despacha."
 
 #. module: stock_fleet
-#: model:ir.model.fields,help:stock_fleet.field_resource_asset_log__source
+#: model:ir.model.fields,help:stock_fleet.field_resource_log__source
 msgid "Which producer wrote this row. Every asset cost and every odometer reading in the system is a log line, so the ledger has one provenance axis. Each producing module adds its own value through selection_add, so a value exists here only where something writes it."
 msgstr "Qué productor escribió esta fila. Cada costo y cada lectura de odómetro de un activo es una línea de bitácora, así que la bitácora tiene un solo eje de procedencia. Cada módulo productor agrega su propio valor con selection_add, así que un valor existe aquí solo donde algo lo escribe."
 

@@ -40,7 +40,7 @@ def move_rows_into_subtype_table(cr, kind_code: str, table: str) -> int:
     foreign key into it."""
     if not table_exists(cr, table):
         return 0
-    cr.execute("SELECT id FROM resource_asset_kind WHERE code = %s", [kind_code])
+    cr.execute("SELECT id FROM resource_kind WHERE code = %s", [kind_code])
     row = cr.fetchone()
     if not row:
         return 0

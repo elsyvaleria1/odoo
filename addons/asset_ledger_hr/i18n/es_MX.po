@@ -20,7 +20,7 @@ msgid "Accept Operator Change"
 msgstr "Aceptar cambio de operador"
 
 #. module: asset_ledger_hr
-#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_asset_log__asset_manager_id
+#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_log__asset_manager_id
 #: model_terms:ir.ui.view,arch_db:asset_ledger_hr.view_search_product_asset_log_hr
 msgid "Asset Manager"
 msgstr "Responsable de activos"
@@ -36,7 +36,7 @@ msgid "No Operator"
 msgstr "Sin operador"
 
 #. module: asset_ledger_hr
-#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_asset_log__operator_id
+#: model:ir.model.fields,field_description:asset_ledger_hr.field_resource_log__operator_id
 #: model_terms:ir.ui.view,arch_db:asset_ledger_hr.view_search_product_asset_log_hr
 msgid "Operator"
 msgstr "Operador"

@@ -129,7 +129,7 @@ msgstr ""
 
 #. module: approval_stock
 #: model:ir.model,name:approval_stock.model_approval_request
-#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__approval_request_id
+#: model:ir.model.fields,field_description:approval_stock.field_resource_log__approval_request_id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__approval_request_id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_picking__approval_request_id
 #: model:ir.model.fields.selection,name:approval_stock.selection__resource_asset_log__source__approval
@@ -176,7 +176,7 @@ msgid "Approval request refused. Transfer can be modified."
 msgstr ""
 
 #. module: approval_stock
-#: model:ir.model.fields,help:approval_stock.field_resource_asset_log__approval_request_id
+#: model:ir.model.fields,help:approval_stock.field_resource_log__approval_request_id
 msgid "Approval request this log entry was booked from."
 msgstr ""
 
@@ -209,7 +209,7 @@ msgid "Asset"
 msgstr ""
 
 #. module: approval_stock
-#: model:ir.model,name:approval_stock.model_resource_asset_log
+#: model:ir.model,name:approval_stock.model_resource_log
 #: model:ir.model.fields,field_description:approval_stock.field_approval_request__asset_log_ids
 msgid "Asset Log"
 msgstr ""
@@ -431,7 +431,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:approval_stock.field_product_category__display_name
 #: model:ir.model.fields,field_description:approval_stock.field_res_company__display_name
 #: model:ir.model.fields,field_description:approval_stock.field_res_config_settings__display_name
-#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__display_name
+#: model:ir.model.fields,field_description:approval_stock.field_resource_log__display_name
 #: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__display_name
 #: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__display_name
 #: model:ir.model.fields,field_description:approval_stock.field_stock_location__display_name
@@ -474,7 +474,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:approval_stock.field_product_category__id
 #: model:ir.model.fields,field_description:approval_stock.field_res_company__id
 #: model:ir.model.fields,field_description:approval_stock.field_res_config_settings__id
-#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__id
+#: model:ir.model.fields,field_description:approval_stock.field_resource_log__id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment__id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_inventory_adjustment_line__id
 #: model:ir.model.fields,field_description:approval_stock.field_stock_location__id
@@ -851,7 +851,7 @@ msgid "Scheduled Date"
 msgstr ""
 
 #. module: approval_stock
-#: model:ir.model.fields,field_description:approval_stock.field_resource_asset_log__source
+#: model:ir.model.fields,field_description:approval_stock.field_resource_log__source
 msgid "Source"
 msgstr ""
 
@@ -1124,7 +1124,7 @@ msgid "Whether this document requires approval based on current rules"
 msgstr ""
 
 #. module: approval_stock
-#: model:ir.model.fields,help:approval_stock.field_resource_asset_log__source
+#: model:ir.model.fields,help:approval_stock.field_resource_log__source
 msgid ""
 "Which producer wrote this row. Every asset cost and every odometer reading "
 "in the system is a log line, so the ledger has one provenance axis. Each "

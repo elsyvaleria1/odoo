@@ -18,7 +18,7 @@ class ResourceAsset(models.Model):
     # write through the root reaches the concrete model, so asset tags written
     # on a vehicle would land in the fleet relation.
     asset_tag_ids = fields.Many2many(
-        comodel_name="resource.asset.tag",
+        comodel_name="resource.tag",
         relation="resource_asset_tag_rel",
         column1="asset_id",
         column2="tag_id",
@@ -149,7 +149,7 @@ class ResourceAsset(models.Model):
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Register Fuel"),
-            "res_model": "resource.asset.log",
+            "res_model": "resource.log",
             "view_mode": "form",
             "target": "current",
             "context": {

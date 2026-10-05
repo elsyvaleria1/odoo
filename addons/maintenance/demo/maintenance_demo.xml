@@ -12,24 +12,24 @@
             <field name="name">Subcontractor</field>
         </record>
         <!-- Asset kinds -->
-        <record id="equipment_computer" model="resource.asset.kind">
+        <record id="equipment_computer" model="resource.kind">
             <field name="name">Computers</field>
             <field name="code">computer</field>
         </record>
-        <record id="equipment_software" model="resource.asset.kind">
+        <record id="equipment_software" model="resource.kind">
             <field name="name">Software</field>
             <field name="code">software</field>
         </record>
-        <record id="equipment_printer" model="resource.asset.kind">
+        <record id="equipment_printer" model="resource.kind">
             <field name="name">Printers</field>
             <field name="code">printer</field>
         </record>
-        <record id="equipment_monitor" model="resource.asset.kind">
+        <record id="equipment_monitor" model="resource.kind">
             <field name="name">Monitors</field>
             <field name="code">monitor</field>
             <field name="technician_user_id" ref="base.user_admin" />
         </record>
-        <record id="equipment_phone" model="resource.asset.kind">
+        <record id="equipment_phone" model="resource.kind">
             <field name="name">Phones</field>
             <field name="code">phone</field>
             <field name="technician_user_id" ref="base.user_admin" />

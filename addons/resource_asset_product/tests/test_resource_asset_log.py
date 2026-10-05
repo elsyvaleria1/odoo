@@ -7,7 +7,7 @@ class TestResourceAssetLog(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.kind = cls.env.ref("resource_asset.kind_tool")
         cls.company_b = cls.env["res.company"].create({"name": "Ledger B"})
         cls.service_category = cls.env["product.category"].create(
@@ -71,7 +71,7 @@ class TestResourceAssetLogOdometer(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.km = cls.env.ref("uom.product_uom_km")
         cls.mile = cls.env.ref("uom.product_uom_mile")
         cls.asset = cls.env["resource.asset"].create(
@@ -155,7 +155,7 @@ class TestResourceAssetLedgerSurface(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.asset = cls.env["resource.asset"].create(
             {"name": "Press", "kind_id": cls.env.ref("resource_asset.kind_tool").id}
         )
@@ -197,7 +197,7 @@ class TestResourceAssetLedgerSurface(TransactionCase):
     def test_the_ledger_button_opens_this_assets_rows(self):
         action = self.asset.action_view_logs()
 
-        self.assertEqual(action["res_model"], "resource.asset.log")
+        self.assertEqual(action["res_model"], "resource.log")
         self.assertEqual(action["domain"], [("asset_id", "=", self.asset.id)])
         self.assertEqual(action["context"]["default_asset_id"], self.asset.id)
 

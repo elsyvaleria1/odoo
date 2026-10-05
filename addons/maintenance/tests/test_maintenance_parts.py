@@ -18,10 +18,10 @@ class TestMaintenanceParts(TransactionCase):
                 )
             ]
         ).action_archive()
-        cls.kind = cls.env["resource.asset.kind"].create(
+        cls.kind = cls.env["resource.kind"].create(
             {"name": "Maintained Truck", "code": "maintained_truck"}
         )
-        cls.pump_position = cls.env["resource.asset.kind.position"].create(
+        cls.pump_position = cls.env["resource.kind.position"].create(
             {
                 "kind_id": cls.kind.id,
                 "name": "Fuel pump",
@@ -50,7 +50,7 @@ class TestMaintenanceParts(TransactionCase):
         )
 
     def _part(self, order, **vals):
-        return self.env["resource.asset.part"].create(
+        return self.env["resource.part"].create(
             {
                 "maintenance_order_id": order.id,
                 "asset_id": self.truck.id,

@@ -2,7 +2,7 @@
 <odoo>
 
     <!-- Asset kinds -->
-    <record id="equipment_furniture_tools" model="resource.asset.kind">
+    <record id="equipment_furniture_tools" model="resource.kind">
         <field name="name">Furniture Tools</field>
         <field name="code">furniture_tools</field>
         <field name="technician_user_id" ref="base.user_admin" />

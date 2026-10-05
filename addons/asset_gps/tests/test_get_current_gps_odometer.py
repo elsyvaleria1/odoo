@@ -94,7 +94,7 @@ class TestGetCurrentGpsOdometer(StockLotGpsTestBase):
         self.env["product.trace"]._cron_record_gps_odometer()
 
         self.assertTrue(
-            self.env["resource.asset.log"].search(
+            self.env["resource.log"].search(
                 [("trace_id", "=", self.vehicle.id), ("source", "=", "gps")]
             ),
             "One bad parameter used to abort the run for every asset.",

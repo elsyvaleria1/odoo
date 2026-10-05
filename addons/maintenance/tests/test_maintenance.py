@@ -43,7 +43,7 @@ class TestMaintenanceCommon(TransactionCase):
             }
         )
 
-        self.monitor_kind = self.env["resource.asset.kind"].create(
+        self.monitor_kind = self.env["resource.kind"].create(
             {"name": "Monitors - Test", "code": "monitor_test"}
         )
 

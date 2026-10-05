@@ -39,7 +39,7 @@ class TestProductAssetLog(AccountTestInvoicingCommon):
         cls.AccountMove = cls.env["account.move"]
         cls.AccountMoveLine = cls.env["account.move.line"]
         cls.ProductTrace = cls.env["product.trace"]
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
         # sudo: these are fixtures. marin gates product.template.standard_price
         # with write_groups, so building them as the suite's deliberately
         # under-privileged accounting user dies in setUpClass wherever it is

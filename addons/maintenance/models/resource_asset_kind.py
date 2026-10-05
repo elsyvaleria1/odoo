@@ -2,7 +2,7 @@ from odoo import fields, models
 
 
 class ResourceAssetKind(models.Model):
-    _inherit = "resource.asset.kind"
+    _inherit = "resource.kind"
 
     technician_user_id = fields.Many2one(
         comodel_name="res.users",

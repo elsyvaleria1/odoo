@@ -16,7 +16,7 @@ class RepairOrder(models.Model):
     )
     asset_kind_id = fields.Many2one(related="asset_id.kind_id")
     part_ids = fields.One2many(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         inverse_name="repair_order_id",
         string="Asset Parts",
     )
@@ -68,4 +68,4 @@ class RepairOrder(models.Model):
                 )
         _debug.logic("repair_asset_parts_recorded", repairs=self, parts=len(vals_list))
         if vals_list:
-            self.env["resource.asset.part"].create(vals_list)
+            self.env["resource.part"].create(vals_list)

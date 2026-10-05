@@ -40,7 +40,7 @@ INSTALLATION_FIELDS = frozenset(
 
 
 class ResourceAssetPart(models.Model):
-    _name = "resource.asset.part"
+    _name = "resource.part"
     _description = "Asset Part Installation"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _order = "date_installed desc, id desc"
@@ -60,7 +60,7 @@ class ResourceAssetPart(models.Model):
     )
     kind_id = fields.Many2one(related="asset_id.kind_id")
     position_id = fields.Many2one(
-        comodel_name="resource.asset.kind.position",
+        comodel_name="resource.kind.position",
         index=True,
         required=True,
         domain="[('kind_id', '=', kind_id)]",
@@ -127,7 +127,7 @@ class ResourceAssetPart(models.Model):
         readonly=True,
     )
     previous_part_id = fields.Many2one(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         string="Replaced Part",
         copy=False,
         readonly=True,
@@ -174,7 +174,7 @@ class ResourceAssetPart(models.Model):
     )
     notes = fields.Text()
     flag_ids = fields.One2many(
-        comodel_name="resource.asset.part.flag",
+        comodel_name="resource.part.flag",
         inverse_name="part_id",
         string="Flags",
         readonly=True,
@@ -326,7 +326,7 @@ class ResourceAssetPart(models.Model):
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Position History"),
-            "res_model": "resource.asset.part",
+            "res_model": "resource.part",
             "view_mode": "list,form",
             "domain": [
                 ("asset_id", "=", self.asset_id.id),
@@ -510,7 +510,7 @@ class ResourceAssetPart(models.Model):
         _debug.lifecycle("part_flagged", part=self, asset=self.asset_id, reason=reason)
         # sudo: a flag is raised by the ledger on whoever installs the part, and
         # nobody holds a right to write one by hand.
-        self.env["resource.asset.part.flag"].sudo().create(
+        self.env["resource.part.flag"].sudo().create(
             {"part_id": self.id, "reason": reason, "note": note}
         )
         body = Markup("<b>%s</b><br/>%s") % (
@@ -636,13 +636,13 @@ class ResourceAssetPart(models.Model):
 
 
 class ResourceAssetPartFlag(models.Model):
-    _name = "resource.asset.part.flag"
+    _name = "resource.part.flag"
     _description = "Asset Part Flag"
     _order = "create_date desc, id desc"
 
     # FIELDS
     part_id = fields.Many2one(
-        comodel_name="resource.asset.part",
+        comodel_name="resource.part",
         index=True,
         required=True,
         ondelete="cascade",

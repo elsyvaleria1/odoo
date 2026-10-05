@@ -104,7 +104,7 @@ class AccountDepreciationProfile(models.Model):
     )
 
     kind_id = fields.Many2one(
-        comodel_name="resource.asset.kind",
+        comodel_name="resource.kind",
         string="Asset Kind",
         help="The kind given to an asset this profile creates. Without one, the asset is a Fixed Asset.",
     )

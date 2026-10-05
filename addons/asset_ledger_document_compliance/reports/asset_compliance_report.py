@@ -27,7 +27,7 @@ class AssetComplianceReport(models.Model):
         help="Name of the asset",
     )
     asset_kind_id = fields.Many2one(
-        comodel_name="resource.asset.kind",
+        comodel_name="resource.kind",
         readonly=True,
         help="Kind of the asset",
     )

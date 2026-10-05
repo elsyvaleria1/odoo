@@ -31,7 +31,7 @@ class TestOdometerUnits(TransactionCase):
         )
 
     def _fuel_log(self, asset, date, odometer, litres):
-        return self.env["resource.asset.log"].create(
+        return self.env["resource.log"].create(
             {
                 "asset_id": asset.asset_id.id,
                 "product_id": self.fuel_product.id,

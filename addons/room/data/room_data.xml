@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="kind_room" model="resource.asset.kind">
+    <record id="kind_room" model="resource.kind">
         <field name="name">Meeting Room</field>
         <field name="code">room</field>
         <field name="sequence">8</field>

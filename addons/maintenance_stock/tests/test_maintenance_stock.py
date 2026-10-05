@@ -16,10 +16,10 @@ class TestMaintenanceStock(TransactionCase):
                 )
             ]
         ).action_archive()
-        cls.kind = cls.env["resource.asset.kind"].create(
+        cls.kind = cls.env["resource.kind"].create(
             {"name": "Stocked Truck", "code": "stocked_truck"}
         )
-        cls.position = cls.env["resource.asset.kind.position"].create(
+        cls.position = cls.env["resource.kind.position"].create(
             {"kind_id": cls.kind.id, "name": "Starter", "code": "starter"}
         )
         cls.starter = cls.env["product.product"].create(
@@ -53,7 +53,7 @@ class TestMaintenanceStock(TransactionCase):
                 "vendor_id": self.vendor.id,
             }
         )
-        part = self.env["resource.asset.part"].create(
+        part = self.env["resource.part"].create(
             {
                 "maintenance_order_id": order.id,
                 "asset_id": self.truck.id,

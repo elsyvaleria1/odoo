@@ -19,7 +19,7 @@ class TestAssetInvariants(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.Lot = cls.env["product.trace"]
         cls.today = fields.Date.context_today(cls.env["product.trace"])
         cls.p_fuel = cls.env.ref("asset_ledger.product_product_fuel_debit")
@@ -130,7 +130,7 @@ class TestAssetInvariants(TransactionCase):
         log = self.Log.create(
             {"asset_id": asset.asset_id.id, "product_id": self.p_svc.id}
         )
-        self.assertNotEqual(log.display_name, f"resource.asset.log,{log.id}")
+        self.assertNotEqual(log.display_name, f"resource.log,{log.id}")
         self.assertIn(asset.asset_id.display_name, log.display_name)
 
     def test_logs_are_ordered_newest_first(self):
@@ -213,7 +213,7 @@ class TestAssetInvariants(TransactionCase):
         stamps tomorrow on one field and today on the next.
         """
         offenders = []
-        for model_name in ("product.trace", "resource.asset.log"):
+        for model_name in ("product.trace", "resource.log"):
             model = self.env[model_name]
             for name, field in model._fields.items():
                 if field.type != "date" or not field.default:
@@ -419,7 +419,7 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.Lot = cls.env["product.trace"]
         cls.today = fields.Date.context_today(cls.env["product.trace"])
         cls.p_fuel = cls.env.ref("asset_ledger.product_product_fuel_debit")
@@ -568,7 +568,7 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
         cls.Lot = cls.env["product.trace"]
         cls.today = fields.Date.context_today(cls.env["product.trace"])
         cls.p_svc = cls.env.ref("asset_ledger.product_product_maintenance")
@@ -596,7 +596,7 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         )
         cls.activity = cls.env["mail.activity"].create(
             {
-                "res_model_id": cls.env["ir.model"]._get("resource.asset.log").id,
+                "res_model_id": cls.env["ir.model"]._get("resource.log").id,
                 "res_id": cls.log.id,
                 "activity_type_id": cls.env.ref("mail.mail_activity_data_todo").id,
                 "date_deadline": cls.today + timedelta(days=2),

@@ -148,7 +148,7 @@ msgid "Acquisition Date"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__active
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__active
 msgid "Active"
 msgstr ""
 
@@ -194,7 +194,7 @@ msgid "Allow"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_tag__active
+#: model:ir.model.fields,help:asset_ledger.field_resource_tag__active
 msgid "Archive a tag to hide it without deleting it."
 msgstr ""
 
@@ -299,7 +299,7 @@ msgid "Asset Services"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model,name:asset_ledger.model_resource_asset_tag
+#: model:ir.model,name:asset_ledger.model_resource_tag
 msgid "Asset Tag"
 msgstr ""
 
@@ -401,13 +401,13 @@ msgid "Civic LX"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__code
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__code
 #: model:ir.model.fields,field_description:asset_ledger.field_product_trace__kind_code
 msgid "Code"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__color
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__color
 msgid "Color"
 msgstr ""
 
@@ -496,12 +496,12 @@ msgid "Create a new log entry"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__create_uid
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__create_date
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__create_date
 msgid "Created on"
 msgstr ""
 
@@ -543,12 +543,12 @@ msgid "Date of asset's registration"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__date_start
+#: model:ir.model.fields,help:asset_ledger.field_resource_log__date_start
 msgid "Date this entry's coverage begins"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__date_end
+#: model:ir.model.fields,help:asset_ledger.field_resource_log__date_end
 msgid "Date this entry's coverage ends"
 msgstr ""
 
@@ -563,12 +563,12 @@ msgid "Dates"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__days_left
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__days_left
 msgid "Days Left"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__days_left
+#: model:ir.model.fields,help:asset_ledger.field_resource_log__days_left
 msgid "Days until the end date. Negative once it has passed."
 msgstr ""
 
@@ -588,12 +588,12 @@ msgid "Displacement"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__display_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__efficiency
+#: model:ir.model.fields,help:asset_ledger.field_resource_log__efficiency
 msgid ""
 "Distance covered since the previous reading, per litre of fuel. The distance"
 " carries the asset's own odometer unit, so the ratio does too -- read "
@@ -606,12 +606,12 @@ msgid "Done"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__efficiency
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__efficiency
 msgid "Efficiency"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__efficiency_uom_name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__efficiency_uom_name
 msgid "Efficiency Unit"
 msgstr ""
 
@@ -626,7 +626,7 @@ msgid "Electric power supply"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__date_end
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__date_end
 msgid "End Date"
 msgstr ""
 
@@ -675,7 +675,7 @@ msgid "Fuel"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__qty_fuel
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__qty_fuel
 msgid "Fuel Quantity"
 msgstr ""
 
@@ -758,7 +758,7 @@ msgid "Hydrogen"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__id
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__id
 msgid "ID"
 msgstr ""
 
@@ -804,12 +804,12 @@ msgid "LPG"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__write_uid
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__write_date
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__write_date
 msgid "Last Updated on"
 msgstr ""
 
@@ -1042,7 +1042,7 @@ msgid "Purchase Value"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__qty_fuel
+#: model:ir.model.fields,help:asset_ledger.field_resource_log__qty_fuel
 msgid "Quantity of fuel added to the asset, in litres."
 msgstr ""
 
@@ -1078,7 +1078,7 @@ msgid "Running"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__trace_id
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__trace_id
 msgid "Serial"
 msgstr ""
 
@@ -1197,14 +1197,14 @@ msgid "Source"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_tag__code
+#: model:ir.model.fields,help:asset_ledger.field_resource_tag__code
 msgid ""
 "Stable identifier for imports, filters and data files. Unlike the name it is"
 " never translated, so it means the same thing to every reader."
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_log__date_start
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_log__date_start
 msgid "Start Date"
 msgstr ""
 
@@ -1232,7 +1232,7 @@ msgid ""
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,field_description:asset_ledger.field_resource_asset_tag__name
+#: model:ir.model.fields,field_description:asset_ledger.field_resource_tag__name
 msgid "Tag Name"
 msgstr ""
 
@@ -1242,7 +1242,7 @@ msgid "Telephone and connectivity"
 msgstr ""
 
 #. module: asset_ledger
-#: model:ir.model.fields,help:asset_ledger.field_resource_asset_log__trace_id
+#: model:ir.model.fields,help:asset_ledger.field_resource_log__trace_id
 msgid ""
 "The inventory identity of this unit, when it entered through a receipt or a "
 "manufacturing order."

@@ -3,7 +3,7 @@
 
     <record id="view_form_product_asset_log" model="ir.ui.view">
         <field name="name">resource.asset.log.form.inherit.account_product_asset</field>
-        <field name="model">resource.asset.log</field>
+        <field name="model">resource.log</field>
         <field name="inherit_id" ref="asset_ledger.view_form_product_asset_log" />
         <field name="priority" eval="1" />
         <field name="arch" type="xml">

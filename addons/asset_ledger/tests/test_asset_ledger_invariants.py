@@ -23,7 +23,7 @@ class TestAssetLedgerInvariants(TransactionCase):
         )
         cls.fuel_debit = cls.env.ref("asset_ledger.product_product_fuel_debit")
         cls.fuel_credit = cls.env.ref("asset_ledger.product_product_fuel_credit")
-        cls.Log = cls.env["resource.asset.log"]
+        cls.Log = cls.env["resource.log"]
 
     def _log(self, **vals):
         vals.setdefault("asset_id", self.asset.asset_id.id)

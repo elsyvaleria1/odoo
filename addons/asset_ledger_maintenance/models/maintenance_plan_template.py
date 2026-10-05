@@ -32,7 +32,7 @@ class MaintenancePlanTemplate(models.Model):
         tracking=True,
     )
     asset_kind_id = fields.Many2one(
-        comodel_name="resource.asset.kind",
+        comodel_name="resource.kind",
         tracking=True,
     )
     product_id = fields.Many2one(

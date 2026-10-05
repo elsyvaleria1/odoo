@@ -106,7 +106,7 @@ msgid "A part changes state through its actions, not by hand."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_kind_position__product_category_id
+#: model:ir.model.fields,help:resource_asset_product.field_resource_kind_position__product_category_id
 msgid "A part installed here must belong to this category or one below it."
 msgstr ""
 
@@ -117,7 +117,7 @@ msgid "A part is recorded as planned or installed."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.constraint,message:resource_asset_product.constraint_resource_asset_kind_position_kind_code_uniq
+#: model:ir.model.constraint,message:resource_asset_product.constraint_resource_kind_position_kind_code_uniq
 msgid "A position code is unique within its asset kind."
 msgstr ""
 
@@ -128,55 +128,55 @@ msgid "A removed part recorded as returned stays returned."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_kind_position__expected_life_meter
+#: model:ir.model.fields,help:resource_asset_product.field_resource_kind_position__expected_life_meter
 msgid ""
 "A replacement at this position sooner than this distance on the meter is "
 "flagged."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_kind_position__expected_life_days
+#: model:ir.model.fields,help:resource_asset_product.field_resource_kind_position__expected_life_days
 msgid "A replacement at this position sooner than this is flagged."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_needaction
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_needaction
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_needaction
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_needaction
 msgid "Action Needed"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__active
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__active
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__active
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__active
 msgid "Active"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_ids
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_ids
 msgid "Activities"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_exception_decoration
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_exception_decoration
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_exception_decoration
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_exception_decoration
 msgid "Activity Exception Decoration"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_state
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_state
 msgid "Activity State"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_type_icon
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_type_icon
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_type_icon
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_type_icon
 msgid "Activity Type Icon"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.constraint,message:resource_asset_product.constraint_resource_asset_kind_position_expected_life_positive
+#: model:ir.model.constraint,message:resource_asset_product.constraint_resource_kind_position_expected_life_positive
 msgid "An expected life cannot be negative."
 msgstr ""
 
@@ -199,9 +199,9 @@ msgid "Archived"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__asset_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__asset_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__asset_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__asset_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
 msgid "Asset"
@@ -214,14 +214,14 @@ msgid "Asset Count"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model,name:resource_asset_product.model_resource_asset_kind
+#: model:ir.model,name:resource_asset_product.model_resource_kind
 #: model:ir.model.fields,field_description:resource_asset_product.field_product_product__asset_kind_id
 #: model:ir.model.fields,field_description:resource_asset_product.field_product_template__asset_kind_id
 msgid "Asset Kind"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model,name:resource_asset_product.model_resource_asset_log
+#: model:ir.model,name:resource_asset_product.model_resource_log
 msgid "Asset Log"
 msgstr ""
 
@@ -231,22 +231,22 @@ msgid "Asset Log Type"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model,name:resource_asset_product.model_resource_asset_part_flag
+#: model:ir.model,name:resource_asset_product.model_resource_part_flag
 msgid "Asset Part Flag"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model,name:resource_asset_product.model_resource_asset_part
+#: model:ir.model,name:resource_asset_product.model_resource_part
 msgid "Asset Part Installation"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model,name:resource_asset_product.model_resource_asset_kind_position
+#: model:ir.model,name:resource_asset_product.model_resource_kind_position
 msgid "Asset Part Position"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__asset_id
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__asset_id
 msgid "Asset this log entry is for. Auto-filled from the related bill line"
 msgstr ""
 
@@ -256,13 +256,13 @@ msgid "Assets"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_attachment_count
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_attachment_count
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_attachment_count
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_attachment_count
 msgid "Attachment Count"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__state
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__state
 msgid ""
 "Auto-synced from the related bill: posted → done, cancel → cancelled, draft "
 "→ new. Manual logs (no bill) remain user-controlled."
@@ -293,7 +293,7 @@ msgid "Clear Flags"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__clear_note
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__clear_note
 msgid "Clear Note"
 msgstr ""
 
@@ -304,7 +304,7 @@ msgid "Cleared"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__cleared_user_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__cleared_user_id
 msgid "Cleared By"
 msgstr ""
 
@@ -314,32 +314,32 @@ msgid "Closed"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__date_closed
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__date_closed
 msgid "Closed On"
 msgstr ""
 
 #. module: resource_asset_product
 #: model:ir.model.fields,field_description:resource_asset_product.field_product_product__asset_kind_code
 #: model:ir.model.fields,field_description:resource_asset_product.field_product_template__asset_kind_code
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__code
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__code
 msgid "Code"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__company_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__company_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__company_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__company_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__company_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__company_id
 msgid "Company"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__amount
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__amount
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__amount
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__amount
 msgid "Cost"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__amount
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__amount
 msgid ""
 "Cost amount. Auto-computed from bill line if linked to accounting. Signed on"
 " the cost convention: positive for expenses, negative for credits, so a "
@@ -347,37 +347,37 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__create_uid
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__create_uid
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__create_uid
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__create_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__create_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__create_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__create_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__create_uid
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__create_date
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__create_date
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__create_date
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__create_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__create_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__create_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__create_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__create_date
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__create_date
 msgid "Created on"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__currency_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__currency_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__currency_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__currency_id
 msgid "Currency"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__date
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
 msgid "Date"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__date
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__date
 msgid "Date when the cost has been executed"
 msgstr ""
 
@@ -387,11 +387,11 @@ msgid "Discard"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind__display_name
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__display_name
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__display_name
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__display_name
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__display_name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind__display_name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__display_name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__display_name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__display_name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__display_name
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__display_name
 msgid "Display Name"
 msgstr ""
@@ -402,12 +402,12 @@ msgid "Done"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__expected_life_days
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__expected_life_days
 msgid "Expected Life (Days)"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__expected_life_meter
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__expected_life_meter
 msgid "Expected Life (Meter)"
 msgstr ""
 
@@ -432,7 +432,7 @@ msgid "Flagged Parts"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__flag_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__flag_ids
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
 msgid "Flags"
 msgstr ""
@@ -444,20 +444,20 @@ msgid "Flags cleared"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_follower_ids
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_follower_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_follower_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_follower_ids
 msgid "Followers"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_partner_ids
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_partner_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_partner_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_partner_ids
 msgid "Followers (Partners)"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__has_message
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__has_message
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__has_message
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__has_message
 msgid "Has Message"
 msgstr ""
 
@@ -467,42 +467,42 @@ msgid "History"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__warranty_meter
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__warranty_meter
 msgid ""
 "How far on the position's meter the installer's warranty covers this part."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind__id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind__id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__id
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__id
 msgid "ID"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_exception_icon
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_exception_icon
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_exception_icon
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_exception_icon
 msgid "Icon"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__activity_exception_icon
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__activity_exception_icon
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__activity_exception_icon
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__activity_exception_icon
 msgid "Icon to indicate an exception activity."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__message_needaction
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__message_needaction
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__message_needaction
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__message_needaction
 msgid "If checked, new messages require your attention."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__message_has_error
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__message_has_error
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__message_has_error
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__message_has_error
 msgid "If checked, some messages have a delivery error."
 msgstr ""
 
@@ -517,7 +517,7 @@ msgid "Installed"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__user_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__user_id
 msgid "Installed By"
 msgstr ""
 
@@ -527,13 +527,13 @@ msgid "Installed Now"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__date_installed
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__date_installed
 msgid "Installed On"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_is_follower
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_is_follower
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_is_follower
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_is_follower
 msgid "Is Follower"
 msgstr ""
 
@@ -543,28 +543,28 @@ msgstr ""
 #: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_equipment__kind_id
 #: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_furniture__kind_id
 #: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_it__kind_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__kind_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__kind_id
 #: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_machinery__kind_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__kind_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__kind_id
 #: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_property__kind_id
 #: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_telecom__kind_id
 msgid "Kind"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__write_uid
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__write_uid
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__write_uid
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__write_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__write_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__write_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__write_uid
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__write_uid
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__write_date
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__write_date
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__write_date
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__write_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__write_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__write_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__write_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__write_date
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__write_date
 msgid "Last Updated on"
 msgstr ""
@@ -601,7 +601,7 @@ msgid "Log"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__log_type
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__log_type
 msgid "Log Type"
 msgstr ""
 
@@ -626,34 +626,34 @@ msgid "Manual"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_has_error
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_has_error
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_has_error
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_has_error
 msgid "Message Delivery error"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_ids
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_ids
 msgid "Messages"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__meter_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__meter_id
 msgid "Meter"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__meter_kind
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__meter_kind
 msgid "Meter Kind"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__meter_installed
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__meter_installed
 msgid "Meter at Installation"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__meter_removed
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__meter_removed
 msgid "Meter at Removal"
 msgstr ""
 
@@ -671,13 +671,13 @@ msgid "Model"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__my_activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__my_activity_date_deadline
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__my_activity_date_deadline
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__my_activity_date_deadline
 msgid "My Activity Deadline"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__name
 msgid "Name"
 msgstr ""
 
@@ -699,20 +699,20 @@ msgid "New Part"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_date_deadline
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_date_deadline
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_summary
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_summary
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_summary
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_summary
 msgid "Next Activity Summary"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_type_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_type_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_type_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_type_id
 msgid "Next Activity Type"
 msgstr ""
 
@@ -722,40 +722,40 @@ msgid "Not Flagged"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__note
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__note
 #: model:ir.model.fields,field_description:resource_asset_product.field_wizard_resource_asset_part_clear_flag__note
 msgid "Note"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__notes
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__notes
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__notes
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__notes
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_form
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_form
 msgid "Notes"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_needaction_counter
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_needaction_counter
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_needaction_counter
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_needaction_counter
 msgid "Number of Actions"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__message_has_error_counter
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__message_has_error_counter
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__message_has_error_counter
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__message_has_error_counter
 msgid "Number of errors"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__message_needaction_counter
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__message_needaction_counter
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__message_needaction_counter
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__message_needaction_counter
 msgid "Number of messages requiring action"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__message_has_error_counter
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__message_has_error_counter
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__message_has_error_counter
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__message_has_error_counter
 msgid "Number of messages with delivery error"
 msgstr ""
 
@@ -776,17 +776,17 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__odometer_uom_name
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__odometer_uom_name
 msgid "Odometer Unit"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__odometer
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__odometer
 msgid "Odometer Value"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__odometer
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__odometer
 msgid "Odometer measure of the asset at the moment of this log"
 msgstr ""
 
@@ -827,18 +827,18 @@ msgid "Open"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__product_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__part_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__part_id
 msgid "Part"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__product_category_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__product_category_id
 msgid "Part Category"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind__position_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind__position_ids
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_kind_view_form_positions
 msgid "Part Positions"
 msgstr ""
@@ -865,19 +865,19 @@ msgid "Planned"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__website_message_ids
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__website_message_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__website_message_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__website_message_ids
 msgid "Portal Messages"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__website_message_ids
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__website_message_ids
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__website_message_ids
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__website_message_ids
 msgid "Portal communication history for this record."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__position_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__position_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
 msgid "Position"
 msgstr ""
@@ -890,12 +890,12 @@ msgid "Position History"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__product_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__product_id
 msgid "Product"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__product_category_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__product_category_id
 msgid "Product Category"
 msgstr ""
 
@@ -917,13 +917,13 @@ msgid "Raised On"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__rating_ids
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__rating_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__rating_ids
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__rating_ids
 msgid "Ratings"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__reason
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__reason
 msgid "Reason"
 msgstr ""
 
@@ -933,7 +933,7 @@ msgid "Removed"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__date_removed
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__date_removed
 msgid "Removed On"
 msgstr ""
 
@@ -944,12 +944,12 @@ msgid "Removed Part Not Returned"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__removed_returned
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__removed_returned
 msgid "Removed Part Returned"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__removed_serial
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__removed_serial
 msgid "Removed Serial"
 msgstr ""
 
@@ -959,7 +959,7 @@ msgid "Removed Serial Mismatch"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__previous_part_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__previous_part_id
 msgid "Replaced Part"
 msgstr ""
 
@@ -984,20 +984,20 @@ msgid "Resolved"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part_flag__state
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part_flag__state
 msgid ""
 "Resolved: the condition went away, such as the removed part arriving. "
 "Cleared: a manager accepted it."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__activity_user_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__activity_user_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__activity_user_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__activity_user_id
 msgid "Responsible User"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__review_state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__review_state
 msgid "Review State"
 msgstr ""
 
@@ -1012,12 +1012,12 @@ msgid "Same Position Twice in One Job"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_kind_position__sequence
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_kind_position__sequence
 msgid "Sequence"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__serial
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__serial
 msgid "Serial"
 msgstr ""
 
@@ -1035,22 +1035,22 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__source
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__source
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__source
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__source
 msgid "Source"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__state
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__state
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part_flag__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__state
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part_flag__state
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_log_view_search
 msgid "State"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__activity_state
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__activity_state
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__activity_state
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__activity_state
 msgid ""
 "Status based on activities\n"
 "Overdue: Due date is already passed\n"
@@ -1059,7 +1059,7 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__log_type
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__log_type
 msgid ""
 "Taken from the product's category when the log is written. Editing a "
 "category's own log type afterwards must not rewrite the meaning of logs "
@@ -1067,17 +1067,17 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_kind_position__meter_kind
+#: model:ir.model.fields,help:resource_asset_product.field_resource_kind_position__meter_kind
 msgid "The asset meter the expected life is measured on."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__previous_part_id
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__previous_part_id
 msgid "The installation this one replaced at the same position."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__meter_id
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__meter_id
 msgid ""
 "The meter the position's expected life is read on, when it had a reading at "
 "installation."
@@ -1105,17 +1105,17 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__serial
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__serial
 msgid "The serial number of the part that went in."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__removed_serial
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__removed_serial
 msgid "The serial number read off the part that came out."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__vendor_id
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__vendor_id
 msgid "The supplier who installed the part, when it was not done in house."
 msgstr ""
 
@@ -1132,30 +1132,30 @@ msgid "Type"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__activity_exception_decoration
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__activity_exception_decoration
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__activity_exception_decoration
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__activity_exception_decoration
 msgid "Type of the exception activity on record."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__vendor_id
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__vendor_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__vendor_id
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__vendor_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_product.resource_asset_part_view_search
 msgid "Vendor"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_log__inv_ref
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_log__inv_ref
 msgid "Vendor Reference"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__warranty_meter
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__warranty_meter
 msgid "Warranty Distance"
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,field_description:resource_asset_product.field_resource_asset_part__warranty_date
+#: model:ir.model.fields,field_description:resource_asset_product.field_resource_part__warranty_date
 msgid "Warranty Until"
 msgstr ""
 
@@ -1165,12 +1165,12 @@ msgid "What an asset log booked on a product of this category records."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_part__source
+#: model:ir.model.fields,help:resource_asset_product.field_resource_part__source
 msgid "Which document installed this part."
 msgstr ""
 
 #. module: resource_asset_product
-#: model:ir.model.fields,help:resource_asset_product.field_resource_asset_log__source
+#: model:ir.model.fields,help:resource_asset_product.field_resource_log__source
 msgid ""
 "Which producer wrote this row. Every asset cost and every odometer reading "
 "in the system is a log line, so the ledger has one provenance axis. Each "

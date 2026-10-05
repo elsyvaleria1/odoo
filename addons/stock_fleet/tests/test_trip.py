@@ -235,9 +235,7 @@ class TestTrip(TransactionCase):
         trip.odometer_return = 1250.0
         trip.action_return()
         self.assertEqual(trip.trip_state, "closed")
-        log = self.env["resource.asset.log"].search(
-            [("picking_batch_id", "=", trip.id)]
-        )
+        log = self.env["resource.log"].search([("picking_batch_id", "=", trip.id)])
         self.assertEqual(log.odometer, 1250.0)
         self.assertEqual(log.source, "delivery")
         with self.assertRaises(UserError):
@@ -512,9 +510,7 @@ class TestTrip(TransactionCase):
         driver_trip.action_return()
         self.assertEqual(trip.trip_state, "closed")
         log = (
-            self.env["resource.asset.log"]
-            .sudo()
-            .search([("picking_batch_id", "=", trip.id)])
+            self.env["resource.log"].sudo().search([("picking_batch_id", "=", trip.id)])
         )
         self.assertEqual(log.odometer, 1180.0)
 

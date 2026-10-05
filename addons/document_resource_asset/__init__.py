@@ -29,7 +29,7 @@ def _document_resource_asset_post_init(env) -> None:
          WHERE documents_fleet_folder IS NOT NULL
         """
     )
-    settings = env["resource.asset.kind.document"].sudo()
+    settings = env["resource.kind.document"].sudo()
     taken = {
         (setting.kind_id.id, setting.company_id.id)
         for setting in settings.search([("kind_id", "=", vehicle.id)])

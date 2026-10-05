@@ -7,12 +7,12 @@ FOLDER_DOMAIN = (
 
 
 class ResourceAssetKindDocument(models.Model):
-    _name = "resource.asset.kind.document"
+    _name = "resource.kind.document"
     _description = "Asset Kind Documents"
     _rec_name = "kind_id"
 
     kind_id = fields.Many2one(
-        comodel_name="resource.asset.kind",
+        comodel_name="resource.kind",
         index=True,
         required=True,
         ondelete="cascade",

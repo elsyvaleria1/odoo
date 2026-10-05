@@ -15,7 +15,7 @@ class TestProductAssetLog(TransactionCase):
         super().setUpClass()
         has_publish_date = ensure_publish_date_field(cls.env)
 
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
         cls.ProductTrace = cls.env["product.trace"]
         cls.ProductTemplate = cls.env["product.template"]
         cls.ProductProduct = cls.env["product.product"]
@@ -135,9 +135,7 @@ class TestProductAssetLog(TransactionCase):
             }
         )
 
-        self.assertEqual(
-            log.date, fields.Date.context_today(self.env["resource.asset.log"])
-        )
+        self.assertEqual(log.date, fields.Date.context_today(self.env["resource.log"]))
 
     def test_default_date_start(self):
         log = self.ProductAssetLog.create(
@@ -149,7 +147,7 @@ class TestProductAssetLog(TransactionCase):
 
         self.assertEqual(
             log.date_start,
-            fields.Date.context_today(self.env["resource.asset.log"]),
+            fields.Date.context_today(self.env["resource.log"]),
         )
 
     def test_compute_days_left_future(self):

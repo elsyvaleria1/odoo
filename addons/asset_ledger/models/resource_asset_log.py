@@ -3,7 +3,7 @@ from odoo.exceptions import ValidationError
 
 
 class ResourceAssetLog(models.Model):
-    _inherit = "resource.asset.log"
+    _inherit = "resource.log"
 
     trace_id = fields.Many2one(  # noqa: E8529  One2many inverse of stock.lot.log_ids
         comodel_name="product.trace",

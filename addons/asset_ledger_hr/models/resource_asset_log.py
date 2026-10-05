@@ -11,7 +11,7 @@ EMPLOYEE_FIELD_BY_LOG_FIELD = {
 
 
 class ProductAssetLog(models.Model):
-    _inherit = "resource.asset.log"
+    _inherit = "resource.log"
 
     source = fields.Selection(
         selection_add=[("assignment", "Operator Assignment")],

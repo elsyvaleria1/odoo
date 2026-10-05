@@ -21,7 +21,7 @@ class TestSecurityHR(TransactionCase):
         super().setUpClass()
         ensure_publish_date_field(cls.env)
         cls.ProductTrace = cls.env["product.trace"]
-        cls.ProductAssetLog = cls.env["resource.asset.log"]
+        cls.ProductAssetLog = cls.env["resource.log"]
 
         cls.vehicle = cls.ProductTrace.create(
             {

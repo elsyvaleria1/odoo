@@ -32,7 +32,7 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_log__account_move_line_id
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_log__account_move_line_id
 msgid "Accounting Entry"
 msgstr ""
 
@@ -82,12 +82,12 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_part__account_move_line_id
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_part__account_move_line_id
 msgid "Bill Line"
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.fields,field_description:resource_asset_account.field_resource_asset_log__account_move_state
+#: model:ir.model.fields,field_description:resource_asset_account.field_resource_log__account_move_state
 msgid "Bill State"
 msgstr ""
 
@@ -126,7 +126,7 @@ msgid "Create Automatic Entries"
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_log__account_move_state
+#: model:ir.model.fields,help:resource_asset_account.field_resource_log__account_move_state
 msgid "Current state of the related vendor bill (draft, posted, cancelled)"
 msgstr ""
 
@@ -165,7 +165,7 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_log__account_move_line_id
+#: model:ir.model.fields,help:resource_asset_account.field_resource_log__account_move_line_id
 msgid ""
 "Link to the vendor bill line that created this log entry. When set, the "
 "amount and asset are synchronized from the bill"
@@ -191,7 +191,7 @@ msgid "Number of vendor bills referencing this asset"
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.constraint,message:resource_asset_account.constraint_resource_asset_log_account_move_line_id_uniq
+#: model:ir.model.constraint,message:resource_asset_account.constraint_resource_log_account_move_line_id_uniq
 msgid "Only one asset log can be linked to a given accounting line."
 msgstr ""
 
@@ -224,7 +224,7 @@ msgid "The installed parts this bill line charges."
 msgstr ""
 
 #. module: resource_asset_account
-#: model:ir.model.fields,help:resource_asset_account.field_resource_asset_part__account_move_line_id
+#: model:ir.model.fields,help:resource_asset_account.field_resource_part__account_move_line_id
 msgid ""
 "The vendor bill line that charges this part. A flagged part holds its bill."
 msgstr ""

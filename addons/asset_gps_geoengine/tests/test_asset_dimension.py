@@ -16,7 +16,7 @@ class TestGeoengineKnowsNothingOfAssets(common.TransactionCase):
             source = path.read_text()
             named = [
                 model
-                for model in ("product.trace", "hr.employee", "resource.asset.log")
+                for model in ("product.trace", "hr.employee", "resource.log")
                 if model in source
             ]
             if named:
