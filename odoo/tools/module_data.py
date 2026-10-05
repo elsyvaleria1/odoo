@@ -656,8 +656,8 @@ def rekey_records(
         if not column_exists(cr, referencing, id_column):
             continue
         if "->" in model_column:
-            link, target = model_column.split("->")
-            target_table, target_column = target.split(".")
+            link, link_target = model_column.split("->")
+            target_table, target_column = link_target.split(".")
             if not column_exists(cr, referencing, link) or not column_exists(
                 cr, target_table, target_column
             ):
@@ -849,12 +849,13 @@ def lift_columns(
                 " WHERE attrelid = %s::regclass AND attname = %s",
                 [source, column],
             )
+            [[column_type]] = cr.fetchall()
             cr.execute(
                 SQL(
                     "ALTER TABLE %s ADD COLUMN %s %s",
                     SQL.identifier(target),
                     name,
-                    SQL(cr.fetchone()[0]),
+                    SQL(column_type),
                 )
             )
         kept = column in keep_target
@@ -879,7 +880,8 @@ def lift_columns(
                 else SQL("t.%s IS NOT DISTINCT FROM s.%s", name, name),
             )
         )
-        if missed := cr.fetchone()[0]:
+        [[missed]] = cr.fetchall()
+        if missed:
             raise ValueError(
                 f"lift_columns: {missed} row(s) of {source}.{column} have no "
                 f"{target} row to receive their value; nothing was dropped"
