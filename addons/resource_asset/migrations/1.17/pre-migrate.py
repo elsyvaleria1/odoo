@@ -1,4 +1,4 @@
-from odoo.db.schema import table_exists
+from odoo.db.schema import column_exists, table_exists
 from odoo.tools import module_data
 
 SUBTYPES = ("mt_asset_operator_updated", "mt_asset_future_operator_scheduled")
@@ -36,6 +36,16 @@ def migrate(cr, version):
     )
     cr.execute("SELECT old_id, new_id FROM resource_asset_rekey_1_17")
     module_data.rekey_records(cr, models, "resource_asset", dict(cr.fetchall()))
+    # mrp_maintenance 1.8 reads the equipment table no model declares any
+    # more, by asset id
+    if column_exists(cr, "maintenance_equipment", "asset_id"):
+        cr.execute(
+            """
+            UPDATE maintenance_equipment equipment SET asset_id = move.new_id
+              FROM resource_asset_rekey_1_17 move
+             WHERE equipment.asset_id = move.old_id
+            """
+        )
     module_data.rehome_references(cr, models, "resource.resource")
     cr.execute(
         """
