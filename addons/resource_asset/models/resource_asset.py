@@ -6,7 +6,6 @@ from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, Query
-from odoo.tools.translate import html_translate
 
 from odoo.addons.resource.fields import ResourceIdentifier
 from odoo.addons.resource.models.utils import (
@@ -19,6 +18,8 @@ _debug = DebugLog(__name__)
 CUSTODY_SILENT = "custody_silent"
 
 SKIP_IDENTITY_CHECK = "skip_asset_identity_check"
+# an asset is acquired before it is available, unlike a resource of its own
+ASSET_INITIAL_STATE = "draft"
 
 
 class ResourceAsset(models.Model):
@@ -61,10 +62,6 @@ class ResourceAsset(models.Model):
         store=True,
         readonly=False,
     )
-    color = fields.Integer(
-        related="resource_id.color",
-        readonly=False,
-    )
     kind_id = fields.Many2one(
         comodel_name="resource.asset.kind",
         index=True,
@@ -72,82 +69,17 @@ class ResourceAsset(models.Model):
         ondelete="restrict",
     )
     kind_code = fields.Char(related="kind_id.code")
-    state = fields.Selection(
-        related="resource_id.state",
-        default="draft",
-        readonly=False,
-        tracking=True,
-    )
-    state_before_maintenance = fields.Selection(
-        related="resource_id.state_before_maintenance",
-    )
-    date_acquisition = fields.Date(
-        related="resource_id.date_acquisition",
-        readonly=False,
-        tracking=True,
-    )
-    date_disposal = fields.Date(
-        related="resource_id.date_disposal",
-        readonly=False,
-        tracking=True,
-    )
-    brand_new = fields.Boolean(default=True)
-    model = fields.Char(string="Model Name")
-    model_year = fields.Integer(
-        help="The commercial model year, which may differ from the year it was built.",
-    )
-    date_origin = fields.Date(
-        related="resource_id.date_origin",
-        string="Date Built",
-        readonly=False,
-    )
-    year_origin = fields.Integer(
-        related="resource_id.year_origin",
-        string="Year Built",
-    )
-    origin_country_id = fields.Many2one(
-        related="resource_id.origin_country_id",
-        string="Country of Production",
-        readonly=False,
-    )
-    place_origin = fields.Char(
-        related="resource_id.place_origin",
-        string="Place of Production",
-        readonly=False,
-    )
-    nationality_ids = fields.One2many(
-        related="resource_id.nationality_ids",
-        readonly=False,
-    )
-    description = fields.Html(translate=html_translate)
-    vendor_id = fields.Many2one(
-        comodel_name="res.partner",
-        index="btree_not_null",
-        check_company=True,
-        tracking=True,
-    )
-    vendor_ref = fields.Char(string="Vendor Reference")
-    warranty_date = fields.Date(string="Warranty Expiration Date")
     # a new asset has no resource yet to read it from
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         compute="_compute_currency_id",
         value_sql="_value_sql_currency_id",
     )
-    value_original = fields.Monetary(
-        related="resource_id.value_original",
-        readonly=False,
-        tracking=True,
-    )
     asset_properties = fields.Properties(
         definition="kind_id.asset_properties_definition",
         copy=True,
     )
 
-    identifier_ids = fields.One2many(
-        related="resource_id.identifier_ids",
-        readonly=False,
-    )
     # Accessors on the root: read and searched through the identifier rows,
     # stored as columns only by the kinds that carry them.
     license_plate = ResourceIdentifier(
@@ -175,10 +107,6 @@ class ResourceAsset(models.Model):
         compute="_compute_missing_identifier_type_ids",
         search="_search_missing_identifier_type_ids",
     )
-    meter_ids = fields.One2many(
-        related="resource_id.meter_ids",
-        readonly=False,
-    )
     odometer_meter_id = fields.Many2one(
         comodel_name="resource.meter",
         compute="_compute_odometer_meter_id",
@@ -198,32 +126,6 @@ class ResourceAsset(models.Model):
     odometer_uom_name = fields.Char(
         related="odometer_uom_id.display_name",
         string="Odometer Unit",
-    )
-    address_id = fields.Many2one(
-        comodel_name="res.partner",
-        string="Location",
-        help="Where the asset normally is, when no inventory location tracks it.",
-    )
-    assignment_ids = fields.One2many(related="resource_id.assignment_ids")
-    holder_id = fields.Many2one(related="resource_id.holder_id")
-    operator_id = fields.Many2one(
-        related="resource_id.operator_id",
-        readonly=False,
-        check_company=True,
-    )
-    manager_id = fields.Many2one(
-        related="resource_id.manager_id",
-        readonly=False,
-        check_company=True,
-    )
-    future_operator_id = fields.Many2one(
-        related="resource_id.future_operator_id",
-        readonly=False,
-        check_company=True,
-    )
-    date_future_operator = fields.Datetime(
-        related="resource_id.date_future_operator",
-        readonly=False,
     )
     operator_history_count = fields.Integer(compute="_compute_operator_history_count")
     parent_id = fields.Many2one(
@@ -578,8 +480,26 @@ class ResourceAsset(models.Model):
         # What the asset relays to its resource is born with the resource:
         # popped here, it never reaches a related inverse run as the user.
         resource_vals.update(self._pop_resource_vals(vals))
-        resource_vals.setdefault("state", self._fields["state"].default(self))
+        resource_vals.setdefault("state", ASSET_INITIAL_STATE)
         return resource_vals
+
+    @api.model
+    def default_get(self, fields):
+        defaults = super().default_get(fields)
+        # the resource's own defaults are the resource's to apply when it is
+        # created, not values to hand down a delegation (a board on an asset)
+        for name in fields:
+            field = self._fields.get(name)
+            if (
+                field
+                and field.inherited
+                and field.related_field.model_name == "resource.resource"
+                and f"default_{name}" not in self.env.context
+            ):
+                defaults.pop(name, None)
+        if "state" in fields and "default_state" not in self.env.context:
+            defaults["state"] = ASSET_INITIAL_STATE
+        return defaults
 
     @api.model_create_multi
     def create(self, vals_list):

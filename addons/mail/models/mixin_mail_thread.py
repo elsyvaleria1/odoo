@@ -973,10 +973,19 @@ class MixinMailThread(models.AbstractModel):
 
     @ormcache()
     def _track_get_declared_fields(self) -> frozenset[str]:
+        # a record sharing its parent's id shares its parent's thread, where the
+        # parent tracks its own fields: tracked here too, a change would be
+        # recorded twice
+        shared = self._get_inherits_shared_parent()
+        if shared and not isinstance(self.env[shared], self.pool["mixin.mail.thread"]):
+            shared = ""
         model_fields = {
             name
             for name, field in self._fields.items()
             if getattr(field, "tracking", None)
+            and not (
+                shared and field.inherited and field.related_field.model_name == shared
+            )
         }
         model_fields |= {
             fname

@@ -1,6 +1,6 @@
 {
     "name": "Physical Assets",
-    "version": "1.17",
+    "version": "1.18",
     "oldest_upgradable_version": "1.10",
     "category": "Hidden",
     "summary": "Track physical asset identity, custody, meters and lifecycle",
@@ -8,8 +8,7 @@
     "author": "AgroMarin",
     "license": "LGPL-3",
     "depends": [
-        "resource",
-        "mail",
+        "resource_mail",
         "uom",
     ],
     "data": [

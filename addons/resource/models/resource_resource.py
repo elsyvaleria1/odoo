@@ -231,6 +231,7 @@ class ResourceResource(models.Model):
         default="available",
         index=True,
         required=True,
+        tracking=True,
         help="Where the resource is in its life: draft, available (ready, idle), in service, under maintenance, out of service or disposed.",
     )
     state_before_maintenance = fields.Selection(
@@ -240,9 +241,11 @@ class ResourceResource(models.Model):
         help="The state the resource returns to when its maintenance ends.",
     )
     date_acquisition = fields.Date(
+        tracking=True,
         help="When the resource was acquired.",
     )
     date_disposal = fields.Date(
+        tracking=True,
         help="When the resource was disposed of.",
     )
     currency_id = fields.Many2one(
@@ -253,6 +256,7 @@ class ResourceResource(models.Model):
     value_original = fields.Monetary(
         string="Original Value",
         copy=False,
+        tracking=True,
     )
 
     date_built = fields.Date(

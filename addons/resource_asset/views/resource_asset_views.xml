@@ -113,9 +113,11 @@
                             <field name="parent_id" />
                             <field name="model" />
                             <field name="model_year" options="{'format': false}" />
-                            <field name="date_origin" />
-                            <field name="origin_country_id" />
-                            <field name="place_origin" />
+                            <field name="date_origin" string="Date Built" />
+                            <field
+                                name="origin_country_id"
+                                string="Country of Production" />
+                            <field name="place_origin" string="Place of Production" />
                             <field name="brand_new" />
                         </group>
                         <group name="where">

@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import fields, models
 
 from odoo.addons.resource.fields import ResourceIdentifier
 
@@ -45,12 +45,6 @@ class ResourceAssetVehicle(models.Model):
         string="Tags",
         copy=False,
     )
-    model_year = fields.Integer(
-        compute="_compute_model_year",
-        precompute=True,
-        store=True,
-        readonly=False,
-    )
     manufacturer_id = fields.Many2one(
         related="product_id.manufacturer_id",
         string="Manufacturer",
@@ -73,12 +67,6 @@ class ResourceAssetVehicle(models.Model):
     )
     range_unit = fields.Selection(related="product_id.range_unit")
     service_count = fields.Integer(compute="_compute_service_count")
-
-    @api.depends("product_id")
-    def _compute_model_year(self) -> None:
-        for asset in self:
-            if not asset.model_year and asset.product_id.vehicle_model_year:
-                asset.model_year = int(asset.product_id.vehicle_model_year)
 
     def _compute_service_count(self) -> None:
         counts = self._get_log_counts_by_type()

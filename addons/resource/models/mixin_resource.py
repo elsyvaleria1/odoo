@@ -70,13 +70,14 @@ class MixinResource(models.AbstractModel):
         Resource = self._get_resource_model_as_system()
         resources_vals_list = []
         for vals in vals_list:
-            delegated = self._pop_delegated_resource_vals(vals)
             if not vals.get("resource_id"):
-                resources_vals_list.append(
-                    delegated
-                    | self._prepare_resource_values(vals, vals.pop("tz", False))
-                )
-            elif delegated:
+                prepared = self._prepare_resource_values(vals, vals.pop("tz", False))
+                # what the host decides wins over the rest of what it is handed,
+                # and a host's resource is always of the host's type
+                resource_vals = self._pop_delegated_resource_vals(vals) | prepared
+                resource_vals["type"] = self._resource_type
+                resources_vals_list.append(resource_vals)
+            elif delegated := self._pop_delegated_resource_vals(vals):
                 vals.update(delegated)
         if resources_vals_list:
             resources = Resource.create(resources_vals_list)
@@ -157,10 +158,9 @@ class MixinResource(models.AbstractModel):
     def _pop_delegated_resource_vals(self, vals: ValuesType) -> ValuesType:
         """The resource fields a host that delegates to its resource is given.
 
-        A record created through one of its own delegating children (a board
-        on an asset) carries the resource's defaults down the chain; the
-        resource it is born with takes them, under the host's own values, and
-        never a type other than the host's.
+        A host that delegates to its resource is handed the resource's fields
+        by name; the resource it is born with takes those the host does not
+        decide itself, and never a type other than the host's.
         """
         if self._inherits.get("resource.resource") != "resource_id":
             return {}

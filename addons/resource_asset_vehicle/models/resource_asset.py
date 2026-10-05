@@ -39,3 +39,33 @@ class ResourceAsset(models.Model):
         if model and name.startswith(f"{model} "):
             name = name[len(model) + 1 :]
         return name or self.env._("No Plate")
+
+    # the model year is the resource's; a vehicle's product fills it when the
+    # asset has none of its own
+    @api.onchange("product_id")
+    def _onchange_product_id_model_year(self) -> None:
+        if not self.model_year and self.product_id.vehicle_model_year:
+            self.model_year = int(self.product_id.vehicle_model_year)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        products = self.env["product.product"].browse(
+            [vals["product_id"] for vals in vals_list if vals.get("product_id")]
+        )
+        years = {
+            product.id: int(product.vehicle_model_year)
+            for product in products
+            if product.vehicle_model_year
+        }
+        for vals in vals_list:
+            if not vals.get("model_year") and vals.get("product_id") in years:
+                vals["model_year"] = years[vals["product_id"]]
+        return super().create(vals_list)
+
+    def _write_concrete(self, vals):
+        res = super()._write_concrete(vals)
+        if "product_id" in vals and "model_year" not in vals:
+            for asset in self:
+                if not asset.model_year and asset.product_id.vehicle_model_year:
+                    asset.model_year = int(asset.product_id.vehicle_model_year)
+        return res
