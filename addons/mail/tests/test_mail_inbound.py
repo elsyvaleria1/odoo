@@ -156,9 +156,14 @@ class TestMailInbound(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # a key already set has sealed this database's secrets: replacing it
+        # would leave them unreadable
         patcher = patch.dict(
             os.environ,
-            {"ODOO_API_ENCRYPTION_KEY": Fernet.generate_key().decode()},
+            {
+                "ODOO_API_ENCRYPTION_KEY": os.environ.get("ODOO_API_ENCRYPTION_KEY")
+                or Fernet.generate_key().decode()
+            },
             clear=False,
         )
         cls.startClassPatcher(patcher)
