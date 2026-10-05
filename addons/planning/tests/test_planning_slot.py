@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from odoo.libs.datetime import timezone
 from odoo.libs.intervals import Intervals
-from odoo.tests import new_test_user
+from odoo.tests import TransactionCase, new_test_user
 
 from .common import TestPlanningContractCommon
 
@@ -348,3 +348,65 @@ class TestPlanningContract(TestPlanningContractCommon):
             8,
             "The allocated hours should be computed without any issue",
         )
+
+
+class TestFlexibleSlotsShareTheWeek(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        calendar = cls.env["resource.calendar"].create(
+            {
+                "name": "Flexible 40h",
+                "schedule_type": "flexible",
+                "hours_per_week": 40,
+                "hours_per_day": 8,
+                "tz": "UTC",
+            }
+        )
+        cls.resource = cls.env["resource.resource"].create(
+            {
+                "name": "Flexy",
+                "type": "material",
+                "calendar_id": calendar.id,
+                "tz": "UTC",
+            }
+        )
+        cls.monday = datetime(2026, 6, 1)
+        cls.wednesday = datetime(2026, 6, 3)
+
+    def _slot(self, start, stop):
+        return self.env["planning.slot"].create(
+            {
+                "resource_id": self.resource.id,
+                "start_datetime": start,
+                "end_datetime": stop,
+            }
+        )
+
+    def _hours(self, *slots):
+        self.env.flush_all()
+        return [
+            (slot.allocated_hours, sum(slot.reservation_ids.mapped("allocated_hours")))
+            for slot in slots
+        ]
+
+    def test_a_slot_holds_what_its_reservation_holds(self):
+        first = self._slot(self.monday, self.wednesday)
+        later = self._slot(self.wednesday, self.wednesday + timedelta(days=7))
+        self.assertEqual(self._hours(first, later), [(16.0, 16.0), (40.0, 40.0)])
+
+    def test_an_earlier_slot_gives_its_hours_back(self):
+        first = self._slot(self.monday, self.wednesday)
+        later = self._slot(self.wednesday, self.wednesday + timedelta(days=7))
+        first.end_datetime = self.monday + timedelta(days=1)
+        self.assertEqual(self._hours(later), [(48.0, 48.0)])
+        first.unlink()
+        self.assertEqual(self._hours(later), [(56.0, 56.0)])
+
+    def test_typed_hours_are_a_share_of_what_the_slot_can_hold(self):
+        self._slot(self.monday, self.wednesday)
+        later = self._slot(self.wednesday, self.wednesday + timedelta(days=7))
+        later.allocated_hours = 20.0
+        self.assertEqual(self._hours(later), [(20.0, 20.0)])
+        # alone the slot holds 56 h, and 20 h of it fits in what is left
+        self.assertAlmostEqual(later.allocated_percentage, 100 * 20 / 56, places=4)

@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from odoo.fields import Domain
 from odoo.libs.datetime import elapsed_hours
@@ -127,6 +127,16 @@ def find_available_interval(
         if not forward and earliest is not None and start_window <= earliest:
             break
     return None
+
+
+class FirstServedClaim(NamedTuple):
+    key: Any
+    resource: Any
+    start: datetime
+    stop: datetime
+    percentage: float
+    order_id: int | None
+    consumes: bool
 
 
 def changed_vals(record, vals: dict[str, Any]) -> dict[str, Any]:

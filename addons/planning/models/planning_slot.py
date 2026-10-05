@@ -34,7 +34,11 @@ from odoo.addons.base.models.mixin_recurrence_rule import (
     REPEAT_TYPE_SELECTION,
     REPEAT_UNIT_SELECTION,
 )
-from odoo.addons.resource.models.utils import last_day_of, peak_capacity
+from odoo.addons.resource.models.utils import (
+    FirstServedClaim,
+    last_day_of,
+    peak_capacity,
+)
 
 if TYPE_CHECKING:
     from vobject.base import Component
@@ -507,6 +511,10 @@ class PlanningSlot(models.Model):
         schedule = slots.resource_id._get_work_schedule(
             start_utc, end_utc, calendars=slots.company_id.resource_calendar_id
         )
+        budgeted = slots._filter_first_served()
+        for slot, percentage in budgeted._get_first_served_percentages().items():
+            slot.allocated_percentage = percentage
+        slots -= budgeted
 
         for slot in slots:
             if not slot.resource_id and slot.allocation_type == "planning":
@@ -558,6 +566,10 @@ class PlanningSlot(models.Model):
             for slot in unplanned_assigned_slots:
                 slot.allocated_hours = 0.0
             planned_assigned_slots = assigned_slots - unplanned_assigned_slots
+            budgeted = planned_assigned_slots._filter_first_served()
+            for slot, hours in budgeted._get_first_served_hours().items():
+                slot.allocated_hours = hours
+            planned_assigned_slots -= budgeted
             if not planned_assigned_slots:
                 return
             # if there are at least one slot having start or end date, call the _get_valid_work_intervals
@@ -690,6 +702,61 @@ class PlanningSlot(models.Model):
 
     def _get_fields_reservation_date(self) -> tuple:
         return ("start_datetime", "end_datetime")
+
+    def _filter_first_served(self):
+        # a flexible person's week is shared by their slots in date order,
+        # read as their reservations read it; a printed day of a slot takes
+        # its hours from the slot instead
+        if self.env.context.get("planning_print_pill"):
+            return self.browse()
+        return self.filtered(
+            lambda slot: (
+                slot.resource_id
+                and slot.start_datetime
+                and slot.end_datetime
+                and slot.start_datetime < slot.end_datetime
+                and slot.resource_id._is_flexible()
+                and not slot.resource_id._is_fully_flexible()
+            )
+        )
+
+    def _recompute_first_served_hours(self) -> None:
+        self.env.add_to_compute(
+            self._fields["allocated_hours"], self._filter_first_served()
+        )
+
+    def _get_first_served_claims(self) -> list:
+        return [
+            FirstServedClaim(
+                key=slot,
+                resource=slot.resource_id,
+                start=slot.start_datetime,
+                stop=slot.end_datetime,
+                percentage=slot.allocated_percentage,
+                order_id=slot._origin.reservation_ids[:1].id or None,
+                consumes=True,
+            )
+            for slot in self
+        ]
+
+    def _get_first_served_hours(self) -> dict:
+        return self.env["resource.reservation"]._get_first_served_hours_of(
+            self._get_first_served_claims(),
+            ignore_ids=self._origin.reservation_ids.ids,
+        )
+
+    def _get_first_served_days(self) -> dict:
+        return self.env["resource.reservation"]._get_first_served_days_of(
+            self._get_first_served_claims(),
+            ignore_ids=self._origin.reservation_ids.ids,
+        )
+
+    def _get_first_served_percentages(self) -> dict:
+        return self.env["resource.reservation"]._get_first_served_percentages_of(
+            self._get_first_served_claims(),
+            {slot: slot.allocated_hours for slot in self},
+            ignore_ids=self._origin.reservation_ids.ids,
+        )
 
     def _prepare_reservation_vals_list(self):
         self.check_singleton()
@@ -2440,12 +2507,19 @@ class PlanningSlot(models.Model):
             return record
 
         def print_planning_create_fake_pill(shift, vals=None):
-            record = self.env["planning.slot"].new(
-                {
-                    **shift._read_format(shift._print_planning_get_fields_to_copy())[0],
-                    **(vals or {}),
-                }
+            record = (
+                self.env["planning.slot"]
+                .with_context(planning_print_pill=True)
+                .new(
+                    {
+                        **shift._read_format(
+                            shift._print_planning_get_fields_to_copy()
+                        )[0],
+                        **(vals or {}),
+                    }
+                )
             )
+            source_of[record] = source_of.get(shift, shift)
             # copy method called inside the original split_pill method recomputes the allocated_hours again after the split (dates changed)
             record._compute_allocated_hours()
             return record
@@ -2477,6 +2551,20 @@ class PlanningSlot(models.Model):
         def print_planning_add_slot(
             shift, tz_info, group_by_slots_per_day_per_week, group, weeks, group_by
         ):
+            if (days := days_by_slot.get(source_of.get(shift))) is not None:
+                shift_tz = timezone(shift.resource_id.tz)
+                first = shift.start_datetime.replace(tzinfo=UTC).astimezone(shift_tz)
+                last = last_day_of(
+                    first, shift.end_datetime.replace(tzinfo=UTC).astimezone(shift_tz)
+                )
+                shift.allocated_hours = round(
+                    sum(
+                        hours
+                        for day, hours in days.items()
+                        if first.date() <= day <= last
+                    ),
+                    2,
+                )
             if float_is_zero(shift.allocated_hours, precision_digits=2):
                 return
 
@@ -2579,6 +2667,13 @@ class PlanningSlot(models.Model):
 
         non_flexible_resources = self.env["resource.resource"].browse(
             non_flexible_resources_ids
+        )
+        source_of = {}
+        days_by_slot = (
+            self.env["planning.slot"]
+            .union(*(slots for _group, slots in group_by_slots))
+            ._filter_first_served()
+            ._get_first_served_days()
         )
         flexible_resources = self.env["resource.resource"].browse(
             flexible_resources_ids

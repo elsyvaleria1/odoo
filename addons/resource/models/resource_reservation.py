@@ -12,7 +12,7 @@ from odoo.libs.intervals import Intervals
 from odoo.tools import SQL
 from odoo.tools.date_utils import get_intervals_hours, localized
 
-from .utils import hours_by_day, peak_capacities
+from .utils import FirstServedClaim, hours_by_day, peak_capacities
 
 _logger = logging.getLogger(__name__)
 
@@ -33,6 +33,28 @@ COMPARATORS = {
     ">": operator_module.gt,
     ">=": operator_module.ge,
 }
+
+
+def _solve_percentage(hours_at, wanted: float) -> float:
+    # hours_at only grows with the percentage, and stops growing once the
+    # schedule has nothing left: past that, the share stays linear
+    if wanted <= 0:
+        return 0.0
+    full = hours_at(100.0)
+    if not full:
+        return 100.0
+    low, high = 0.0, 100.0
+    while hours_at(high) < wanted:
+        if high >= 100.0 * 2**10 or hours_at(high * 2) <= hours_at(high):
+            return 100.0 * wanted / full
+        low, high = high, high * 2
+    for _step in range(50):
+        middle = (low + high) / 2
+        if hours_at(middle) < wanted:
+            low = middle
+        else:
+            high = middle
+    return high
 
 
 class ResourceReservation(models.Model):
@@ -272,8 +294,7 @@ class ResourceReservation(models.Model):
         self.resource_id._lock_for_integrity()
         neighbours = self._get_domain_first_served_neighbours()
         result = super().unlink()
-        if not neighbours.is_false():
-            self._recompute_allocated_hours(neighbours)
+        self.browse()._recompute_first_served_neighbours(neighbours)
         self.invalidate_model(
             ["peak_booking_percentage", "booking_state", "schedule_overlap_count"]
         )
@@ -463,76 +484,146 @@ class ResourceReservation(models.Model):
                 )
 
     def _get_first_served_hours(self) -> dict:
-        if not self:
-            return {}
-        resources = self.resource_id
+        return self._get_first_served_hours_of(
+            [
+                FirstServedClaim(
+                    key=record,
+                    resource=record.resource_id,
+                    start=record.date_start,
+                    stop=record.date_end,
+                    percentage=record.allocated_percentage,
+                    order_id=record._origin.id or None,
+                    consumes=record.active,
+                )
+                for record in self
+            ],
+            ignore_ids=[record._origin.id for record in self if record._origin.id],
+        )
+
+    @api.model
+    def _get_first_served_hours_of(self, claims, ignore_ids=()) -> dict:
+        return self._walk_first_served(claims, ignore_ids)[0]
+
+    @api.model
+    def _get_first_served_percentages_of(self, claims, hours, ignore_ids=()) -> dict:
+        return self._walk_first_served(claims, ignore_ids, hours)[1]
+
+    @api.model
+    def _get_first_served_days_of(self, claims, ignore_ids=()) -> dict:
+        return self._walk_first_served(claims, ignore_ids)[2]
+
+    @api.model
+    def _walk_first_served(self, claims, ignore_ids=(), wanted=None) -> tuple:
+        wanted = wanted or {}
+        if not claims:
+            return {}, {}, {}
+        resources = self.env["resource.resource"].union(
+            *(claim.resource for claim in claims)
+        )
         start, stop = resources._get_flexible_week_bounds(
-            localized(min(self.mapped("date_start"))),
-            localized(max(self.mapped("date_end"))),
+            localized(min(claim.start for claim in claims)),
+            localized(max(claim.stop for claim in claims)),
         )
         schedule = resources._get_work_schedule(start, stop)
         others = self._get_occupancy(
-            resources,
-            start,
-            stop,
-            [("id", "not in", [r._origin.id for r in self if r._origin.id])],
+            resources, start, stop, [("id", "not in", list(ignore_ids))]
         )
-        claims = defaultdict(list)
+        queue = defaultdict(list)
         for other in others:
-            claims[other.resource_id.id].append(
-                (other.date_start, other.id, 0, other, True, False)
-            )
-        for sequence, record in enumerate(self, start=1):
-            claims[record.resource_id.id].append(
+            queue[other.resource_id.id].append(
                 (
-                    record.date_start,
-                    record._origin.id or float("inf"),
-                    sequence,
-                    record,
-                    record.active,
-                    True,
+                    other.date_start,
+                    other.id,
+                    0,
+                    FirstServedClaim(
+                        key=None,
+                        resource=other.resource_id,
+                        start=other.date_start,
+                        stop=other.date_end,
+                        percentage=other.allocated_percentage,
+                        order_id=other.id,
+                        consumes=True,
+                    ),
                 )
             )
+        for sequence, claim in enumerate(claims, start=1):
+            queue[claim.resource.id].append(
+                (claim.start, claim.order_id or float("inf"), sequence, claim)
+            )
         no_attendance = self.env["resource.calendar.attendance"]
-        result = {}
+        hours_by_key, percentages, days_by_key = {}, {}, {}
         for resource in resources:
             tz = timezone(resource.tz)
             day_capacity = schedule.hours_per_day[resource.id]
             day_left = dict(day_capacity)
             week_left = dict(schedule.hours_per_week[resource.id])
-            for *_order, claim, consumes, own in sorted(
-                claims[resource.id], key=operator_module.itemgetter(0, 1, 2)
+            for *_order, claim in sorted(
+                queue[resource.id], key=operator_module.itemgetter(0, 1, 2)
             ):
                 window = Intervals(
                     [
                         (
-                            localized(claim.date_start).astimezone(tz),
-                            localized(claim.date_end).astimezone(tz),
+                            localized(claim.start).astimezone(tz),
+                            localized(claim.stop).astimezone(tz),
                             no_attendance,
                         )
                     ]
                 )
-                share = claim.allocated_percentage / 100.0
-                granted = 0.0
+                # what the claim would hold at 100 % alone: its own window
+                # filling each week from its first day; a share takes that
+                # part of it, out of what earlier claims left
+                reach = []
+                alone_week_left = dict(schedule.hours_per_week[resource.id])
                 for day, hours in sorted(
                     hours_by_day(schedule.intervals[resource.id] & window).items()
                 ):
                     week = resource._get_week_of(day)
-                    grant = max(
+                    alone = max(
                         0.0,
                         min(
-                            min(hours, day_capacity.get(day, 0.0)) * share,
-                            day_left.get(day, 0.0),
-                            week_left.get(week, 0.0),
+                            hours,
+                            day_capacity.get(day, 0.0),
+                            alone_week_left.get(week, 0.0),
                         ),
                     )
-                    if consumes:
+                    alone_week_left[week] = alone_week_left.get(week, 0.0) - alone
+                    reach.append((day, week, alone))
+
+                def grants(
+                    percentage, reach=reach, day_left=day_left, week_left=week_left
+                ):
+                    taken = defaultdict(float)
+                    for day, week, hours in reach:
+                        grant = max(
+                            0.0,
+                            min(
+                                hours * percentage / 100.0,
+                                day_left.get(day, 0.0),
+                                week_left.get(week, 0.0) - taken[week],
+                            ),
+                        )
+                        taken[week] += grant
+                        yield day, week, grant
+
+                percentage = claim.percentage
+                if claim.key in wanted:
+                    percentage = _solve_percentage(
+                        lambda p, grants=grants: sum(g for *_, g in grants(p)),
+                        wanted[claim.key],
+                    )
+                    percentages[claim.key] = percentage
+                granted = 0.0
+                by_day = {}
+                for day, week, grant in list(grants(percentage)):
+                    if claim.consumes:
                         day_left[day] = day_left.get(day, 0.0) - grant
                         week_left[week] = week_left.get(week, 0.0) - grant
                     granted += grant
-                if own:
-                    result[claim] = round(granted, 2)
-        return result
+                    by_day[day] = grant
+                if claim.key is not None:
+                    hours_by_key[claim.key] = round(granted, 2)
+                    days_by_key[claim.key] = by_day
+        return hours_by_key, percentages, days_by_key
 
     def _get_domain_first_served_neighbours(self) -> Domain:
         budgeted = self.filtered(
@@ -556,8 +647,16 @@ class ResourceReservation(models.Model):
 
     def _recompute_first_served_neighbours(self, domain=Domain.FALSE) -> None:
         domain |= self._get_domain_first_served_neighbours()
-        if not domain.is_false():
-            self._recompute_allocated_hours(domain)
+        if domain.is_false():
+            return
+        neighbours = self._recompute_reservations_field(domain, "allocated_hours")
+        Scheduling = self.env.registry["mixin.resource.scheduling"]
+        for model_name, owned in neighbours.grouped("res_model").items():
+            owners = self.env.get(model_name)
+            if isinstance(owners, Scheduling):
+                owners.browse(
+                    owned.mapped("res_id")
+                ).exists()._recompute_first_served_hours()
 
     @api.depends(
         "date_start", "date_end", "resource_id", "allocated_percentage", "active"
@@ -592,11 +691,12 @@ class ResourceReservation(models.Model):
     def _recompute_allocated_hours(self, domain) -> None:
         self._recompute_reservations_field(domain, "allocated_hours")
 
-    def _recompute_reservations_field(self, domain, fname) -> None:
+    def _recompute_reservations_field(self, domain, fname) -> Self:
         reservations = self.sudo().with_context(active_test=False).search(domain)
         if reservations:
             self.env.add_to_compute(self._fields[fname], reservations)
             reservations.modified([fname])
+        return reservations
 
     def _scale_allocation(self, work_hours):
         self.check_singleton()

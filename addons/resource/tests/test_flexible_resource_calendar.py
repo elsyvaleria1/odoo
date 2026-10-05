@@ -544,6 +544,18 @@ class TestReservationsShareTheWeeklyBudget(TransactionCase):
         later = self._book(self.wednesday, self.wednesday + timedelta(days=7))
         self.assertEqual(self._hours(first, later), [8.0, 48.0])
 
+    def test_parallel_shares_split_the_week(self):
+        friday = self.monday + timedelta(days=5)
+        first = self._book(self.monday, friday, allocated_percentage=50)
+        second = self._book(self.monday, friday, allocated_percentage=50)
+        self.assertEqual(self._hours(first, second), [20.0, 20.0])
+
+    def test_a_share_is_of_each_week_not_of_each_day(self):
+        booking = self._book(
+            self.monday, self.monday + timedelta(days=12), allocated_percentage=50
+        )
+        self.assertEqual(self._hours(booking), [40.0])
+
     def test_a_released_booking_gives_its_hours_back(self):
         first = self._book(self.monday, self.wednesday)
         later = self._book(self.wednesday, self.wednesday + timedelta(days=7))

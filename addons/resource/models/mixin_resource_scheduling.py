@@ -110,6 +110,9 @@ class MixinResourceScheduling(models.AbstractModel):
     def _get_fields_reservation_date(self) -> tuple:
         return (None, None)
 
+    def _recompute_first_served_hours(self) -> None:
+        pass
+
     def _get_fields_sync_trigger(self):
         triggers = set()
         start_field, end_field = self._get_fields_reservation_date()

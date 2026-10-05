@@ -121,10 +121,16 @@ subtracts).
 - Conflicts: `_get_sql_overlap_partners`, `_get_overlap_partners`, `_get_conflicting_reservations`,
   `_get_prospective_conflicts`.
 - Hours: `_recompute_allocated_hours`, `_get_first_served_hours`. On a flexible
-  schedule a person's reservations draw on each day's and week's hours in date
-  order, so together they never hold more than the schedule; creating, moving,
-  archiving or deleting one recomputes the others in its weeks
-  (`_get_domain_first_served_neighbours`).
+  schedule a person's claims draw on each day's and week's hours in date order:
+  each takes its percentage of what it would hold alone (its own week filled from
+  its first day), out of what earlier claims left, so together they never hold
+  more than the schedule. `_walk_first_served` reads plain `FirstServedClaim`s,
+  so an owner reads its records before their reservations exist
+  (`_get_first_served_hours_of`), solves the percentage that holds typed hours
+  (`_get_first_served_percentages_of`) or splits a claim by day
+  (`_get_first_served_days_of`). Creating, moving, archiving or deleting one
+  recomputes the others in its weeks (`_get_domain_first_served_neighbours`,
+  `_recompute_first_served_neighbours`) and asks their owners to as well.
 - Upkeep: `_get_reservation_intervals_batch`, `_gc_orphan_reservations`.
 
 ## resource.assignment
@@ -222,7 +228,8 @@ subquery).
   `_get_fields_overlap_depends`, `_prepare_reservation_vals_list`,
   `_prepare_reservation_vals_by_record`.
 - Provided: `_sync_reservations`, `_active_for_sync`,
-  `_get_schedule_conflicts_batch`.
+  `_get_schedule_conflicts_batch`, `_recompute_first_served_hours` (a no-op that
+  planning.slot overrides: its flexible slots read the week as their reservations do).
 
 ## mixin.resource.allocation
 
