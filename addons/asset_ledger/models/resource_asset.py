@@ -37,11 +37,6 @@ class ResourceAsset(models.Model):
         string="Area Unit",
         compute="_compute_area_uom_name",
     )
-    odometer_uom_id = fields.Many2one(
-        default=lambda self: self.env[
-            "product.template"
-        ]._get_odometer_uom_id_from_ir_config_parameter(),
-    )
     service_activity = fields.Selection(
         selection=[
             ("none", "None"),
@@ -162,3 +157,14 @@ class ResourceAsset(models.Model):
                 "default_product_id": fuel_product.id if fuel_product else False,
             },
         }
+
+    def _prepare_resource_values(self, vals, tz):
+        resource_vals = super()._prepare_resource_values(vals, tz)
+        # the ledger's configured unit is a new asset's odometer unit
+        resource_vals.setdefault(
+            "odometer_uom_id",
+            self.env["product.template"]
+            ._get_odometer_uom_id_from_ir_config_parameter()
+            .id,
+        )
+        return resource_vals

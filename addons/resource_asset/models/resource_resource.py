@@ -1,6 +1,10 @@
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 from odoo.tools.translate import html_translate
+
+_debug = DebugLog(__name__)
 
 
 class ResourceResource(models.Model):
@@ -33,6 +37,27 @@ class ResourceResource(models.Model):
         string="Location",
         help="Where the resource normally is, when no inventory location tracks it.",
     )
+    # a thing's odometer: the newest reading of its odometer meter
+    odometer = fields.Float(
+        compute="_compute_odometer",
+        inverse="_inverse_odometer",
+        store=True,
+        readonly=False,
+    )
+    odometer_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        tracking=True,
+        help="Unit of measurement for the odometer readings",
+    )
+    odometer_uom_name = fields.Char(
+        related="odometer_uom_id.display_name",
+        string="Odometer Unit",
+    )
+    odometer_meter_id = fields.Many2one(
+        comodel_name="resource.meter",
+        compute="_compute_odometer_meter_id",
+        store=True,
+    )
 
     def _track_prepare(self, fields_iter):
         # an asset's history is its chatter's; a person's or an intangible's
@@ -40,6 +65,80 @@ class ResourceResource(models.Model):
         return super(ResourceResource, self.filtered("asset_id"))._track_prepare(
             fields_iter
         )
+
+    @api.depends("meter_ids.kind")
+    def _compute_odometer_meter_id(self) -> None:
+        for resource in self:
+            resource.odometer_meter_id = resource.meter_ids.filtered(
+                lambda m: m.kind == "odometer"
+            )[:1]
+
+    @api.depends("odometer_meter_id.last_reading_id.value")
+    def _compute_odometer(self) -> None:
+        for resource in self:
+            resource.odometer = resource.odometer_meter_id.value
+
+    def _inverse_odometer(self) -> None:
+        for resource in self:
+            meter = resource.odometer_meter_id
+            if not resource.odometer and not meter:
+                continue
+            if not meter:
+                meter = resource._create_odometer_meter()
+            if meter.value > resource.odometer:
+                _debug.logic(
+                    "odometer.refused", reason="below_last_reading", resource=resource
+                )
+                raise ValidationError(
+                    self.env._(
+                        "%(asset)s: the odometer cannot go below its last reading of %(value)s.",
+                        asset=resource.display_name,
+                        value=meter.value,
+                    )
+                )
+            if meter.value != resource.odometer:
+                meter.record(resource.odometer)
+
+    def _create_odometer_meter(self):
+        self.check_singleton()
+        meter = self.env["resource.meter"].create(
+            {
+                "resource_id": self.id,
+                "name": self.env._("Odometer"),
+                "kind": "odometer",
+                "uom_id": self.odometer_uom_id.id,
+            }
+        )
+        self.invalidate_recordset(["odometer_meter_id"])
+        return meter
+
+    def _check_odometer_uom_is_not_reinterpreted(self, new_uom_id) -> None:
+        """Every reading the meter holds is a number in the asset's unit, and
+        nothing stores which unit it was taken in. Changing the unit therefore
+        restates the whole history rather than converting it."""
+        changing = self.filtered(
+            lambda resource: resource.odometer_uom_id.id != new_uom_id
+        )
+        with_readings = changing.sudo().filtered(
+            lambda resource: resource.odometer_meter_id.reading_ids
+        )
+        if with_readings:
+            _debug.logic(
+                "odometer_uom.refused", reason="readings_exist", resources=self
+            )
+            raise ValidationError(
+                self.env._(
+                    "%(assets)s already carry odometer readings in their current "
+                    "unit. Changing it now would restate every one of them; "
+                    "convert the readings deliberately instead.",
+                    assets=", ".join(with_readings.mapped("display_name")),
+                )
+            )
+
+    def write(self, vals):
+        if "odometer_uom_id" in vals:
+            self._check_odometer_uom_is_not_reinterpreted(vals["odometer_uom_id"])
+        return super().write(vals)
 
     def _check_transition(self, state):
         super()._check_transition(state)

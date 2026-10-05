@@ -141,7 +141,7 @@ class ResourceAsset(models.Model):
             if not value and not meter:
                 continue
             if not meter:
-                meter = asset._create_odometer_meter()
+                meter = asset.resource_id._create_odometer_meter()
             elif meter.uom_id != asset.odometer_uom_id:
                 meter.uom_id = asset.odometer_uom_id
             if value and meter.value != value:
