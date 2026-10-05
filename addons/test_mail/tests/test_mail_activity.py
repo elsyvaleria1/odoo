@@ -2124,18 +2124,17 @@ class TestActivitySearchPaging(ActivityScheduleCase):
         control_total = Control.search_count([])
         self.assertTrue(control_total, "the control needs rows to be a control")
 
-        for limit, expected in (
-            (None, total),
-            (False, total),
-            (True, 1),
-            (0, 0),
-            (4, 4),
+        for limit, expected, control_expected in (
+            (None, total, control_total),
+            (False, total, control_total),
+            (True, 1, 1),
+            (0, 0, 0),
+            (4, 4, min(4, control_total)),
         ):
             with self.subTest(limit=limit):
-                control = len(Control.search([], limit=limit))
                 self.assertEqual(
-                    control,
-                    min(expected, control_total) if expected else expected,
+                    len(Control.search([], limit=limit)),
+                    control_expected,
                     "the control model defines the contract",
                 )
                 self.assertEqual(len(Activity.search(domain, limit=limit)), expected)
