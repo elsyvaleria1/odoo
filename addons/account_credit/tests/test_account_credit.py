@@ -268,6 +268,90 @@ class TestCreditStatusComputation(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
+class TestCreditFileOutsideCreditFolder(TransactionCase):
+    """A document a credit grade requires counts wherever it is filed."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Document = cls.env["document.document"]
+        cls.credit_folder = Document.create({"name": "Credit", "type": "folder"})
+        cls.identity_folder = Document.create({"name": "Identity", "type": "folder"})
+        cls.env.company.credit_folder_id = cls.credit_folder
+        cls.required_type = cls.env["document.type"].create(
+            {"name": "Required ID", "code": "TEST_FILE_REQUIRED"}
+        )
+        cls.other_type = cls.env["document.type"].create(
+            {"name": "Unrelated", "code": "TEST_FILE_OTHER"}
+        )
+        cls.grade = cls.env["credit.grade"].create(
+            {
+                "name": "File Grade",
+                "rule_ids": [
+                    Command.create(
+                        {
+                            "name": "ID Rule",
+                            "document_type_id": cls.required_type.id,
+                            "min_quantity": 1,
+                        }
+                    )
+                ],
+            }
+        )
+        cls.partner = cls.env["res.partner"].create(
+            {"name": "File Partner", "credit_grade_id": cls.grade.id}
+        )
+
+    def _create_document(self, folder, doc_type):
+        return self.env["document.document"].create(
+            {
+                "name": "INE.pdf",
+                "folder_id": folder.id,
+                "partner_id": self.partner.id,
+                "document_type_id": doc_type.id,
+            }
+        )
+
+    def test_required_document_in_another_folder_is_in_the_file(self):
+        doc = self._create_document(self.identity_folder, self.required_type)
+        self.partner.invalidate_recordset(["credit_document_ids"])
+        self.assertIn(doc, self.partner.credit_document_ids)
+        self.assertEqual(self.partner.credit_status, "authorized")
+
+    def test_unrequired_document_in_another_folder_stays_out(self):
+        doc = self._create_document(self.identity_folder, self.other_type)
+        self.partner.invalidate_recordset(["credit_document_ids"])
+        self.assertNotIn(doc, self.partner.credit_document_ids)
+        self.assertEqual(self.partner.credit_status, "review")
+
+    def test_moving_a_required_document_out_keeps_the_partner_compliant(self):
+        doc = self._create_document(self.credit_folder, self.required_type)
+        self.assertEqual(self.partner.credit_status, "authorized")
+        doc.folder_id = self.identity_folder
+        self.assertIn(doc, self.partner.credit_document_ids)
+        self.assertEqual(self.partner.credit_status, "authorized")
+
+    def test_retyping_a_document_outside_the_folder_updates_the_file(self):
+        doc = self._create_document(self.identity_folder, self.other_type)
+        self.assertEqual(self.partner.credit_status, "review")
+        doc.document_type_id = self.required_type
+        self.assertIn(doc, self.partner.credit_document_ids)
+        self.assertEqual(self.partner.credit_status, "authorized")
+
+    def test_a_new_rule_brings_documents_of_its_type_into_the_file(self):
+        doc = self._create_document(self.identity_folder, self.other_type)
+        self.assertNotIn(doc, self.partner.credit_document_ids)
+        self.env["credit.grade.rule"].create(
+            {
+                "name": "Other Rule",
+                "grade_id": self.grade.id,
+                "document_type_id": self.other_type.id,
+            }
+        )
+        self.assertIn(doc, self.partner.credit_document_ids)
+
+
+@tagged("post_install", "-at_install")
 class TestCreditTypeWarning(TransactionCase):
     @classmethod
     def setUpClass(cls):

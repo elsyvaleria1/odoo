@@ -32,7 +32,14 @@ class CreditGradeRule(models.Model):
         ondelete="cascade",
     )
 
+    def _drop_credit_file_cache(self) -> None:
+        # the types the rules require are part of the credit file's domain,
+        # which the dependency graph does not see: a file cached before the
+        # change would keep answering for the old set of types
+        self.env["res.partner"].invalidate_model(["credit_document_ids"])
+
     def _sync_profiles(self) -> None:
+        self._drop_credit_file_cache()
         profiles = (
             self.env["credit.profile"]
             .sudo()
@@ -55,6 +62,7 @@ class CreditGradeRule(models.Model):
     def unlink(self):
         grades = self.grade_id
         result = super().unlink()
+        self._drop_credit_file_cache()
         profiles = (
             self.env["credit.profile"].sudo().search([("grade_id", "in", grades.ids)])
         )

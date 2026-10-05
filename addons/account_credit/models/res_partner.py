@@ -100,7 +100,8 @@ class Partner(models.Model):
         copy=False,
         domain=lambda self: self._domain_credit_document_ids(),
         help="Documents submitted for credit evaluation: this partner's own "
-        "documents that live under the company's credit folder. Derived "
+        "documents that live under the company's credit folder, plus those "
+        "of a type a credit grade requires wherever they are filed. Derived "
         "from the documents themselves, so it is never stale.",
     )
 
@@ -123,9 +124,12 @@ class Partner(models.Model):
     def _domain_credit_document_ids(self):
         """Restrict ``document_ids`` to the credit files.
 
-        A credit document is one filed under a company's credit folder; which
-        partner it belongs to is its own ``partner_id``. The subtree is read
-        across every company rather than ``self.env.companies``, because
+        A credit document is one filed under a company's credit folder, or one
+        whose type a credit grade rule requires, wherever it is filed: an
+        identification kept in a shared identity folder still proves what the
+        rule asks for. Which partner it belongs to is its own ``partner_id``.
+        The subtree is read across every company rather than
+        ``self.env.companies``, because
         ``credit_limit`` and ``credit_document_compliant`` are stored and their
         value may not depend on which companies the user recomputing them
         happens to have enabled. The seven companies share one credit folder,
@@ -135,9 +139,10 @@ class Partner(models.Model):
         that contact submitted.
 
         The domain is not part of the dependency graph, so a document changing
-        ``folder_id`` would leave this One2many cached and the stored fields
-        derived from it answering for a tree it has left.
-        ``document.document.write`` is where that is caught.
+        ``folder_id`` or ``document_type_id`` would leave this One2many cached
+        and the stored fields derived from it answering for a file it has left.
+        ``document.document.write`` is where that is caught, and
+        ``credit.grade.rule`` drops the cache when the required types change.
         """
         # Read the folder off credit.config, not off the company: since the
         # credit consolidation res_company.credit_folder_id is a non-stored
@@ -149,16 +154,20 @@ class Partner(models.Model):
             .search([("credit_folder_id", "!=", False)])
             .credit_folder_id
         )
-        if not roots:
+        required_types = (
+            self.env["credit.grade.rule"].sudo().search([]).document_type_id
+        )
+        if not roots and not required_types:
             return Domain.FALSE
         # `child_of` on `folder_id` takes a single value -- see
         # `_search_folder_id` in document's `document_document_user_folder.py`,
         # "Only one value can be searched for child of `folder_id`" -- so one
         # term per root. Companies sharing a credit folder collapse by
         # themselves.
-        return Domain.OR(
-            Domain("folder_id", "child_of", root.id) for root in roots
-        ) & Domain("type", "!=", "folder")
+        filed = Domain.OR(Domain("folder_id", "child_of", root.id) for root in roots)
+        if required_types:
+            filed |= Domain("document_type_id", "in", required_types.ids)
+        return filed & Domain("type", "!=", "folder")
 
     @api.model
     def _commercial_fields(self):

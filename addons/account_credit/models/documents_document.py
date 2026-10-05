@@ -19,18 +19,19 @@ class DocumentsDocument(models.Model):
         """Keep the derived credit file in step with a document that moves.
 
         ``res.partner.credit_document_ids`` is a One2many whose domain is the
-        subtree of the company's credit folder. The ORM keeps a One2many in
-        step through its inverse only -- a partner's cache is updated when a
-        document writes ``partner_id`` -- so a document changing ``folder_id``
-        walks in or out of the file without anything telling the partner.
+        subtree of the company's credit folder plus the types a credit grade
+        requires. The ORM keeps a One2many in step through its inverse only --
+        a partner's cache is updated when a document writes ``partner_id`` --
+        so a document changing ``folder_id`` or ``document_type_id`` walks in
+        or out of the file without anything telling the partner.
         What is cached stays cached, and ``credit_limit`` and
         ``credit_document_compliant``, both stored, then recompute from that
         stale cache even though ``@api.depends`` did mark them.
 
         So the cache is dropped here and the partners are told. The domain is
-        not part of the dependency graph, but ``folder_id`` is a write we see.
+        not part of the dependency graph, but these two are writes we see.
         """
-        if "folder_id" not in vals:
+        if "folder_id" not in vals and "document_type_id" not in vals:
             return super().write(vals)
         partners = self._get_credit_file_partners()
         result = super().write(vals)
