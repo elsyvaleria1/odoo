@@ -218,7 +218,7 @@
                         <page name="main_page" string="Asset">
                             <group>
                                 <field name="active" invisible="1" />
-                                <field name="asset_properties" columns="2" />
+                                <field name="properties" columns="2" />
                                 <group name="asset_values" string="Asset Values">
                                     <field
                                         name="value_original"
@@ -460,9 +460,7 @@
                 decoration-muted="(depreciation_state in ['close', 'cancelled'])"
                 decoration-warning="(depreciation_state == 'close' and value_depreciable_residual != 0)">
                 <field name="name" readonly="depreciation_state != 'draft'" />
-                <field
-                    name="asset_properties"
-                    readonly="depreciation_state != 'draft'" />
+                <field name="properties" readonly="depreciation_state != 'draft'" />
                 <field
                     name="date_acquisition"
                     readonly="depreciation_state != 'draft'" />
@@ -537,7 +535,7 @@
                     domain="[('depreciation_state', '=', 'close')]" />
                 <field name="depreciation_profile_id" />
                 <separator />
-                <field name="asset_properties" />
+                <field name="properties" />
                 <filter
                     name="filter_activities_my"
                     string="My Activities"

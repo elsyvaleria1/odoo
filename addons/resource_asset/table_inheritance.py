@@ -48,7 +48,11 @@ def move_rows_into_subtype_table(cr, kind_code: str, table: str) -> int:
         SQL(
             """
             WITH moved AS (
-                DELETE FROM ONLY resource_asset WHERE kind_id = %(kind)s RETURNING *
+                DELETE FROM ONLY resource_asset asset
+                 USING resource_resource resource
+                 WHERE resource.id = asset.resource_id
+                   AND resource.kind_id = %(kind)s
+             RETURNING asset.*
             )
             INSERT INTO %(table)s SELECT * FROM moved
             """,

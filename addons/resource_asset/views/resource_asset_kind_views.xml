@@ -12,7 +12,7 @@
                 <field name="scheduled" />
                 <field name="identifier_type_ids" widget="many2many_tags" />
                 <field name="group_id" optional="show" />
-                <field name="asset_count" />
+                <field name="resource_count" />
             </list>
         </field>
     </record>
@@ -34,7 +34,7 @@
                             <field name="group_id" />
                         </group>
                     </group>
-                    <field name="asset_properties_definition" />
+                    <field name="properties_definition" />
                 </sheet>
             </form>
         </field>

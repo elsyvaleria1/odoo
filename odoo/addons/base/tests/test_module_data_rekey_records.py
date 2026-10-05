@@ -295,6 +295,13 @@ class TestLiftColumns(TransactionCase):
             [(0,)],
         )
 
+    def test_a_column_can_take_a_new_name(self):
+        lift_columns(self.env.cr, "probe_box", "probe_shelf", [("size", "width")])
+        self.assertEqual(
+            self._rows("SELECT id, width FROM probe_shelf ORDER BY id"),
+            [(1, 10), (2, 20), (3, 30)],
+        )
+
     def test_a_value_with_nowhere_to_go_drops_nothing(self):
         self.env.cr.execute("INSERT INTO probe_box VALUES (4, 40, NULL)")
         with self.assertRaisesRegex(ValueError, "1 row"):

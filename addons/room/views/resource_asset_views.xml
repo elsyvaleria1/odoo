@@ -9,7 +9,7 @@
             <search string="Room">
                 <field name="name" string="Room" />
                 <field name="address_id" string="Office" />
-                <field name="asset_properties" />
+                <field name="properties" />
                 <field name="company_id" groups="base.group_multi_company" />
                 <filter
                     name="filter_archived"
@@ -58,7 +58,7 @@
                         <main class="ml8">
                             <field name="name" class="fw-bolder fs-5" />
                             <field name="address_id" />
-                            <field name="asset_properties" widget="properties" />
+                            <field name="properties" widget="properties" />
                             <footer class="pt-0">
                                 <div
                                     t-if="record.active.raw_value"
@@ -96,7 +96,7 @@
                 <field name="address_id" string="Office" />
                 <field name="room_is_available" string="Is Currently Available" />
                 <field name="room_next_booking_start" />
-                <field name="asset_properties" />
+                <field name="properties" />
             </list>
         </field>
     </record>

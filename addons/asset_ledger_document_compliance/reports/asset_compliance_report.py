@@ -83,17 +83,18 @@ class AssetComplianceReport(models.Model):
                 SELECT
                     pt.id as product_tmpl_id,
                     pt.name as product_name,
-                    ra.kind_id AS asset_kind_id,
+                    rr.kind_id AS asset_kind_id,
                     ra.company_id,
                     ra.id as asset_id,
                     ra.name as asset_name,
                     sq.location_id
                 FROM resource_asset ra
+                JOIN resource_resource rr ON rr.id = ra.resource_id
                 JOIN product_product pp ON pp.id = ra.product_id
                 JOIN product_template pt ON pt.id = pp.product_tmpl_id
                 LEFT JOIN product_trace sl ON sl.id = ra.trace_id
                 LEFT JOIN stock_quant sq ON sq.trace_id = sl.id AND sq.quantity > 0
-                WHERE ra.kind_id IS NOT NULL
+                WHERE rr.kind_id IS NOT NULL
                     AND ra.active = true
             ),
             asset_documents AS (

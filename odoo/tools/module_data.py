@@ -830,7 +830,7 @@ def lift_columns(
     cr: BaseCursor,
     source: str,
     target: str,
-    columns: Collection[str],
+    columns: Collection[str | tuple[str, str]],
     *,
     keep_target: Collection[str] = (),
 ) -> list[str]:
@@ -839,11 +839,16 @@ def lift_columns(
     # dropped. A column in `keep_target` keeps the target's own value where it
     # has one. A row that held a value the target did not receive raises
     # before anything is dropped, so a short copy fails the upgrade instead of
-    # losing what it missed. Returns the columns lifted.
-    lifted = [c for c in columns if column_exists(cr, source, c)]
-    for column in lifted:
-        name = SQL.identifier(column)
-        if not column_exists(cr, target, column):
+    # losing what it missed. A (source column, target column) pair renames the
+    # column on the way. Returns the source columns lifted.
+    pairs = [
+        (column, column) if isinstance(column, str) else column for column in columns
+    ]
+    pairs = [(old, new) for old, new in pairs if column_exists(cr, source, old)]
+    for column, target_column in pairs:
+        old_name = SQL.identifier(column)
+        name = SQL.identifier(target_column)
+        if not column_exists(cr, target, target_column):
             cr.execute(
                 "SELECT format_type(atttypid, atttypmod) FROM pg_attribute"
                 " WHERE attrelid = %s::regclass AND attname = %s",
@@ -858,13 +863,15 @@ def lift_columns(
                     SQL(column_type),
                 )
             )
-        kept = column in keep_target
+        kept = target_column in keep_target
         cr.execute(
             SQL(
                 "UPDATE %s t SET %s = %s FROM %s s WHERE s.id = t.id",
                 SQL.identifier(target),
                 name,
-                SQL("COALESCE(t.%s, s.%s)", name, name) if kept else SQL("s.%s", name),
+                SQL("COALESCE(t.%s, s.%s)", name, old_name)
+                if kept
+                else SQL("s.%s", old_name),
                 SQL.identifier(source),
             )
         )
@@ -873,11 +880,11 @@ def lift_columns(
                 "SELECT count(*) FROM %s s WHERE s.%s IS NOT NULL AND NOT EXISTS"
                 " (SELECT 1 FROM %s t WHERE t.id = s.id AND %s)",
                 SQL.identifier(source),
-                name,
+                old_name,
                 SQL.identifier(target),
                 SQL("t.%s IS NOT NULL", name)
                 if kept
-                else SQL("t.%s IS NOT DISTINCT FROM s.%s", name, name),
+                else SQL("t.%s IS NOT DISTINCT FROM s.%s", name, old_name),
             )
         )
         [[missed]] = cr.fetchall()
@@ -901,6 +908,7 @@ def lift_columns(
         """,
         [source],
     )
+    lifted = [column for column, __ in pairs]
     for (table,) in cr.fetchall():
         for column in lifted:
             cr.execute(

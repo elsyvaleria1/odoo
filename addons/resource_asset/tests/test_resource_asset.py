@@ -911,14 +911,14 @@ class TestResourceAsset(TransactionCase):
             self._truck(vendor_id=foreign.id, company_id=self.env.company.id)
 
     def test_each_kind_defines_the_properties_its_assets_carry(self):
-        self.vehicle.asset_properties_definition = [
+        self.vehicle.properties_definition = [
             {"name": "axles", "string": "Axles", "type": "integer"}
         ]
         truck = self._truck()
-        truck.asset_properties = {"axles": 3}
-        self.assertEqual(truck.asset_properties, {"axles": 3})
+        truck.properties = {"axles": 3}
+        self.assertEqual(truck.properties, {"axles": 3})
         press = self.Asset.create({"name": "Press", "kind_id": self.machinery.id})
-        self.assertFalse(press.asset_properties)
+        self.assertFalse(press.properties)
 
     def test_the_computed_currency_reaches_sql(self):
         # currency_id is computed and not stored; the list's currency-aware

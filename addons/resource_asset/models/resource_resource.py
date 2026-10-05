@@ -18,6 +18,16 @@ class ResourceResource(models.Model):
         context={"active_test": False},
     )
     # what a thing is and where it came from, on the resource it is
+    kind_id = fields.Many2one(
+        comodel_name="resource.kind",
+        index="btree_not_null",
+        ondelete="restrict",
+    )
+    kind_code = fields.Char(related="kind_id.code")
+    properties = fields.Properties(
+        definition="kind_id.properties_definition",
+        copy=True,
+    )
     description = fields.Html(translate=html_translate)
     model = fields.Char(string="Model Name")
     model_year = fields.Integer(
@@ -135,7 +145,15 @@ class ResourceResource(models.Model):
                 )
             )
 
+    @api.constrains("kind_id")
+    def _check_an_asset_has_a_kind(self) -> None:
+        if self.filtered(lambda resource: resource.asset_id and not resource.kind_id):
+            raise ValidationError(self.env._("An asset has a kind."))
+
     def write(self, vals):
+        if "kind_id" in vals and (assets := self.asset_id):
+            # a kind decides the table an asset's row lives in
+            assets._check_kind_stays_in_this_table(vals["kind_id"])
         if "odometer_uom_id" in vals:
             self._check_odometer_uom_is_not_reinterpreted(vals["odometer_uom_id"])
         return super().write(vals)

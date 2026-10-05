@@ -137,7 +137,7 @@
                             <field name="tz" />
                         </group>
                     </group>
-                    <field name="asset_properties" columns="2" />
+                    <field name="properties" columns="2" />
                     <notebook>
                         <page name="identifiers" string="Identifiers">
                             <field name="identifier_ids">

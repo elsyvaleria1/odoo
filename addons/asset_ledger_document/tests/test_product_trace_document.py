@@ -403,23 +403,42 @@ class TestStockLotDocuments(TransactionCase):
         )
 
     def test_documents_settings_follows_the_asset_kind(self):
+        tool_product = create_test_template(
+            self.env, name="Test Tool", asset_kind="tool", tracking="serial"
+        )
+        tool_lot = self.product_trace.create(
+            {
+                "name": "TOOL-RETYPE",
+                "product_id": tool_product.product_variant_id.id,
+                "company_id": self.company.id,
+            }
+        )
+        gauge = self.env["resource.kind"].create({"name": "Gauge", "code": "gauge"})
+        self.env["resource.kind.document"].create(
+            {"kind_id": gauge.id, "company_id": self.company.id, "centralize": True}
+        )
+        self._set_kind_documents("resource_asset.kind_tool", centralize=False)
+        self.assertFalse(tool_lot.asset_id.document_centralized)
+
+        tool_lot.asset_id.kind_id = gauge
+        self.assertTrue(
+            tool_lot.asset_id.document_centralized,
+            "the flag must follow the asset's kind",
+        )
+
+    def test_a_product_s_new_kind_leaves_its_assets_as_they_are(self):
         vehicle_lot = self.product_trace.create(
             {
-                "name": "VEH-RETYPE",
+                "name": "VEH-KEPT",
                 "product_id": self.vehicle_product.product_variant_id.id,
                 "company_id": self.company.id,
             }
         )
-        self._set_kind_documents("resource_asset.kind_vehicle", centralize=False)
-        self._set_kind_documents("resource_asset.kind_equipment", centralize=True)
-        self.assertFalse(vehicle_lot.asset_id.document_centralized)
-
         self.vehicle_product.asset_kind_id = self.env.ref(
             "resource_asset.kind_equipment"
         )
-        self.assertTrue(
-            vehicle_lot.asset_id.document_centralized,
-            "the flag must follow the product's asset type",
+        self.assertEqual(
+            vehicle_lot.asset_id.kind_id, self.env.ref("resource_asset.kind_vehicle")
         )
 
     def test_count_document_follows_the_documents(self):

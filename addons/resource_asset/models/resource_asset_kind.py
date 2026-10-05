@@ -29,12 +29,12 @@ class ResourceAssetKind(models.Model):
         string="Visible To",
         help="The group a user needs to see assets of this kind and the menus that open them. Empty: every asset user sees them.",
     )
-    asset_properties_definition = fields.PropertiesDefinition(string="Asset Properties")
-    asset_ids = fields.One2many(
-        comodel_name="resource.asset",
+    properties_definition = fields.PropertiesDefinition(string="Properties")
+    resource_ids = fields.One2many(
+        comodel_name="resource.resource",
         inverse_name="kind_id",
     )
-    asset_count = fields.Count(count_of="asset_ids")
+    resource_count = fields.Count(count_of="resource_ids")
 
     _code_uniq = models.Constraint(
         "UNIQUE(code)", "Each asset kind code must be unique."

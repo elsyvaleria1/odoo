@@ -1,6 +1,6 @@
 {
     "name": "Physical Assets",
-    "version": "1.20",
+    "version": "1.21",
     "oldest_upgradable_version": "1.10",
     "category": "Hidden",
     "summary": "Track physical asset identity, custody, meters and lifecycle",

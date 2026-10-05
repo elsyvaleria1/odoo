@@ -62,22 +62,11 @@ class ResourceAsset(models.Model):
         store=True,
         readonly=False,
     )
-    kind_id = fields.Many2one(
-        comodel_name="resource.kind",
-        index=True,
-        required=True,
-        ondelete="restrict",
-    )
-    kind_code = fields.Char(related="kind_id.code")
     # a new asset has no resource yet to read it from
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         compute="_compute_currency_id",
         value_sql="_value_sql_currency_id",
-    )
-    asset_properties = fields.Properties(
-        definition="kind_id.asset_properties_definition",
-        copy=True,
     )
 
     # Accessors on the root: read and searched through the identifier rows,
@@ -213,7 +202,9 @@ class ResourceAsset(models.Model):
                 EXISTS (
                     SELECT 1
                       FROM resource_asset_kind_identifier_type_rel rel
-                     WHERE rel.kind_id = %(kind)s
+                      JOIN resource_resource resource
+                        ON resource.id = %(resource)s
+                     WHERE rel.kind_id = resource.kind_id
                        AND %(types)s
                        AND NOT EXISTS (
                            SELECT 1
@@ -223,7 +214,6 @@ class ResourceAsset(models.Model):
                        )
                 )
                 """,
-                kind=SQL.identifier(alias, "kind_id"),
                 resource=SQL.identifier(alias, "resource_id"),
                 types=type_condition or SQL("TRUE"),
             )
@@ -448,6 +438,8 @@ class ResourceAsset(models.Model):
             if resource_vals:
                 asset.resource_id.sudo().write(resource_vals)
             asset._on_kind_changed(vals)
+        # the kind is the resource's, which the resource alone cannot require
+        assets.resource_id._check_an_asset_has_a_kind()
         for asset, parent_id in zip(assets, parent_values, strict=True):
             if parent_id:
                 asset._set_parent_asset(

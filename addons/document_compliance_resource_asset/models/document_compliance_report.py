@@ -9,9 +9,9 @@ KIND_SCOPE = """
     OR EXISTS (
         SELECT 1
           FROM document_type_resource_asset_kind_rel r
-          JOIN resource_asset asset ON asset.id = e.entity_id
+          JOIN resource_resource resource ON resource.id = e.entity_id
          WHERE r.type_id = dt.id
-           AND r.kind_id = asset.kind_id
+           AND r.kind_id = resource.kind_id
     )
 """
 

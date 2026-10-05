@@ -217,7 +217,7 @@
         <field name="model">resource.kind</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_kind_view_form" />
         <field name="arch" type="xml">
-            <field name="asset_properties_definition" position="after">
+            <field name="properties_definition" position="after">
                 <separator string="Part Positions" />
                 <field name="position_ids">
                     <list editable="bottom">
