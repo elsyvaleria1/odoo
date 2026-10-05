@@ -15,6 +15,7 @@ import {
     onWillUnmount,
     proxy,
     signal,
+    toRaw,
     useListener,
     useScope,
 } from "@odoo/owl";
@@ -210,6 +211,21 @@ function truncate(value, length = MAX_HUMAN_READABLE_SIZE) {
 }
 
 /**
+ * A copy is a report of what was compared, so a value that refuses to be read
+ * (a proxy guarding its keys, a throwing getter) is reported as unreadable
+ * instead of failing the test that compared it.
+ *
+ * @param {() => unknown} read
+ */
+function _probe(read) {
+    try {
+        return read();
+    } catch {
+        return S_UNREADABLE;
+    }
+}
+
+/**
  * @template T
  * @param {T} value
  * @param {ReturnType<makeObjectCache>} cache
@@ -226,30 +242,52 @@ function _deepCopy(value, cache) {
             return "<anonymous function>";
         }
     }
-    if (typeof value === "object" && !Markup.isMarkup(value)) {
-        if (isInstanceOf(value, String, Number, Boolean)) {
-            return value;
-        }
-        if (isNode(value)) {
-            return value.cloneNode(true);
-        } else if (isInstanceOf(value, Date, RegExp)) {
-            return new (getConstructor(value))(value);
-        } else if (isIterable(value)) {
-            const isArray = $isArray(value);
-            const valueArray = isArray ? value : [...value];
-            const values = valueArray.map((item) => _deepCopy(item, cache));
-            return $isArray(value) ? values : new (getConstructor(value))(values);
-        } else {
-            if (cache.has(value)) {
-                return S_CIRCULAR;
-            }
-            cache.add(value);
-            return $fromEntries(
-                $ownKeys(value).map((key) => [key, _deepCopy(value[key], cache)]),
-            );
-        }
+    if (typeof value === "object") {
+        return _probe(() => _deepCopyObject(value, cache));
     }
     return value;
+}
+
+/**
+ * @template T
+ * @param {T} value
+ * @param {ReturnType<makeObjectCache>} cache
+ * @returns {T}
+ */
+function _deepCopyObject(value, cache) {
+    if (Markup.isMarkup(value)) {
+        return value;
+    }
+    // a reactive proxy is new on every read: copy its target, so the
+    // circular cache recognises an object it has already copied
+    value = toRaw(value);
+    if (isInstanceOf(value, String, Number, Boolean)) {
+        return value;
+    }
+    if (isNode(value)) {
+        return value.cloneNode(true);
+    } else if (isInstanceOf(value, Date, RegExp)) {
+        return new (getConstructor(value))(value);
+    } else if (isIterable(value)) {
+        const isArray = $isArray(value);
+        const valueArray = isArray ? value : [...value];
+        const values = valueArray.map((item) => _deepCopy(item, cache));
+        return $isArray(value) ? values : new (getConstructor(value))(values);
+    } else {
+        if (cache.has(value)) {
+            return S_CIRCULAR;
+        }
+        cache.add(value);
+        return $fromEntries(
+            $ownKeys(value).map((key) => [
+                key,
+                _deepCopy(
+                    _probe(() => value[key]),
+                    cache,
+                ),
+            ]),
+        );
+    }
 }
 
 /**
@@ -2200,6 +2238,7 @@ export const STORAGE = {
 
 export const S_ANY = Symbol("any value");
 export const S_CIRCULAR = Symbol("circular object");
+export const S_UNREADABLE = Symbol("unreadable value");
 export const S_NONE = Symbol("no value");
 
 export const R_QUERY_EXACT = new RegExp(

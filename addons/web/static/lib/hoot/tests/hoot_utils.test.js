@@ -3,6 +3,7 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { queryOne } from "@odoo/hoot-dom";
 import { isInstanceOf, isIterable } from "@odoo/hoot-dom-utils";
+import { proxy } from "@odoo/owl";
 
 import {
     createJobScopedGetter,
@@ -16,6 +17,7 @@ import {
     match,
     parseQuery,
     S_CIRCULAR,
+    S_UNREADABLE,
     title,
     toExplicitString,
 } from "../hoot_utils.js";
@@ -69,6 +71,27 @@ describe(parseUrl(import.meta.url), () => {
             document.createElement("div"),
         );
         expect(deepCopy([1, 2, 3])).toEqual([1, 2, 3]);
+    });
+
+    test("deepCopy reports what it cannot read", () => {
+        const guarded = new Proxy(
+            { x: 1 },
+            {
+                get() {
+                    throw new Error("guarded");
+                },
+            },
+        );
+        expect(deepCopy({ guarded, plain: 1 })).toEqual({
+            guarded: S_UNREADABLE,
+            plain: 1,
+        });
+    });
+
+    test("deepCopy follows a reactive proxy to the object behind it", () => {
+        const target = {};
+        target.self = target;
+        expect(deepCopy(proxy(target))).toEqual({ self: S_CIRCULAR });
     });
 
     test("deepEqual", () => {
