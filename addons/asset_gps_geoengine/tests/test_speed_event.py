@@ -55,6 +55,15 @@ class TestSpeedEvent(common.TransactionCase):
                 }
             )
 
+    def _raise_for_this_device(self):
+        # the cron alerts every device: demo bursts dated today land in its
+        # window or not depending on the time of day
+        return (
+            self.env["device.gps.speed.alert"]
+            ._cron_raise_critical()
+            .filtered(lambda alert: alert.device_id == self.device)
+        )
+
     def _events(self):
         self.env.flush_all()
         return self.env["device.gps.speed.event"].search(
@@ -171,8 +180,7 @@ class TestSpeedEvent(common.TransactionCase):
         self._drive(t0, [90, 130, 125, 60])
         self.env.flush_all()
 
-        Alert = self.env["device.gps.speed.alert"]
-        raised = Alert._cron_raise_critical()
+        raised = self._raise_for_this_device()
         self.assertEqual(len(raised), 1)
         self.assertEqual(raised.operator_id, driver)
         self.assertEqual(raised.speed_max, 130)
@@ -193,11 +201,11 @@ class TestSpeedEvent(common.TransactionCase):
         )
 
         self.assertFalse(
-            Alert._cron_raise_critical(), "the same burst is not alerted twice"
+            self._raise_for_this_device(), "the same burst is not alerted twice"
         )
 
     def test_ongoing_burst_waits_until_it_is_over(self):
         t0 = datetime.now() - timedelta(minutes=1)
         self._drive(t0, [130, 135])
         self.env.flush_all()
-        self.assertFalse(self.env["device.gps.speed.alert"]._cron_raise_critical())
+        self.assertFalse(self._raise_for_this_device())
