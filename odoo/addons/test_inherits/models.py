@@ -26,6 +26,7 @@ class TestUnit(models.Model):
         comodel_name="test.unit.badge",
         inverse_name="unit_id",
     )
+    props_definition = fields.PropertiesDefinition()
 
     @api.depends("name")
     def _compute_surname(self):
@@ -57,6 +58,7 @@ class TestBox(models.Model):
         ondelete="cascade",
     )
     field_in_box = fields.Char(string="Field1")
+    props = fields.Properties(definition="unit_id.props_definition")
     size = fields.Integer()
 
 

@@ -28,7 +28,13 @@ def migrate(cr, version):
     # an asset is its resource's row extended (`_inherits_shared_id`): it takes
     # its resource's id, and what was filed under the asset is the resource's
     models = _tree_models(cr)
-    cr.execute("SELECT id, resource_id FROM resource_asset")
+    # a property value holds asset ids too, re-keyed once the registry knows
+    # its definitions (end-migrate.py)
+    cr.execute(
+        "CREATE TABLE resource_asset_rekey_1_17 AS "
+        "SELECT id AS old_id, resource_id AS new_id FROM resource_asset"
+    )
+    cr.execute("SELECT old_id, new_id FROM resource_asset_rekey_1_17")
     module_data.rekey_records(cr, models, "resource_asset", dict(cr.fetchall()))
     module_data.rehome_references(cr, models, "resource.resource")
     cr.execute(

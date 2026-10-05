@@ -549,6 +549,27 @@ def _repoint_references(
                 cr.execute(SQL("DELETE FROM %s WHERE %s", SQL.identifier(table), row))
 
 
+# record ids kept beside a model name in an Integer column that no field
+# declares a Many2oneReference, so ir_model_fields cannot pair them; the model
+# column holds a name or an ir_model id, on the row or, written
+# "link->table.column", on the row its link points at
+UNDECLARED_REFERENCES: tuple[tuple[str, str, str], ...] = (
+    ("approval_observation", "res_id", "model_name"),
+    ("integration_exchange", "origin_record_id", "origin_model"),
+    ("ir_act_window", "res_id", "res_model"),
+    ("ir_embedded_actions", "parent_res_id", "parent_res_model"),
+    (
+        "ir_filters",
+        "embedded_parent_res_id",
+        "embedded_action_id->ir_embedded_actions.parent_res_model",
+    ),
+    ("mail_alias", "alias_force_thread_id", "alias_model_id"),
+    ("mail_alias", "alias_parent_thread_id", "alias_parent_model_id"),
+    ("res_users_settings_embedded_action", "res_id", "res_model"),
+    ("snailmail_letter", "res_id", "model"),
+)
+
+
 def rekey_records(
     cr: BaseCursor, models: Collection[str], table: str, moves: Mapping[int, int]
 ) -> None:
@@ -631,6 +652,28 @@ def rekey_records(
             continue
         rekeyed.add(target[:2])
         _rekey_column(cr, *target[:2], olds, news, target[2])
+    for referencing, id_column, model_column in UNDECLARED_REFERENCES:
+        if not column_exists(cr, referencing, id_column):
+            continue
+        if "->" in model_column:
+            link, target = model_column.split("->")
+            target_table, target_column = target.split(".")
+            if not column_exists(cr, referencing, link) or not column_exists(
+                cr, target_table, target_column
+            ):
+                continue
+            condition = SQL(
+                " AND %s IN (SELECT id FROM %s WHERE %s = ANY(%s))",
+                SQL.identifier(link),
+                SQL.identifier(target_table),
+                SQL.identifier(target_column),
+                models,
+            )
+        elif column_exists(cr, referencing, model_column):
+            condition = _model_condition(cr, referencing, model_column, models)
+        else:
+            continue
+        _rekey_column(cr, referencing, id_column, olds, news, condition)
     if table_exists(cr, "mail_tracking_value"):
         tracked = SQL(
             " AND field_id IN (SELECT id FROM ir_model_fields "
@@ -648,6 +691,91 @@ def rekey_records(
                 SQL(definition),
             )
         )
+
+
+def rekey_property_values(
+    env: Any, models: Collection[str], moves: Mapping[int, int]
+) -> None:
+    # A Properties value keeps a relational property's ids in its jsonb, by
+    # the names its container's definition gives them; only the registry knows
+    # which container defines which field, so this runs once it is loaded (an
+    # end- migration), after rekey_records moved the rows.
+    moves = {old: new for old, new in moves.items() if old != new}
+    if not moves:
+        return
+    models = set(models)
+    cr = env.cr
+
+    def moved(value: Any) -> Any:
+        if isinstance(value, int) and not isinstance(value, bool):
+            return moves.get(value, value)
+        if isinstance(value, list):
+            return [moved(item) for item in value]
+        return value
+
+    for model_name, model in env.registry.items():
+        if model._abstract or not model._auto:
+            continue
+        for field in model._fields.values():
+            if field.type != "properties" or not field.store:
+                continue
+            container_name, definition_name = field.definition.split(".", 1)
+            cr.execute(
+                SQL(
+                    "SELECT id, %s FROM %s WHERE %s IS NOT NULL",
+                    SQL.identifier(field.name),
+                    SQL.identifier(model._table),
+                    SQL.identifier(field.name),
+                )
+            )
+            values_by_id = dict(cr.fetchall())
+            if not values_by_id:
+                continue
+            # the container may be a related or computed field: read it as the
+            # registry would, and each container's definition once
+            records = (
+                env[model_name]
+                .sudo()
+                .with_context(active_test=False)
+                .browse(list(values_by_id))
+            )
+            names_by_container: dict[int, set[str]] = {}
+            relational = 0  # debuglog
+            for record in records:
+                container = record[container_name]
+                if container.id not in names_by_container:
+                    names_by_container[container.id] = {
+                        prop["name"]
+                        for prop in (container[definition_name] or ())
+                        if prop.get("type") in ("many2one", "many2many")
+                        and prop.get("comodel") in models
+                    }
+                names = names_by_container[container.id]
+                if not names:
+                    continue
+                relational += 1
+                values = values_by_id[record.id]
+                rekeyed = {
+                    name: moved(value) if name in names else value
+                    for name, value in values.items()
+                }
+                if rekeyed != values:
+                    cr.execute(
+                        SQL(
+                            "UPDATE %s SET %s = %s WHERE id = %s",
+                            SQL.identifier(model._table),
+                            SQL.identifier(field.name),
+                            Json(rekeyed),
+                            record.id,
+                        )
+                    )
+            _debug.lifecycle(
+                "module_data.rekey_property_values",
+                model=model_name,
+                field=field.name,
+                rows=relational,
+            )
+    env.invalidate_all()
 
 
 def rehome_references(
@@ -696,6 +824,59 @@ def rehome_references(
                 )
             )
     _debug.lifecycle("module_data.rehome_references", models=models, into=into)
+
+
+def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, str]]:
+    cr.execute(
+        """
+        WITH RECURSIVE tree(oid) AS (
+            SELECT %s::regclass::oid
+             UNION
+            SELECT inherit.inhrelid FROM pg_inherits inherit
+              JOIN tree ON inherit.inhparent = tree.oid
+        )
+        SELECT con.conrelid::regclass::text, con.conname, pg_get_constraintdef(con.oid)
+          FROM pg_constraint con JOIN tree ON con.confrelid = tree.oid
+         WHERE con.contype = 'f'
+        """,
+        [table],
+    )
+    return cr.fetchall()
+
+
+def _model_column_of(
+    cr: BaseCursor, table: str, res_column: str
+) -> tuple[str, bool] | None:
+    # a Many2oneReference names its model beside it, by name in a char column
+    # (res_id <-> res_model or model, cause_res_id <-> cause_model) or as an
+    # ir_model id (calendar_event.res_model_id): the column, and whether it is an id
+    prefix = res_column.removesuffix("res_id")
+    columns = get_table_columns(cr, table)
+    for base in (f"{prefix}res_model", f"{prefix}model"):
+        for candidate, is_id in ((base, False), (f"{base}_id", True)):
+            column = columns.get(candidate)
+            if column and (column["udt_name"] == "int4") == is_id:
+                return candidate, is_id
+    return None
+
+
+def _model_condition_of(
+    cr: BaseCursor, table: str, res_column: str, models: list[str]
+) -> SQL | None:
+    found = _model_column_of(cr, table, res_column)
+    if found is None:
+        return None
+    return _model_condition(cr, table, found[0], models)
+
+
+def _model_condition(cr: BaseCursor, table: str, column: str, models: list[str]) -> SQL:
+    if get_table_columns(cr, table)[column]["udt_name"] == "int4":
+        return SQL(
+            " AND %s IN (SELECT id FROM ir_model WHERE model = ANY(%s))",
+            SQL.identifier(column),
+            models,
+        )
+    return SQL(" AND %s = ANY(%s)", SQL.identifier(column), models)
 
 
 def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, str]]:

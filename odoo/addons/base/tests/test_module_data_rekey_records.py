@@ -1,5 +1,10 @@
 from odoo.tests.common import TransactionCase, tagged
-from odoo.tools.module_data import _model_column_of, rehome_references, rekey_records
+from odoo.tools.module_data import (
+    UNDECLARED_REFERENCES,
+    _model_column_of,
+    rehome_references,
+    rekey_records,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -66,6 +71,14 @@ class TestRekeyRecords(TransactionCase):
         cls.env.cr.execute(
             "INSERT INTO ir_model_data (module, name, model, res_id) "
             "VALUES ('test_rekey', 'probe_two', 'probe.box', 2)"
+        )
+        cls.action = cls.env["ir.actions.act_window"].create(
+            {"name": "probe box", "res_model": "res.partner", "res_id": 2}
+        )
+        cls.env.flush_all()
+        cls.env.cr.execute(
+            "UPDATE ir_act_window SET res_model = 'probe.box' WHERE id = %s",
+            [cls.action.id],
         )
         # each box takes the id another one holds until it moves too
         rekey_records(
@@ -157,6 +170,12 @@ class TestRekeyRecords(TransactionCase):
             [("probe.box,3",), ("res.partner,2",)],
         )
 
+    def test_an_action_opening_a_box_follows(self):
+        self.assertEqual(
+            self._rows(f"SELECT res_id FROM ir_act_window WHERE id = {self.action.id}"),
+            [(3,)],
+        )
+
     def test_an_external_id_follows(self):
         self.assertEqual(
             self._rows(
@@ -169,6 +188,23 @@ class TestRekeyRecords(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRekeyRecordsReadsEveryModelColumn(TransactionCase):
+    def test_every_undeclared_record_id_is_known(self):
+        """An Integer that holds a record id beside a model name, and is not a
+        Many2oneReference, is listed for rekey_records, or it is missed."""
+        listed = {(table, column) for table, column, __ in UNDECLARED_REFERENCES}
+        suffixes = ("res_id", "_thread_id", "record_id")
+        for name, model in self.env.registry.items():
+            if model._abstract or model._transient or not model._auto:
+                continue
+            for field in model._fields.values():
+                if (
+                    field.type == "integer"
+                    and field.store
+                    and field.name.endswith(suffixes)
+                ):
+                    with self.subTest(model=name, field=field.name):
+                        self.assertIn((model._table, field.name), listed)
+
     def test_every_stored_model_and_id_pair_is_the_one_it_reads(self):
         """rekey_records pairs a res_id with its model column by name, before
         any registry exists; every pair the registry knows must match it."""
