@@ -189,6 +189,26 @@ class TestStockPickingApprovalRequired(TransactionCase):
             "can neither be validated nor sent for approval",
         )
 
+    def test_an_unstaffed_catch_all_gives_way_to_a_staffed_one(self):
+        unstaffed = self.env["approval.category"].create(
+            {
+                "name": "Nobody Asked",
+                "approval_type": "stock",
+                "company_id": self.company.id,
+                "sequence": self.catch_all.sequence - 1,
+                "step_ids": pool_step(minimum=1),
+            },
+        )
+        picking = self._create_picking(location_id=self.restricted_location.id)
+
+        self.assertFalse(unstaffed._can_be_met_for(picking))
+        self.assertEqual(
+            picking._get_approval_category(),
+            self.catch_all,
+            "a catch-all whose step no one can staff could never approve the "
+            "transfer, so the next one serves it",
+        )
+
     def test_a_flag_with_no_category_at_all_does_not_brick_the_transfer(self):
         self.env["approval.category"].search(
             [("approval_type", "=", "stock"), ("target_model", "=", False)],

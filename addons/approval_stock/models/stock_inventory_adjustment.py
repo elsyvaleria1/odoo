@@ -240,6 +240,7 @@ class StockInventoryAdjustment(models.Model):
             lambda category: (
                 not (category.location_ids or category.stock_product_categ_ids)
                 and category.step_ids
+                and category._can_be_met_for(self)
             )
         )[:1]
 

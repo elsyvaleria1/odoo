@@ -477,6 +477,13 @@ class ApprovalCategoryStep(models.Model):
         )
         return pool
 
+    def _can_be_met_for(self, document, company) -> bool:
+        self.check_singleton()
+        # a walk names its approver per request, from the requester
+        if self.advisory or self.walk != "none":
+            return True
+        return len(self._get_pool_user_ids(document, company)) >= self.minimum
+
     def _walk(self, document, company, request) -> set[int]:
         """The one approver the walk stops at: the first whose limit covers the amount.
 

@@ -97,6 +97,7 @@ class StockPicking(models.Model):
             lambda c: (
                 not (c.picking_type_ids or c.location_ids or c.stock_product_categ_ids)
                 and c.step_ids
+                and c._can_be_met_for(self)
             ),
         )[:1]
         if not catch_all:

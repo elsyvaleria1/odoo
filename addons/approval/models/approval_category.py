@@ -647,6 +647,11 @@ class ApprovalCategory(models.Model):
         )
         return True
 
+    def _can_be_met_for(self, document) -> bool:
+        self.check_singleton()
+        company = document.company_id if "company_id" in document._fields else None
+        return all(step._can_be_met_for(document, company) for step in self.step_ids)
+
     def _get_view_request(
         self, label: str, extra_domain: list | None = None
     ) -> dict[str, Any]:
