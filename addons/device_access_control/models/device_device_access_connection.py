@@ -3,7 +3,6 @@ from urllib.parse import urlparse
 from odoo import api, models
 from odoo.exceptions import UserError
 
-from .device_device import EHOME_BRIDGE_DEFAULT_URL
 from odoo.addons.integration.tools import is_private_host
 
 
