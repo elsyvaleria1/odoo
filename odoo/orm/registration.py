@@ -623,6 +623,11 @@ def _add_table_objects(model_cls: type[BaseModel]) -> None:
             f"A record shares its id with its {shared}: neither changes.",
         )
         cons.name = "inherits_shared_id"
+        cons._module = next(
+            cls._module or ""
+            for cls in model_cls._model_classes__
+            if isinstance(cls, models.MetaModel) and "_inherits_shared_id" in vars(cls)
+        )
         table_objects[cons.get_full_name(model_cls)] = cons
     set_class_attr(model_cls, "_table_objects", frozendict(table_objects))
     if _debug.pipeline.enabled and model_cls._table_objects:
