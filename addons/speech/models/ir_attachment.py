@@ -71,6 +71,7 @@ class IrAttachment(models.Model):
 
     @api.depends(
         "checksum",
+        "mimetype",
         "reading_ids.representation",
         "reading_ids.state",
         "reading_ids.value",
@@ -80,7 +81,19 @@ class IrAttachment(models.Model):
         "reading_ids.checksum",
     )
     def _compute_transcript(self) -> None:
-        for attachment in self:
+        # only a recording is ever transcribed: the rest need not read the
+        # readings at all
+        recordings = self.filtered(lambda a: is_recording(a.mimetype or ""))
+        (self - recordings).update(
+            {
+                "transcript_state": "none",
+                "transcript_cues": False,
+                "transcript_language": False,
+                "transcript_engine": False,
+                "transcript_error": False,
+            }
+        )
+        for attachment in recordings:
             reading = attachment._reading(CUES)
             done = reading.state == "done"
             attachment.transcript_state = reading.state or "none"
