@@ -689,6 +689,8 @@ class ResourceResource(models.Model):
         "partner_id.child_ids.country_of_birth",
         "partner_id.child_ids.place_of_birth",
     )
+    # a person's origin is read through their private facet as the reader, so
+    # another reader in the same transaction computes their own
     @api.depends_context("uid")
     def _compute_origin(self) -> None:
         facets = self.filtered(
@@ -760,6 +762,7 @@ class ResourceResource(models.Model):
             return self.partner_id._get_private_facet().nationality_ids
         return self.nationality_ids
 
+    @api.depends_context("uid")
     def _compute_nationality_country_ids(self) -> None:
         for resource in self:
             resource.nationality_country_ids = (
