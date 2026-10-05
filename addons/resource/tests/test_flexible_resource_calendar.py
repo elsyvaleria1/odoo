@@ -712,3 +712,65 @@ class TestTheScheduleReadDecides(ResourceCase):
             [(self.monday.replace(hour=9), self.monday.replace(hour=11))],
         )
         self.assertEqual(absence(flexible)[0][0], self.monday)
+
+
+class TestFlexibleHoursFollowTheWindow(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.calendar = cls.env["resource.calendar"].create(
+            {
+                "name": "Flexible 40h",
+                "schedule_type": "flexible",
+                "hours_per_week": 40,
+                "hours_per_day": 8,
+                "tz": "UTC",
+            }
+        )
+        cls.resource = cls.env["resource.resource"].create(
+            {
+                "name": "Flexy",
+                "type": "material",
+                "calendar_id": cls.calendar.id,
+                "tz": "UTC",
+            }
+        )
+        cls.monday = datetime(2026, 6, 1, tzinfo=UTC)
+
+    def test_an_evening_counts_as_the_resource_reads_it(self):
+        start, stop = (
+            self.monday + timedelta(hours=18),
+            self.monday + timedelta(hours=22),
+        )
+        self.assertEqual(
+            self.calendar.get_work_hours_count(start, stop, compute_leaves=False), 4.0
+        )
+        schedule = self.resource._get_work_schedule(start, stop)
+        self.assertEqual(schedule.work_hours(self.resource), 4.0)
+
+    def test_a_plan_starts_where_it_is_asked_to(self):
+        self.assertEqual(
+            self.calendar.plan_hours(
+                4,
+                (self.monday + timedelta(hours=18)).replace(tzinfo=None),
+                compute_leaves=False,
+            ),
+            (self.monday + timedelta(hours=22)).replace(tzinfo=None),
+        )
+
+    def test_a_whole_day_is_still_drawn_around_noon(self):
+        blocks = self.calendar._attendance_intervals_batch(
+            self.monday, self.monday + timedelta(days=1)
+        )[False]
+        self.assertEqual(
+            [(start.hour, stop.hour) for start, stop, _meta in blocks], [(8, 16)]
+        )
+
+    def test_a_cut_day_holds_no_more_than_its_hours(self):
+        start = self.monday + timedelta(hours=2)
+        self.assertEqual(
+            self.calendar.get_work_hours_count(
+                start, self.monday + timedelta(days=1), compute_leaves=False
+            ),
+            8.0,
+        )

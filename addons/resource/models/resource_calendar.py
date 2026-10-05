@@ -648,6 +648,27 @@ class ResourceCalendar(models.Model):
         start_time = min(max(noon - length / 2, lower), upper - length)
         return start_time, start_time + length
 
+    @classmethod
+    def _place_flexible_hours(cls, day, hours, tz, free, start, stop) -> list:
+        # a window that holds the whole day leaves the hours unanchored, so
+        # they are drawn around noon; one that cuts the day anchors them at
+        # its earliest free time
+        midnight = datetime.combine(day, time.min).replace(tzinfo=tz)
+        if start <= midnight and stop >= midnight + timedelta(days=1):
+            block = cls._center_block_on_noon(day, hours, tz, free)
+            return [block] if block else []
+        lower, upper = max(start, midnight), min(stop, midnight + timedelta(days=1))
+        blocks, left = [], hours
+        for span_start, span_stop, _meta in free:
+            span_start, span_stop = max(span_start, lower), min(span_stop, upper)
+            if left <= 0 or span_start >= span_stop:
+                continue
+            take = min(left, elapsed_hours(span_start, span_stop))
+            end_utc = span_start.astimezone(UTC) + timedelta(hours=take)
+            blocks.append((span_start, end_utc.astimezone(tz)))
+            left -= take
+        return blocks
+
     def _get_flexible_hours_per_week(self):
         self.check_singleton()
         return self.hours_per_week or self.full_time_required_hours
@@ -697,12 +718,9 @@ class ResourceCalendar(models.Model):
                         for window_start, window_stop in leave_windows.get(day, ())
                     ]
                 )
-                block = self._center_block_on_noon(day, hours, tz, free)
-                if not block:
-                    continue
-                start = max(block[0], start_datetime)
-                stop = min(block[1], end_datetime)
-                if start < stop:
+                for start, stop in self._place_flexible_hours(
+                    day, hours, tz, free, start_datetime, end_datetime
+                ):
                     covered = elapsed_hours(start, stop)
                     intervals.append(
                         (
