@@ -1,2 +1,2 @@
 from . import hr_employee
-from . import resource_asset
+from . import resource_resource

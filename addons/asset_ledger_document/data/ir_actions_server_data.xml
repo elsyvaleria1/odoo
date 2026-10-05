@@ -10,7 +10,7 @@
         <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
         <field name="state">code</field>
         <field
-            name="code">action = records.action_link_to_record('resource.asset')</field>
+            name="code">action = records.action_link_to_record('resource.resource')</field>
     </record>
 
     <!--

@@ -44,17 +44,17 @@ class TestResourceAssetLink(TransactionCase):
         self.assertTrue(asset)
         self.assertEqual(asset.trace_id, lot)
         self.assertEqual(asset.kind_id.code, "vehicle")
-        self.assertEqual(asset.resource_id.type, "material")
-        self.assertEqual(asset.resource_id._get_identifier("plate"), "ABC-123")
-        self.assertEqual(asset.resource_id._get_identifier("vin"), "1HGCM82633A004352")
+        self.assertEqual(asset.type, "material")
+        self.assertEqual(asset._get_identifier("plate"), "ABC-123")
+        self.assertEqual(asset._get_identifier("vin"), "1HGCM82633A004352")
         self.assertFalse(asset.missing_identifier_type_ids)
 
     def test_identity_follows_the_lot(self):
         lot = self._lot(license_plate="ABC-123")
         lot.license_plate = "XYZ-999"
-        self.assertEqual(lot.asset_id.resource_id._get_identifier("plate"), "XYZ-999")
+        self.assertEqual(lot.asset_id._get_identifier("plate"), "XYZ-999")
         lot.license_plate = False
-        self.assertFalse(lot.asset_id.resource_id._get_identifier("plate"))
+        self.assertFalse(lot.asset_id._get_identifier("plate"))
         self.assertIn(self.plate_type, lot.asset_id.missing_identifier_type_ids)
 
     def test_odometer_follows_the_ledger(self):
@@ -232,7 +232,7 @@ class TestResourceAssetLink(TransactionCase):
         self.assertEqual(lot.license_plate, "XYZ-999")
         self.env["resource.identifier"].create(
             {
-                "resource_id": asset.resource_id.id,
+                "resource_id": asset.id,
                 "type_id": self.vin_type.id,
                 "value": "1HGCM82633A004352",
             }

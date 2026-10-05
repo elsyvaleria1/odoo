@@ -7,7 +7,7 @@ class TestMaintenanceMulticompany(TransactionCase):
         """Test Check maintenance with maintenance manager and user in multi company environment"""
 
         # Use full models
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         MaintenanceOrder = self.env["maintenance.order"]
         Kind = self.env["resource.kind"]
         ResUsers = self.env["res.users"]

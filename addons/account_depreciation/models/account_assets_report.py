@@ -464,14 +464,8 @@ class AccountAssetReportHandler(models.AbstractModel):
         query.add_join(
             "JOIN",
             alias="asset",
-            table="resource_asset",
-            condition=SQL("asset.id = board.asset_id"),
-        )
-        query.add_join(
-            "JOIN",
-            alias="asset_resource",
             table="resource_resource",
-            condition=SQL("asset_resource.id = asset.resource_id"),
+            condition=SQL("asset.id = board.asset_id"),
         )
         account_alias = query.join(
             lhs_alias="board",
@@ -525,7 +519,7 @@ class AccountAssetReportHandler(models.AbstractModel):
                 SQL(
                     "%s && %s",
                     [analytic_account_ids],
-                    self.env["resource.asset"]._query_analytic_accounts("asset"),
+                    self.env["resource.resource"]._query_analytic_accounts("asset"),
                 )
             )
 
@@ -545,12 +539,12 @@ class AccountAssetReportHandler(models.AbstractModel):
                    board.increased_board_id AS parent_id,
                    asset.name AS asset_name,
                    board.asset_group_id AS asset_group_id,
-                   COALESCE(asset_resource.value_original, 0) AS asset_original_value,
+                   COALESCE(asset.value_original, 0) AS asset_original_value,
                    asset_company.currency_id AS asset_currency_id,
                    COALESCE(board.value_salvage, 0) as asset_salvage_value,
                    MIN(move.date) AS asset_date,
-                   asset_resource.date_disposal AS asset_disposal_date,
-                   asset_resource.date_acquisition AS asset_acquisition_date,
+                   asset.date_disposal AS asset_disposal_date,
+                   asset.date_acquisition AS asset_acquisition_date,
                    board.depreciation_method AS asset_method,
                    board.depreciation_duration AS asset_method_number,
                    board.depreciation_period AS asset_method_period,
@@ -566,12 +560,12 @@ class AccountAssetReportHandler(models.AbstractModel):
               FROM %(from_clause)s
              WHERE %(where_clause)s
                AND asset.company_id in %(company_ids)s
-               AND (asset_resource.date_acquisition <= %(date_to)s OR move.date <= %(date_to)s)
-               AND (asset_resource.date_disposal >= %(date_from)s OR asset_resource.date_disposal IS NULL)
+               AND (asset.date_acquisition <= %(date_to)s OR move.date <= %(date_to)s)
+               AND (asset.date_disposal >= %(date_from)s OR asset.date_disposal IS NULL)
                AND (board.depreciation_state not in ('draft', 'cancelled') OR (board.depreciation_state = 'draft' AND %(include_draft)s))
                AND (asset.active = 't' OR board.depreciation_state = 'close')
-          GROUP BY board.id, asset.id, asset_resource.id, asset_company.currency_id, account_id, account_code, account_name
-          ORDER BY account_code, asset_resource.date_acquisition, asset.id;
+          GROUP BY board.id, asset.id, asset_company.currency_id, account_id, account_code, account_name
+          ORDER BY account_code, asset.date_acquisition, asset.id;
             """,
             account_code=account_code,
             account_name=account_name,

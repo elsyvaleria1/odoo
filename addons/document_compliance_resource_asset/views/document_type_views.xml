@@ -13,7 +13,7 @@
                     name="asset_kind_ids"
                     widget="many2many_tags"
                     options="{'no_create': True}"
-                    invisible="applies_to != 'resource.asset'" />
+                    invisible="applies_to != 'resource.resource'" />
             </field>
         </field>
     </record>

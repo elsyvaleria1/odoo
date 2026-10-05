@@ -39,11 +39,11 @@ class VisitDeliveriesSetup:
         pickup_model = cls.env["product.product"].create(
             {"name": "Pickup model", "type": "consu", "asset_kind_id": kind.id}
         )
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {"name": "Pickup", "kind_id": kind.id, "product_id": pickup_model.id}
         )
         # A vehicle is on one trip at a time: a second trip on the road takes another.
-        cls.other_vehicle = cls.env["resource.asset"].create(
+        cls.other_vehicle = cls.env["resource.resource"].create(
             {"name": "Truck", "kind_id": kind.id, "product_id": pickup_model.id}
         )
         cls.product = cls.env["product.product"].create(

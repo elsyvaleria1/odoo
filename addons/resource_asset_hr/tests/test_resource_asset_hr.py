@@ -11,14 +11,14 @@ class TestAssetCustody(TransactionCase):
         super().setUpClass()
         cls.employee = cls.env["hr.employee"].create({"name": "Custodian"})
         cls.department = cls.env["hr.department"].create({"name": "Workshop"})
-        cls.laptop = cls.env["resource.asset"].create(
+        cls.laptop = cls.env["resource.resource"].create(
             {"name": "Laptop", "kind_id": cls.env.ref("resource_asset.kind_it").id}
         )
 
     def _assign(self, **vals):
         return self.env["resource.assignment"].create(
             {
-                "resource_id": self.laptop.resource_id.id,
+                "resource_id": self.laptop.id,
                 "custody_role": "custodian",
                 **vals,
             }
@@ -67,7 +67,7 @@ class TestEmployeeCustody(TransactionCase):
         cls.kind = cls.env.ref("resource_asset.kind_tool")
 
     def test_naming_the_operator_by_employee_writes_the_assignment(self):
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Drill",
                 "kind_id": self.kind.id,
@@ -82,7 +82,7 @@ class TestEmployeeCustody(TransactionCase):
         self.assertEqual(asset.operator_employee_id, self.employee)
         self.assertIn(
             asset,
-            self.env["resource.asset"].search(
+            self.env["resource.resource"].search(
                 [("operator_employee_id", "=", self.employee.id)]
             ),
         )

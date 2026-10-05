@@ -48,7 +48,7 @@ class TestMaintenanceTransfer(TransactionCase):
         return self.env["maintenance.order"].create(
             {
                 "name": "Replace hydraulic hose",
-                "resource_ids": self.lot.asset_id.resource_id.ids,
+                "resource_ids": self.lot.asset_id.ids,
                 "maintenance_type": "corrective",
                 "date_scheduled_start": datetime.now(),
                 "duration": 24,
@@ -113,7 +113,7 @@ class TestMaintenanceTransfer(TransactionCase):
         )
         second = self._stocked_lot("TRANSFER-2", location=shelf)
         self._stocked_lot("TRANSFER-IDLE")
-        order = self._order(resource_ids=(self.lot | second).asset_id.resource_id.ids)
+        order = self._order(resource_ids=(self.lot | second).asset_id.ids)
         self.assertEqual(order._get_lot_location(), self.warehouse.lot_stock_id)
 
         picking = self._send(order)
@@ -123,7 +123,7 @@ class TestMaintenanceTransfer(TransactionCase):
 
     def test_the_order_closes_once_every_serial_is_back(self):
         second = self._stocked_lot("TRANSFER-2")
-        order = self._order(resource_ids=(self.lot | second).asset_id.resource_id.ids)
+        order = self._order(resource_ids=(self.lot | second).asset_id.ids)
         picking = self._send(order)
 
         self._return(picking, lots=self.lot)

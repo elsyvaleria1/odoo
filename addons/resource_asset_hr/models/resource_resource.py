@@ -9,8 +9,8 @@ EMPLOYEE_CUSTODY_FIELDS = {
 }
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     operator_employee_id = fields.Many2one(
         comodel_name="hr.employee",
@@ -50,9 +50,11 @@ class ResourceAsset(models.Model):
             .search([("resource_id", "in", resources.ids)])
         )
         by_resource = {employee.resource_id: employee for employee in employees}
-        for asset in self:
+        for resource in self:
             for employee_field, resource_field in EMPLOYEE_CUSTODY_FIELDS.items():
-                asset[employee_field] = by_resource.get(asset[resource_field], False)
+                resource[employee_field] = by_resource.get(
+                    resource[resource_field], False
+                )
 
     def _inverse_custody_employee(self, employee_field) -> None:
         # Through write, so the resource field's own inverse runs: an assignment
@@ -60,10 +62,10 @@ class ResourceAsset(models.Model):
         # Grouped by holder, so a batch writing one holder is one write.
         resource_field = EMPLOYEE_CUSTODY_FIELDS[employee_field]
         by_resource = defaultdict(self.browse)
-        for asset in self:
-            by_resource[asset[employee_field].sudo().resource_id] |= asset
-        for resource, assets in by_resource.items():
-            assets.write({resource_field: resource.id})
+        for resource in self:
+            by_resource[resource[employee_field].sudo().resource_id] |= resource
+        for holder, resources in by_resource.items():
+            resources.write({resource_field: holder.id})
 
     def _inverse_operator_employee_id(self) -> None:
         self._inverse_custody_employee("operator_employee_id")
@@ -111,17 +113,17 @@ class ResourceAsset(models.Model):
 
 
 def live_custody_subquery(
-    role, asset_alias, alias, *, at="(clock_timestamp() AT TIME ZONE 'UTC')"
+    role, resource_alias, alias, *, at="(clock_timestamp() AT TIME ZONE 'UTC')"
 ) -> str:
-    """A lateral subquery naming the employee who holds `role` on the asset right
-    at ``at`` (now by default): the latest started assignment, so an asset joins at most one row
+    """A lateral subquery naming the employee who holds `role` on the resource
+    right at ``at`` (now by default): the latest started assignment, so a resource joins at most one row
     and a report's groups do not split. Use it as ``LEFT JOIN LATERAL {subquery}
     ON TRUE``."""
     return f"""(
                 SELECT e.id AS employee_id
                   FROM resource_assignment ra
                   JOIN hr_employee e ON e.resource_id = ra.assignee_id
-                 WHERE ra.resource_id = {asset_alias}.resource_id
+                 WHERE ra.resource_id = {resource_alias}.id
                    AND ra.custody_role = '{role}'
                    AND ra.active
                    AND ra.date_start <= {at}

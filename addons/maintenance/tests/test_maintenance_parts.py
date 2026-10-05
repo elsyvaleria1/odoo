@@ -30,7 +30,7 @@ class TestMaintenanceParts(TransactionCase):
             }
         )
         cls.pump = cls.env["product.product"].create({"name": "Fuel pump"})
-        cls.truck = cls.env["resource.asset"].create(
+        cls.truck = cls.env["resource.resource"].create(
             {"name": "Truck 12", "kind_id": cls.kind.id}
         )
         cls.vendor = cls.env["res.partner"].create({"name": "Diesel Workshop"})
@@ -42,7 +42,7 @@ class TestMaintenanceParts(TransactionCase):
         return self.env["maintenance.order"].create(
             {
                 "name": "Fuel pump failure",
-                "resource_ids": [(6, 0, self.truck.resource_id.ids)],
+                "resource_ids": [(6, 0, self.truck.ids)],
                 "maintenance_team_id": self.team.id,
                 "block_resource": False,
                 **vals,

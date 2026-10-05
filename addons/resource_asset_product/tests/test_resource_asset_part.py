@@ -37,12 +37,12 @@ class TestResourceAssetPart(TransactionCase):
             {"name": "Tyre 295/80", "categ_id": cls.tyres.id}
         )
         cls.vendor = cls.env["res.partner"].create({"name": "Tyre Shop"})
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {"name": "Truck 7", "kind_id": cls.kind.id}
         )
         cls.odometer = cls.env["resource.meter"].create(
             {
-                "resource_id": cls.asset.resource_id.id,
+                "resource_id": cls.asset.id,
                 "name": "Odometer",
                 "kind": "odometer",
             }
@@ -220,7 +220,7 @@ class TestResourceAssetPart(TransactionCase):
         with self.assertRaises(ValidationError):
             self._install(datetime(2026, 1, 1), product_id=other.id)
 
-        van = self.env["resource.asset"].create(
+        van = self.env["resource.resource"].create(
             {"name": "Van", "kind_id": self.env.ref("resource_asset.kind_tool").id}
         )
         with self.assertRaises(ValidationError):
@@ -236,12 +236,13 @@ class TestResourceAssetPart(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestResourceAssetPartReference(TransactionCase):
-    def test_a_part_reference_is_guarded_by_the_scan(self):
-        restricting = {
-            (model, field)
-            for model, field, ondelete in self.env[
-                "resource.asset"
-            ]._get_fields_ondelete_unenforced()
-            if ondelete == "restrict"
-        }
-        self.assertIn(("resource.part", "asset_id"), restricting)
+    def test_a_part_reference_is_a_foreign_key_that_restricts(self):
+        self.env.cr.execute(
+            """
+            SELECT pg_get_constraintdef(c.oid) FROM pg_constraint c
+             WHERE c.conrelid = 'resource_part'::regclass AND c.contype = 'f'
+               AND pg_get_constraintdef(c.oid) LIKE 'FOREIGN KEY (asset_id)%'
+            """
+        )
+        [[definition]] = self.env.cr.fetchall()
+        self.assertIn("REFERENCES resource_resource(id) ON DELETE RESTRICT", definition)

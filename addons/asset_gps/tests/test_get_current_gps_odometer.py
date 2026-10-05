@@ -73,7 +73,7 @@ class TestGetCurrentGpsOdometer(StockLotGpsTestBase):
         )
 
         self.assertEqual(
-            self.env["resource.asset"]._gps_odometer_lookback_days(),
+            self.env["resource.resource"]._gps_odometer_lookback_days(),
             30,
             "A parameter that will not parse must not raise.",
         )
@@ -83,7 +83,7 @@ class TestGetCurrentGpsOdometer(StockLotGpsTestBase):
             "asset_gps.odometer_lookback_days", "-5"
         )
 
-        self.assertEqual(self.env["resource.asset"]._gps_odometer_lookback_days(), 30)
+        self.assertEqual(self.env["resource.resource"]._gps_odometer_lookback_days(), 30)
 
     def test_a_junk_window_does_not_abort_the_cron(self):
         self._log(10000, days_ago=5)

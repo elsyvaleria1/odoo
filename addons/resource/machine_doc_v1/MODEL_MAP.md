@@ -44,8 +44,8 @@
 - Local time: `_get_local_date`, `_get_local_day_bounds`.
 - Lifecycle: `_transition`, `_get_transition_vals` (disposal archives and dates),
   `_end_maintenance`, `_get_state_after_maintenance`; `_check_transition` and
-  `_check_reactivation` are hooks a representation extends (resource_asset defers to the
-  asset's). Archiving ends custody; unarchiving a disposed resource puts it out of service.
+  `_check_reactivation` are hooks an extension overrides (account_depreciation refuses
+  disposing a running board). Archiving ends custody; unarchiving a disposed resource puts it out of service.
 - Identifiers and meters: `_get_identifier`, `_update_identifier` (silent for an unknown
   code). `fields.ResourceIdentifier` exposes one identifier as a column on
   any model that reaches a resource through `through`.

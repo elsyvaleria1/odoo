@@ -125,7 +125,7 @@ class TestResourceAssetTripReadingAge(GpsBridgeCase):
 
         self.assertEqual(self.asset.get_current_odometer(), 12000.0)
         self.assertEqual(
-            self.env["resource.asset"]._trip_reading_max_age(), timedelta(hours=2)
+            self.env["resource.resource"]._trip_reading_max_age(), timedelta(hours=2)
         )
 
     def test_the_latest_reading_is_taken_not_the_highest(self):

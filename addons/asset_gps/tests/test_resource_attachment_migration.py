@@ -2,14 +2,13 @@ import importlib.util
 from pathlib import Path
 
 from odoo.db import schema
-from odoo.tools import SQL
 
 from .test_product_trace import StockLotGpsTestBase
 from odoo.addons.asset_gps.tools.compatibility import register_legacy_gps_privileges
 
 
 class TestResourceAttachmentMigration(StockLotGpsTestBase):
-    """Exercise migration against inherited tables with legacy attachment data."""
+    """Exercise the migration against what resource_asset 2.0 held of an old tree."""
 
     def _migrate(self):
         path = (
@@ -34,27 +33,10 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
             [self.device.id],
         )
         self.env["resource.gps.binding"].invalidate_model()
-        schema.create_column(self.cr, "resource_asset", "gps_device_id", "int4")
-        self.concrete_table = self.env[
-            self.asset._get_model_for_kind(self.asset.kind_id)
-        ]._table
-        # Detaching and reattaching preserves a child's local column copy,
-        # matching an old concrete model that also declared the field.
+        # what resource_asset 2.0 holds of an old tree for this migration
         self.cr.execute(
-            SQL(
-                "ALTER TABLE %s NO INHERIT resource_asset",
-                SQL.identifier(self.concrete_table),
-            )
-        )
-        self.cr.execute(
-            SQL(
-                "ALTER TABLE %s INHERIT resource_asset",
-                SQL.identifier(self.concrete_table),
-            )
-        )
-        self.cr.execute(
-            "UPDATE resource_asset SET gps_device_id = %s WHERE id = %s",
-            [self.device.id, self.asset.id],
+            "CREATE TABLE resource_asset_legacy AS SELECT %s::int4 AS id, %s::int4 AS gps_device_id",
+            [self.asset.id, self.device.id],
         )
 
     def test_attachment_survives_and_legacy_columns_are_removed(self):
@@ -65,20 +47,17 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
         self._migrate()
         self.assertTrue(report._rolling_pop_stale())
         self.assertEqual(self.asset.gps_device_id, self.device)
-        self.assertEqual(self.device.tracked_resource_id, self.asset.resource_id)
+        self.assertEqual(self.device.tracked_resource_id, self.asset)
         self.assertEqual(self.device.asset_id, self.asset)
         binding = self.env["resource.gps.binding"].search(
-            [("resource_id", "=", self.asset.resource_id.id)]
+            [("resource_id", "=", self.asset.id)]
         )
         self.assertEqual(binding.origin, "legacy")
         self.assertFalse(binding.date_start)
         self.assertFalse(binding.date_end)
         self.assertFalse(self.asset.active)
         self.assertFalse(
-            schema.column_exists(self.cr, "resource_asset", "gps_device_id")
-        )
-        self.assertFalse(
-            schema.column_exists(self.cr, self.concrete_table, "gps_device_id")
+            schema.column_exists(self.cr, "resource_asset_legacy", "gps_device_id")
         )
         # Safe to retry after the old columns have gone.
         self._migrate()
@@ -93,10 +72,11 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
             self._migrate()
         self.assertEqual(self.asset.gps_device_id, other)
         self.assertTrue(
-            schema.column_exists(self.cr, "resource_asset", "gps_device_id")
+            schema.column_exists(self.cr, "resource_asset_legacy", "gps_device_id")
         )
         self.cr.execute(
-            "SELECT gps_device_id FROM resource_asset WHERE id = %s", [self.asset.id]
+            "SELECT gps_device_id FROM resource_asset_legacy WHERE id = %s",
+            [self.asset.id],
         )
         self.assertEqual(self.cr.fetchone()[0], self.device.id)
 
@@ -105,15 +85,15 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
         other = self.asset.with_context(skip_asset_identity_check=True).copy()
         self.env.flush_all()
         self.cr.execute(
-            "UPDATE resource_asset SET gps_device_id = %s WHERE id = %s",
-            [self.device.id, other.id],
+            "INSERT INTO resource_asset_legacy VALUES (%s, %s)",
+            [other.id, self.device.id],
         )
         with self.assertRaisesRegex(ValueError, "several resources"):
             self._migrate()
-        self.assertFalse(self.asset.resource_id.gps_device_id)
-        self.assertFalse(other.resource_id.gps_device_id)
+        self.assertFalse(self.asset.gps_device_id)
+        self.assertFalse(other.gps_device_id)
         self.assertTrue(
-            schema.column_exists(self.cr, "resource_asset", "gps_device_id")
+            schema.column_exists(self.cr, "resource_asset_legacy", "gps_device_id")
         )
 
     def test_cross_company_legacy_attachment_is_refused(self):
@@ -123,9 +103,9 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
         self.env.flush_all()
         with self.assertRaisesRegex(ValueError, "companies disagree"):
             self._migrate()
-        self.assertFalse(self.asset.resource_id.gps_device_id)
+        self.assertFalse(self.asset.gps_device_id)
         self.assertTrue(
-            schema.column_exists(self.cr, "resource_asset", "gps_device_id")
+            schema.column_exists(self.cr, "resource_asset_legacy", "gps_device_id")
         )
 
     def test_legacy_privilege_ids_are_aliases_of_shared_policy(self):

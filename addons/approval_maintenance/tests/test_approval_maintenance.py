@@ -101,7 +101,7 @@ class TestApprovalMaintenanceSetup(TransactionCase):
             {
                 "name": name,
                 "maintenance_type": maintenance_type,
-                "resource_ids": lot.asset_id.resource_id.ids,
+                "resource_ids": lot.asset_id.ids,
                 "vendor_id": vendor and vendor.id,
             }
         )
@@ -240,7 +240,7 @@ class TestApprovalMaintenancePlan(TestApprovalMaintenanceSetup):
         return self.env["maintenance.plan"].create(
             {
                 "name": "Monthly check",
-                "resource_ids": self.equipment.asset_id.resource_id.ids,
+                "resource_ids": self.equipment.asset_id.ids,
                 "repeat_interval": 1,
                 "repeat_unit": "month",
             }

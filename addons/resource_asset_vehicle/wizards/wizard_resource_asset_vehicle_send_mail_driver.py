@@ -19,7 +19,7 @@ class WizardResourceAssetVehicleSendMailDriver(models.TransientModel):
     )
     template_id = fields.Many2one(
         domain=lambda self: [
-            ("model_id", "=", self.env["ir.model"]._get("resource.asset").id)
+            ("model_id", "=", self.env["ir.model"]._get("resource.resource").id)
         ]
     )
     attachment_ids = fields.Many2many(
@@ -33,7 +33,7 @@ class WizardResourceAssetVehicleSendMailDriver(models.TransientModel):
 
     @api.depends("subject")
     def _compute_render_model(self) -> None:
-        self.render_model = "resource.asset"
+        self.render_model = "resource.resource"
 
     @api.onchange("template_id")
     def _onchange_template_id(self) -> None:
@@ -79,7 +79,7 @@ class WizardResourceAssetVehicleSendMailDriver(models.TransientModel):
         return None
 
     def action_save_as_template(self):
-        model = self.env["ir.model"]._get("resource.asset")
+        model = self.env["ir.model"]._get("resource.resource")
         template_name = self.env._("Vehicle: Mass mail drivers")
         template = self.env["mail.template"].create(
             {

@@ -25,7 +25,7 @@ class TestMaintenanceStock(TransactionCase):
         cls.starter = cls.env["product.product"].create(
             {"name": "Starter motor", "is_storable": True, "tracking": "serial"}
         )
-        cls.truck = cls.env["resource.asset"].create(
+        cls.truck = cls.env["resource.resource"].create(
             {"name": "Truck 40", "kind_id": cls.kind.id}
         )
         cls.stock = cls.env.ref("stock.stock_location_stock")
@@ -48,7 +48,7 @@ class TestMaintenanceStock(TransactionCase):
         order = self.env["maintenance.order"].create(
             {
                 "name": "Starter replacement",
-                "resource_ids": [(6, 0, self.truck.resource_id.ids)],
+                "resource_ids": [(6, 0, self.truck.ids)],
                 "block_resource": False,
                 "vendor_id": self.vendor.id,
             }

@@ -74,7 +74,7 @@ class ProductAssetLog(models.Model):
         after = [t for t in timeline if t["date"] > target_dt]
         if after:
             return after[0]["old"] or after[0]["new"] or False
-        asset = self.env["resource.asset"].browse(asset_id)
+        asset = self.env["resource.resource"].browse(asset_id)
         holder = asset[EMPLOYEE_FIELD_BY_LOG_FIELD[lot_field]]
         return holder.id or False
 
@@ -105,8 +105,8 @@ class ProductAssetLog(models.Model):
         {date, old, new} employee ids: one entry per assignment start and one
         per end that nothing follows."""
         role = ROLE_BY_LOG_FIELD.get(lot_field)
-        asset = self.env["resource.asset"].browse(asset_id).sudo()
-        if not role or not asset.resource_id:
+        asset = self.env["resource.resource"].browse(asset_id).sudo()
+        if not role or not asset:
             return []
         self.env.flush_all()
         rows = (
@@ -114,7 +114,7 @@ class ProductAssetLog(models.Model):
             .sudo()
             .search(
                 [
-                    ("resource_id", "=", asset.resource_id.id),
+                    ("resource_id", "=", asset.id),
                     ("custody_role", "=", role),
                 ],
                 order="date_start asc, id asc",

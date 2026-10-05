@@ -5,7 +5,7 @@
         <field name="name">Import Assets</field>
         <field name="tag">account_import_action</field>
         <field name="target">current</field>
-        <field name="params" eval="{'model': 'resource.asset'}" />
+        <field name="params" eval="{'model': 'resource.resource'}" />
     </record>
 
 </odoo>

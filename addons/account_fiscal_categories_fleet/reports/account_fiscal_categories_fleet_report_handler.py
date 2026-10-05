@@ -73,7 +73,7 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
             %(select)s,
                 ARRAY_AGG(fleet_rate.rate) fleet_rate,
                 ARRAY_AGG(vehicle.id) vehicle_id,
-                ARRAY_AGG(vehicle.name) vehicle_name,
+                ARRAY_AGG(vehicle_resource.name) vehicle_name,
                 SUM(aml.balance * (
                     CASE WHEN fleet_rate.rate IS NOT NULL
                     THEN
@@ -94,11 +94,11 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
             """
             %(from_)s
             LEFT JOIN resource_asset_vehicle vehicle ON aml.asset_id = vehicle.id
+            LEFT JOIN resource_resource vehicle_resource ON vehicle_resource.id = vehicle.id
             LEFT JOIN fleet_disallowed_expenses_rate fleet_rate ON fleet_rate.id = (
-                SELECT r2.id FROm fleet_disallowed_expenses_rate r2
-                JOIN resource_asset v2 ON r2.vehicle_id = v2.id
+                SELECT r2.id FROM fleet_disallowed_expenses_rate r2
                 WHERE r2.date_from <= aml.date
-                  AND v2.id = vehicle.id
+                  AND r2.vehicle_id = vehicle.id
                 ORDER BY r2.date_from DESC LIMIT 1
             )
             """,
@@ -172,12 +172,12 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         ):
             if model == "account.fiscal.category":
                 current.update({"category_id": record_id})
-            if model == "resource.asset":
+            if model == "resource.asset.vehicle":
                 current.update({"vehicle_id": record_id})
             if model == "account.account":
                 current.update({"account_id": record_id})
             if model == "account.account.fiscal.rate":
-                if model == "resource.asset":
+                if model == "resource.asset.vehicle":
                     current.update({"fleet_rate": record_id})
                 else:
                     current.update({"account_rate": record_id})
@@ -195,7 +195,7 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         if current.get("vehicle_id") and options.get("vehicle_split"):
             parent_line_id = line_id
             line_id = report._get_generic_line_id(
-                "resource.asset", current["vehicle_id"], parent_line_id=line_id
+                "resource.asset.vehicle", current["vehicle_id"], parent_line_id=line_id
             )
         if current.get("account_id"):
             parent_line_id = line_id

@@ -14,7 +14,7 @@ registry.category("web_tour.tours").add("room_backend_tour", {
             run: "click",
         },
         {
-            trigger: "div[name='room_short_code'] input",
+            trigger: "div[name='short_code'] input",
             content: "The room carries its kiosk short code",
             run: function () {
                 if (this.anchor.value !== "room_1") {

@@ -51,7 +51,7 @@ class ResourceAssetPart(models.Model):
         related="asset_id.company_id",
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         index=True,
         required=True,
         ondelete="restrict",

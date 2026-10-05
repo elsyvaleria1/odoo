@@ -232,7 +232,7 @@ class TestOperatorSubtypeVisibility(TransactionCase):
         self.assertFalse(self.outsider.user_ids)
         follower = self.env["mail.followers"].search(
             [
-                ("res_model", "=", "resource.asset"),
+                ("res_model", "=", "resource.resource"),
                 ("res_id", "=", self.lot.asset_id.id),
                 ("partner_id", "=", self.outsider.id),
             ]

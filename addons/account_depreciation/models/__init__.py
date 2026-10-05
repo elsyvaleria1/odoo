@@ -6,6 +6,5 @@ from . import account_depreciation_profile
 from . import account_depreciation_board
 from . import account_move
 from . import account_return
-from . import resource_asset
 from . import resource_resource
 from . import account_config

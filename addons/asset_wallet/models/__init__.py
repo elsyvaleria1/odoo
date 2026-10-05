@@ -1,1 +1,1 @@
-from . import resource_asset, wallet_card, wallet_transaction
+from . import resource_resource, wallet_card, wallet_transaction

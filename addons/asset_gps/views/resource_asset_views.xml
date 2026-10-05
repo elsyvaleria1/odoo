@@ -14,7 +14,7 @@
 
     <record id="resource_asset_view_form_gps" model="ir.ui.view">
         <field name="name">resource.asset.form.gps</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
@@ -236,7 +236,7 @@
 
     <record id="resource_asset_view_kanban_general_gps" model="ir.ui.view">
         <field name="name">resource.asset.general.kanban.gps</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field
             name="inherit_id"
             ref="asset_ledger.resource_asset_view_kanban_general" />

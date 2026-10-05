@@ -110,13 +110,21 @@ class DocumentComplianceReport(models.Model):
             model: table for model, table in ENTITY_TABLES.items() if model in self.env
         }
 
+    @api.model
+    def _get_entity_conditions(self) -> dict[str, str]:
+        """An SQL condition on `t` narrowing a model's rows to its entities,
+        by model; a model absent here is entities in every active row."""
+        return {}
+
     def _get_entities_union(self) -> str:
         # a document names its entity by the entity's reference model, which
         # for a record that extends another's row is that other model
+        conditions = self._get_entity_conditions()
         parts = [
             f"SELECT '{model}' AS entity_type, "
             f"'{self.env[model]._get_reference_model_name()}' AS entity_reference, "
             f"t.id AS entity_id, t.company_id FROM {table} t WHERE t.active = true"
+            + (f" AND ({conditions[model]})" if model in conditions else "")
             for model, table in self._get_entity_model_map().items()
         ]
         return "\n                UNION ALL\n                ".join(parts)

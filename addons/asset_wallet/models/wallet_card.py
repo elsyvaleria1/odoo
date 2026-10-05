@@ -10,7 +10,7 @@ class WalletCard(models.Model):
     _inherit = "wallet.card"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         index=True,
         ondelete="set null",
         check_company=True,

@@ -57,7 +57,7 @@ class TestResourceAssetComponents(TestAccountAssetCommon):
         return bill
 
     def _plain_asset(self, name="Truck 7"):
-        return self.env["resource.asset"].create(
+        return self.env["resource.resource"].create(
             {"name": name, "kind_id": self.vehicle.id}
         )
 

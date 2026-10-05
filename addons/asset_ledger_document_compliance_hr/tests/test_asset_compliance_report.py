@@ -40,13 +40,13 @@ class TestAssetComplianceReportHrRegistry(TransactionCase):
         product = self.env["product.product"].create(
             {"name": "Managed Asset Model", "type": "consu", "asset_kind_id": kind.id}
         )
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {"name": "Managed Asset", "kind_id": kind.id, "product_id": product.id}
         )
         manager = self.env["hr.employee"].create({"name": "Asset Manager"})
         self.env["resource.assignment"].create(
             {
-                "resource_id": asset.resource_id.id,
+                "resource_id": asset.id,
                 "assignee_id": manager.resource_id.id,
                 "custody_role": "manager",
             }
@@ -57,7 +57,7 @@ class TestAssetComplianceReportHrRegistry(TransactionCase):
                 "code": "MANAGED_ASSET",
                 "company_id": False,
                 "is_mandatory": True,
-                "applies_to": "resource.asset",
+                "applies_to": "resource.resource",
             }
         )
         self.env.flush_all()

@@ -12,7 +12,7 @@ class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         index="btree_not_null",
         help="Asset to which this expense or revenue is allocated. "
         "Used for tracking costs per vehicle, equipment, or property",

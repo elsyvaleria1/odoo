@@ -25,7 +25,7 @@ class TestViewExtensions(TransactionCase):
         """`_compute_move_ids` answers 0 without accounting rights, so an
         unguarded button is a permanent empty one for every warehouse user."""
         form = self.env.ref("asset_ledger.resource_asset_view_form_ledger")
-        arch = self.env["resource.asset"].get_view(form.id, "form")["arch"]
+        arch = self.env["resource.resource"].get_view(form.id, "form")["arch"]
 
         button = ET.fromstring(arch).find(".//button[@name='action_view_bills']")
 

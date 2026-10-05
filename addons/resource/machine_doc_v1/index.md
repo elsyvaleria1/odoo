@@ -6,7 +6,7 @@
 | Version | 1.39 |
 | Depends | `web`, `uom` |
 | Models | 20 (15 concrete, 5 abstract) |
-| `mixin.resource` hosts in this checkout | 4 |
+| `mixin.resource` hosts in this checkout | 3 |
 | `mixin.resource.scheduling` hosts in this checkout | 4 |
 | `mixin.resource.allocation` hosts in this checkout | 2 |
 
@@ -57,7 +57,6 @@ reasons live in `doc/architecture/resource.rst`.
 `mixin.resource`:
 - `hr.employee` (hr)
 - `mrp.workcenter` (mrp)
-- `resource.asset` (resource_asset)
 - `resource.test` (test_resource)
 
 `mixin.resource.scheduling`:

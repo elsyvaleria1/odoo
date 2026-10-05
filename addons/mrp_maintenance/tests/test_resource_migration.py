@@ -10,7 +10,7 @@ class TestEquipmentResourceMigration(TransactionCase):
         self.cr.execute(
             "CREATE TEMP TABLE maintenance_equipment (asset_id integer, workcenter_id integer) ON COMMIT DROP"
         )
-        machine = self.env["resource.asset"].create(
+        machine = self.env["resource.resource"].create(
             {
                 "name": "Component",
                 "kind_id": self.env.ref("resource_asset.kind_machinery").id,
@@ -26,14 +26,14 @@ class TestEquipmentResourceMigration(TransactionCase):
         migrate_equipment_resources(self.env)
         migrate_equipment_resources(self.env)
         relations = self.env["resource.relation"].search(
-            [("member_id", "=", machine.resource_id.id)]
+            [("member_id", "=", machine.id)]
         )
         self.assertEqual(len(relations), 1)
         self.assertEqual(relations.parent_id, resource)
         self.assertFalse(relations.date_start)
         self.assertEqual(station.resource_id, resource)
         self.assertFalse(station.asset_id)
-        self.assertNotEqual(machine.resource_id, resource)
+        self.assertNotEqual(machine, resource)
 
     def test_missing_identity_aborts_import(self):
         self.cr.execute(
@@ -48,7 +48,7 @@ class TestEquipmentResourceMigration(TransactionCase):
         self.cr.execute(
             "CREATE TEMP TABLE maintenance_equipment (asset_id integer, workcenter_id integer) ON COMMIT DROP"
         )
-        machine = self.env["resource.asset"].create(
+        machine = self.env["resource.resource"].create(
             {
                 "name": "Ambiguous component",
                 "kind_id": self.env.ref("resource_asset.kind_machinery").id,
@@ -65,7 +65,5 @@ class TestEquipmentResourceMigration(TransactionCase):
         with self.assertRaises(ValueError):
             migrate_equipment_resources(self.env)
         self.assertFalse(
-            self.env["resource.relation"].search(
-                [("member_id", "=", machine.resource_id.id)]
-            )
+            self.env["resource.relation"].search([("member_id", "=", machine.id)])
         )

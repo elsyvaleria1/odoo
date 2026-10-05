@@ -663,7 +663,7 @@ class TestStockLotTransportCapacity(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLotIdentityIsTheAssets(TransactionCase):
-    """The lot's identity columns are relates onto `resource.asset`, so core's
+    """The lot's identity columns are relates onto `resource.resource`, so core's
     identifier rules have to reach a value written on the serial."""
 
     @classmethod

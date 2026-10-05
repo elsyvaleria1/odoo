@@ -2,8 +2,9 @@
 <odoo>
 
     <record id="resource_asset_view_list" model="ir.ui.view">
-        <field name="name">resource.asset.list</field>
-        <field name="model">resource.asset</field>
+        <field name="name">resource.resource.asset.list</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <list
                 string="Assets"
@@ -14,7 +15,7 @@
                 <field name="holder_id" />
                 <field name="address_id" optional="hide" />
                 <field name="date_acquisition" optional="hide" />
-                <field name="resource_calendar_id" optional="hide" />
+                <field name="calendar_id" optional="hide" />
                 <field
                     name="company_id"
                     optional="hide"
@@ -24,8 +25,9 @@
     </record>
 
     <record id="resource_asset_view_kanban" model="ir.ui.view">
-        <field name="name">resource.asset.kanban</field>
-        <field name="model">resource.asset</field>
+        <field name="name">resource.resource.asset.kanban</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <kanban sample="1" highlight_color="color">
                 <field name="state" />
@@ -48,8 +50,9 @@
     </record>
 
     <record id="resource_asset_view_form" model="ir.ui.view">
-        <field name="name">resource.asset.form</field>
-        <field name="model">resource.asset</field>
+        <field name="name">resource.resource.asset.form</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <form string="Asset">
                 <header>
@@ -109,10 +112,23 @@
                     <group>
                         <group name="identity">
                             <field name="active" invisible="1" />
-                            <field name="kind_id" />
+                            <field name="kind_id" required="1" />
+                            <field name="kind_code" invisible="1" />
                             <field name="parent_id" />
                             <field name="model" />
                             <field name="model_year" options="{'format': false}" />
+                            <field
+                                name="serial_number"
+                                invisible="kind_code not in ('device', 'telecom', 'machinery', 'equipment', 'it')" />
+                            <field
+                                name="imei"
+                                invisible="kind_code not in ('device', 'telecom')" />
+                            <field
+                                name="cadastral_id"
+                                invisible="kind_code != 'property'" />
+                            <field
+                                name="inventory_tag"
+                                invisible="kind_code != 'furniture'" />
                             <field name="date_origin" string="Date Built" />
                             <field
                                 name="origin_country_id"
@@ -131,9 +147,7 @@
                             <field
                                 name="company_id"
                                 groups="base.group_multi_company" />
-                            <field
-                                name="resource_calendar_id"
-                                placeholder="Around the clock" />
+                            <field name="calendar_id" />
                             <field name="tz" />
                         </group>
                     </group>
@@ -180,7 +194,7 @@
                         <page name="custody" string="Custody">
                             <field
                                 name="assignment_ids"
-                                context="{'default_resource_id': resource_id}">
+                                context="{'default_resource_id': id}">
                                 <list editable="bottom">
                                     <field name="assignee_partner_id" />
                                     <field name="custody_role" />
@@ -203,10 +217,6 @@
                                 </group>
                                 <group>
                                     <field
-                                        name="resource_id"
-                                        invisible="not id"
-                                        readonly="1" />
-                                    <field
                                         name="child_ids"
                                         widget="many2many_tags"
                                         readonly="1" />
@@ -222,8 +232,9 @@
     </record>
 
     <record id="resource_asset_view_search" model="ir.ui.view">
-        <field name="name">resource.asset.search</field>
-        <field name="model">resource.asset</field>
+        <field name="name">resource.resource.asset.search</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <search string="Assets">
                 <field name="name" />
@@ -284,10 +295,12 @@
 
     <record id="action_resource_asset" model="ir.actions.act_window">
         <field name="name">Assets</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="resource_asset_view_search" />
-        <field name="context">{'search_default_top_level': 1}</field>
+        <field name="domain">[('kind_id', '!=', False)]</field>
+        <field
+            name="context">{'search_default_top_level': 1, 'default_type': 'material'}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Register an asset
@@ -296,6 +309,9 @@
                 A vehicle, a machine, a tool, a phone, a parcel: one record with its identifiers, meters and custody, schedulable like any other resource.
             </p>
         </field>
+        <field
+            name="view_ids"
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset_view_form')}),             ]" />
     </record>
 
 </odoo>

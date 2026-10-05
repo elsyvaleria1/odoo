@@ -24,7 +24,7 @@ class ResourceAssetLog(models.Model):
         help="Current state of the related vendor bill (draft, posted, cancelled)",
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         compute="_compute_asset_id",
         store=True,
         readonly=False,

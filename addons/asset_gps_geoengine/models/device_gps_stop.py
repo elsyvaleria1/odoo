@@ -10,7 +10,7 @@ from odoo.tools import SQL
 
 from .device_gps_place import PLACE_REUSE_M
 from .device_gps_speed_day import DEFAULT_TZ, MOVING_MIN_KMH
-from odoo.addons.resource_asset_hr.models.resource_asset import live_custody_subquery
+from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
 _logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class DeviceGpsStop(models.Model):
         ondelete="cascade",
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Vehicle",
         readonly=True,
     )
@@ -551,7 +551,7 @@ class DeviceGpsStop(models.Model):
       LEFT JOIN (%(device_timezones)s) device_clock ON device_clock.device_id = d.id
       LEFT JOIN LATERAL (%(arrival_binding)s) binding ON TRUE
       LEFT JOIN resource_resource tracked_resource ON tracked_resource.id = binding.resource_id
-      LEFT JOIN resource_asset a ON a.resource_id = tracked_resource.id
+      LEFT JOIN resource_resource a ON a.id = tracked_resource.id AND a.kind_id IS NOT NULL
       LEFT JOIN LATERAL %(operator_query)s ON TRUE
       LEFT JOIN LATERAL (
             -- the_geom is Web Mercator; cosd() converts the metres (see
@@ -726,7 +726,7 @@ class DeviceGpsStop(models.Model):
                         and (not period.date_end or period.date_end > at)
                     )
                 )[:1]
-                asset = binding.resource_id.asset_id
+                asset = binding.resource_id.filtered("kind_id")
                 holders = (
                     by_resource.get(
                         binding.resource_id, self.env["resource.assignment"]

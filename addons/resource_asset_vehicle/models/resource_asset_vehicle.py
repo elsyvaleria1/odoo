@@ -1,25 +1,16 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 from odoo.addons.resource.fields import ResourceIdentifier
 
 
 class ResourceAssetVehicle(models.Model):
-    """A vehicle is an asset whose rows live in their own table.
-
-    Everything a vehicle is remains declared on `resource.asset`, so a
-    reference held as `resource.asset` still reads and writes it: PostgreSQL's
-    SELECT, UPDATE and DELETE on a parent reach the children unless told ONLY.
-    What this model buys is a place to put what only vehicles have -- ir.access
-    rows, views, actions and, later, columns no other kind
-    carries.
-    """
-
     _name = "resource.asset.vehicle"
     _description = "Vehicle"
-    _inherit = ["resource.asset"]
+    _inherit = ["mixin.resource.kind"]
     _table = "resource_asset_vehicle"
+    _resource_kind_code = "vehicle"
 
-    # The root reads these through the identifier rows; the vehicle holds them.
+    # the resource reads these through the identifier rows; the vehicle holds them
     license_plate = ResourceIdentifier(
         identifier_code="plate",
         through="resource_id",
@@ -69,12 +60,17 @@ class ResourceAssetVehicle(models.Model):
     service_count = fields.Integer(compute="_compute_service_count")
 
     def _compute_service_count(self) -> None:
-        counts = self._get_log_counts_by_type()
-        for asset in self:
-            asset.service_count = counts[asset.id]["service"]
+        counts = self.resource_id._get_log_counts_by_type()
+        for vehicle in self:
+            vehicle.service_count = counts[vehicle.id]["service"]
+
+    @api.onchange("product_id")
+    def _onchange_product_id_model_year(self) -> None:
+        if not self.model_year and self.product_id.vehicle_model_year:
+            self.model_year = int(self.product_id.vehicle_model_year)
 
     def action_view_services(self):
-        return self._action_view_logs(
+        return self.resource_id._action_view_logs(
             [("log_type", "=", "service")],
             {"search_default_groupby_product": 1},
             xml_id="resource_asset_vehicle.fleet_vehicle_service_action",

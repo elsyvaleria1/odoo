@@ -8,7 +8,7 @@ class TestResourceAssetProduct(TransactionCase):
         template = self.env["product.template"].create(
             {"name": "Pickup", "asset_kind_id": vehicle.id}
         )
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {"name": "Pickup 1", "product_id": template.product_variant_id.id}
         )
         self.assertEqual(asset.kind_id, vehicle)
@@ -22,7 +22,7 @@ class TestResourceAssetProduct(TransactionCase):
     def test_an_explicit_kind_survives_a_product_without_one(self):
         tool = self.env.ref("resource_asset.kind_tool")
         template = self.env["product.template"].create({"name": "Wrench"})
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Wrench 1",
                 "product_id": template.product_variant_id.id,

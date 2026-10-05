@@ -3,8 +3,8 @@ from typing import Any
 from odoo import api, fields, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     account_move_ids = fields.Many2many(
         comodel_name="account.move",

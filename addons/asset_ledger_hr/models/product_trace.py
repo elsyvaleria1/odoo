@@ -32,18 +32,18 @@ class ProductTrace(models.Model):
 
     def write(self, vals):
         resources_before = (
-            self.filtered("asset_id").asset_id.sudo().resource_id
+            self.filtered("asset_id").asset_id.sudo()
             if "asset_id" in vals
             else self.env["resource.resource"]
         )
         res = super().write(vals)
         if "asset_id" in vals:
-            kept = self.filtered("asset_id").asset_id.sudo().resource_id
+            kept = self.filtered("asset_id").asset_id.sudo()
             (resources_before - kept)._end_custody()
         return res
 
     def unlink(self):
-        self.filtered("asset_id").asset_id.sudo().resource_id._end_custody()
+        self.filtered("asset_id").asset_id.sudo()._end_custody()
         return super().unlink()
 
     def action_view_logs_assignation(self):

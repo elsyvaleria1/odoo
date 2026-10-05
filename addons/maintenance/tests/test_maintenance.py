@@ -15,7 +15,7 @@ class TestMaintenanceCommon(TransactionCase):
                 )
             ]
         ).action_archive()
-        self.asset = self.env["resource.asset"]
+        self.asset = self.env["resource.resource"]
         self.maintenance_order = self.env["maintenance.order"]
         self.res_users = self.env["res.users"]
         self.maintenance_team = self.env["team.team"]
@@ -65,7 +65,7 @@ class TestMaintenance(TestMaintenanceCommon):
             {
                 "name": "Resolution is bad",
                 "user_id": self.user.id,
-                "resource_ids": monitor.resource_id.ids,
+                "resource_ids": monitor.ids,
                 "color": 7,
                 "maintenance_team_id": self.ref(
                     "maintenance.equipment_team_maintenance"
@@ -127,13 +127,19 @@ class TestMaintenance(TestMaintenanceCommon):
 class TestMaintenancePostInstall(TestMaintenanceCommon):
     def test_a_maintenance_manager_creates_an_asset_an_employee_opens(self):
         with self.with_user("hm"):
-            form = Form(self.env["resource.asset"])
+            form = Form(
+                self.env["resource.resource"],
+                view="resource_asset.resource_asset_view_form",
+            )
             form.name = "Super Equipment"
             form.kind_id = self.monitor_kind
             asset = form.save()
 
         with self.with_user("emp"):
-            form = Form(self.env["resource.asset"].browse(asset.id))
+            form = Form(
+                self.env["resource.resource"].browse(asset.id),
+                view="resource_asset.resource_asset_view_form",
+            )
             self.assertEqual(form.name, "Super Equipment")
 
     def test_done_maintenance_no_date_done_or_date_confirmed(self):
@@ -144,13 +150,16 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
         in case these dates are forced set to False.
         """
 
-        form = Form(self.env["resource.asset"].with_user(self.manager))
+        form = Form(
+            self.env["resource.resource"].with_user(self.manager),
+            view="resource_asset.resource_asset_view_form",
+        )
         form.name = "brain"
         form.kind_id = self.monitor_kind
         equipment = form.save()
         form = Form(self.env["maintenance.order"].with_user(self.manager))
         form.name = "improve efficiency"
-        form.resource_ids.add(equipment.resource_id)
+        form.resource_ids.add(equipment)
         form.maintenance_type = "corrective"
         maintenance = form.save()
         self.assertFalse(maintenance.date_confirmed)
@@ -160,13 +169,13 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
         maintenance.action_done()
         self.assertTrue(maintenance.date_confirmed)
         self.assertTrue(maintenance.date_done)
-        form = Form(equipment)
+        form = Form(equipment, view="resource_asset.resource_asset_view_form")
 
         # this shouldn't happen unless it's forced
         maintenance.date_done = False
-        form = Form(equipment)
+        form = Form(equipment, view="resource_asset.resource_asset_view_form")
         maintenance.date_done = fields.Date.today()
         maintenance.date_confirmed = False
-        form = Form(equipment)
+        form = Form(equipment, view="resource_asset.resource_asset_view_form")
         maintenance.date_done = False
-        form = Form(equipment)
+        form = Form(equipment, view="resource_asset.resource_asset_view_form")

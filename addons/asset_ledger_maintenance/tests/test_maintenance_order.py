@@ -40,7 +40,7 @@ class TestMaintenanceOrderAsset(TransactionCase):
         return self.env["maintenance.order"].create(
             {
                 "name": "Replace hydraulic hose",
-                "resource_ids": self.lot.asset_id.resource_id.ids,
+                "resource_ids": self.lot.asset_id.ids,
                 "maintenance_type": "corrective",
                 "date_scheduled_start": datetime.now(),
                 "duration": 24,

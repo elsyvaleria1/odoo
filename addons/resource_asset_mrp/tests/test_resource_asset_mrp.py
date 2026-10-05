@@ -12,7 +12,7 @@ class TestResourceAssetMrp(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.machinery = cls.env.ref("resource_asset.kind_machinery")
-        cls.press = cls.env["resource.asset"].create(
+        cls.press = cls.env["resource.resource"].create(
             {"name": "Press 1", "kind_id": cls.machinery.id}
         )
 
@@ -20,18 +20,18 @@ class TestResourceAssetMrp(TransactionCase):
         wc = self.env["mrp.workcenter"].create(
             {"name": "Pressing", "asset_id": self.press.id}
         )
-        self.assertEqual(wc.resource_id, self.press.resource_id)
+        self.assertEqual(wc.resource_id, self.press)
         self.assertEqual(self.press.workcenter_id, wc)
-        self.assertEqual(wc.resource_calendar_id, self.press.resource_calendar_id)
+        self.assertEqual(wc.resource_calendar_id, self.press.calendar_id)
 
     def test_attaching_later_swaps_the_resource_and_archives_the_orphan(self):
         wc = self.env["mrp.workcenter"].create({"name": "Pressing"})
         own = wc.resource_id
         wc.asset_id = self.press
-        self.assertEqual(wc.resource_id, self.press.resource_id)
+        self.assertEqual(wc.resource_id, self.press)
         self.assertFalse(own.active)
         wc.asset_id = False
-        self.assertNotEqual(wc.resource_id, self.press.resource_id)
+        self.assertNotEqual(wc.resource_id, self.press)
         self.assertTrue(wc.resource_id.active)
 
     def test_detaching_leaves_a_material_resource_of_its_own(self):
@@ -42,8 +42,8 @@ class TestResourceAssetMrp(TransactionCase):
         resource = wc.resource_id
         self.assertEqual(resource.type, "material")
         self.assertFalse(resource.partner_id)
-        self.assertNotEqual(resource, self.press.resource_id)
-        self.assertTrue(self.press.resource_id.active)
+        self.assertNotEqual(resource, self.press)
+        self.assertTrue(self.press.active)
         self.assertFalse(resource._get_owners())
 
     def test_archiving_the_work_centre_leaves_the_machine_in_service(self):
@@ -53,7 +53,7 @@ class TestResourceAssetMrp(TransactionCase):
         wc.action_archive()
         self.assertFalse(wc.active)
         self.assertTrue(self.press.active)
-        self.assertTrue(self.press.resource_id.active)
+        self.assertTrue(self.press.active)
         wc.name = "Pressing renamed"
         self.assertEqual(self.press.name, "Press 1")
 
@@ -84,7 +84,7 @@ class TestResourceAssetMrp(TransactionCase):
         self.env["resource.reservation"].create(
             {
                 "name": "Machine down",
-                "resource_id": self.press.resource_id.id,
+                "resource_id": self.press.id,
                 "date_start": start,
                 "date_end": datetime(2026, 3, 2, 12, 0),
                 "enforcement_mode": "hard",
@@ -127,7 +127,7 @@ class TestResourceAssetMrp(TransactionCase):
 
     def test_direct_resource_changes_project_the_machine(self):
         wc = self.env["mrp.workcenter"].create({"name": "Pressing"})
-        wc.resource_id = self.press.resource_id
+        wc.resource_id = self.press
         self.assertEqual(wc.asset_id, self.press)
         self.assertIn(
             wc, self.env["mrp.workcenter"].search([("asset_id", "=", self.press.id)])
@@ -153,7 +153,7 @@ class TestResourceAssetMrp(TransactionCase):
             wc.resource_id.type = "human"
 
     def test_attaching_does_not_reset_resource_configuration(self):
-        self.press.resource_id.write({"time_efficiency": 175, "tz": "Asia/Tokyo"})
+        self.press.write({"time_efficiency": 175, "tz": "Asia/Tokyo"})
         wc = self.env["mrp.workcenter"].create(
             {"name": "Pressing", "asset_id": self.press.id}
         )
@@ -167,7 +167,7 @@ class TestResourceAssetMrp(TransactionCase):
         wc.action_archive()
         with self.assertRaises(ValidationError), self.cr.savepoint():
             self.env["mrp.workcenter"].create(
-                {"name": "Pressing", "resource_id": self.press.resource_id.id}
+                {"name": "Pressing", "resource_id": self.press.id}
             )
 
     def test_containment_preserves_the_replaced_resource(self):
@@ -176,7 +176,7 @@ class TestResourceAssetMrp(TransactionCase):
         relation = self.env["resource.relation"].create(
             {
                 "parent_id": old.id,
-                "member_id": self.press.resource_id.id,
+                "member_id": self.press.id,
                 "date_start": False,
             }
         )
@@ -235,4 +235,4 @@ class TestResourceAssetMrp(TransactionCase):
             run_path(file_path("resource_asset_mrp/migrations/1.1/post-migrate.py"))[
                 "migrate"
             ](self.cr, "1.0")
-        self.assertNotEqual(wc.resource_id, self.press.resource_id)
+        self.assertNotEqual(wc.resource_id, self.press)

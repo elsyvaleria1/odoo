@@ -1,8 +1,8 @@
 from odoo import fields, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     device_ids = fields.One2many(
         comodel_name="device.device",

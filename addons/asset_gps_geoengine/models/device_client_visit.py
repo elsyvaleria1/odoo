@@ -2,7 +2,7 @@ from odoo import api, fields, models
 from odoo.tools import SQL
 
 from .device_gps_speed_day import MOVING_MIN_KMH
-from odoo.addons.resource_asset_hr.models.resource_asset import live_custody_subquery
+from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
 
 class DeviceClientVisit(models.Model):
@@ -16,7 +16,7 @@ class DeviceClientVisit(models.Model):
         help="Operator assigned to the vehicle at arrival.",
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Vehicle",
         compute="_compute_visit_target",
         compute_sudo=False,
@@ -60,7 +60,7 @@ class DeviceClientVisit(models.Model):
             SELECT v.id, a.id AS asset_id, op.employee_id
               FROM device_client_visit v
               LEFT JOIN LATERAL (%(binding)s) binding ON TRUE
-              LEFT JOIN resource_asset a ON a.resource_id = binding.resource_id
+              LEFT JOIN resource_resource a ON a.id = binding.resource_id AND a.kind_id IS NOT NULL
               LEFT JOIN LATERAL %(operator)s ON TRUE
              WHERE v.id = ANY(%(ids)s)
             """,

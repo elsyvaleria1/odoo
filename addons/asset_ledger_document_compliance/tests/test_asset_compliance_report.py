@@ -98,7 +98,7 @@ class TestAssetRequirements(TransactionCase):
                 "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
             }
         )
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Reported Asset",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
@@ -126,7 +126,7 @@ class TestAssetRequirements(TransactionCase):
 
     def test_a_type_that_applies_to_assets_is_required_of_one(self):
         before = self._total_required()
-        self._type("ASSET_SCOPED", "resource.asset")
+        self._type("ASSET_SCOPED", "resource.resource")
 
         self.assertEqual(self._total_required(), before + 1)
 
@@ -147,7 +147,7 @@ class TestAssetComplianceReportAccess(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle, cls.computer = cls.env["resource.asset"].create(
+        cls.vehicle, cls.computer = cls.env["resource.resource"].create(
             [
                 {
                     "name": f"Access {kind}",
@@ -191,7 +191,7 @@ class TestAssetComplianceReportAccess(TransactionCase):
                 "code": "ACCESS_ASSET_PAPER",
                 "company_id": False,
                 "is_mandatory": True,
-                "applies_to": "resource.asset",
+                "applies_to": "resource.resource",
             }
         )
         cls.env.flush_all()

@@ -1,6 +1,6 @@
 from odoo import models
 
-from odoo.addons.resource_asset.models.resource_asset import SKIP_IDENTITY_CHECK
+from odoo.addons.resource_asset.models.resource_resource import SKIP_IDENTITY_CHECK
 
 
 class StockMoveLine(models.Model):

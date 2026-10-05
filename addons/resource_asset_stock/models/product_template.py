@@ -32,7 +32,7 @@ class ProductTemplate(models.Model):
 
     def _create_missing_assets(self):
         if not self:
-            return self.env["resource.asset"]
+            return self.env["resource.resource"]
         lots = (
             self.env["product.trace"]
             .sudo()

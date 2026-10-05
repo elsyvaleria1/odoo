@@ -53,7 +53,7 @@ class AccountMove(models.Model):
         compute_sudo=True,
     )
     capitalised_asset_ids = fields.Many2many(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Capitalised Assets",
         compute="_compute_capitalised_board_ids",
         compute_sudo=True,
@@ -456,7 +456,7 @@ class AccountMoveLine(models.Model):
         context={"active_test": False},
     )
     capitalised_asset_ids = fields.Many2many(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Capitalised Assets",
         compute="_compute_capitalised_asset_ids",
     )
@@ -499,7 +499,9 @@ class AccountMoveLine(models.Model):
         account = self.account_id
         units = max(1, int(self.quantity)) if account.multiple_assets_per_line else 1
         named = (
-            self.asset_id if "asset_id" in self._fields else self.env["resource.asset"]
+            self.asset_id
+            if "asset_id" in self._fields
+            else self.env["resource.resource"]
         )
         base_vals = self._prepare_asset_vals()
         profiles = account.depreciation_profile_ids.filtered(

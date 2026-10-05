@@ -5,7 +5,7 @@ class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
     asset_ids = fields.Many2many(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Assets Held",
         compute="_compute_asset_ids",
         groups="hr.group_hr_user",
@@ -29,8 +29,8 @@ class HrEmployee(models.Model):
 
     def _compute_asset_ids(self) -> None:
         assignments = self._get_custody_assignments()
-        assets = self.env["resource.asset"].search(
-            [("resource_id", "in", assignments.resource_id.ids)]
+        assets = self.env["resource.resource"].search(
+            [("id", "in", assignments.resource_id.ids), ("kind_id", "!=", False)]
         )
         active_by_assignee = assignments.filtered(
             lambda assignment: assignment.state == "active"
@@ -39,9 +39,7 @@ class HrEmployee(models.Model):
             held = active_by_assignee.get(
                 employee.resource_id, assignments.browse()
             ).resource_id
-            employee.asset_ids = assets.filtered_domain(
-                [("resource_id", "in", held.ids)]
-            )
+            employee.asset_ids = assets & held
             employee.asset_count = len(employee.asset_ids)
 
     def action_view_assets(self):

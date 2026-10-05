@@ -34,7 +34,7 @@ class TestDispatchManagement(TransactionCase):
             }
         )
         cls.driver = cls.env["res.partner"].create({"name": "Driver"})
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "Van",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,

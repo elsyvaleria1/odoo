@@ -108,7 +108,7 @@ class TestAssetTripReportHistory(TransactionCase):
             .with_context(active_test=False, skip_custody_push=True)
             .search(
                 [
-                    ("resource_id", "=", cls.lot.asset_id.resource_id.id),
+                    ("resource_id", "=", cls.lot.asset_id.id),
                     ("custody_role", "=", "operator"),
                 ],
                 order="date_start asc, id asc",
@@ -172,7 +172,7 @@ class TestAssetTripReportHistory(TransactionCase):
         with freeze_time("2025-12-01"):
             self.env["resource.assignment"].create(
                 {
-                    "resource_id": self.lot.asset_id.resource_id.id,
+                    "resource_id": self.lot.asset_id.id,
                     "assignee_id": self.second.resource_id.id,
                     "custody_role": "operator",
                     "date_start": datetime(2026, 1, 11, 13),
@@ -222,7 +222,7 @@ class TestAssetTripReportHistory(TransactionCase):
         end = datetime(2024, 5, 10, 17)
         self.env["resource.assignment"].with_context(skip_custody_push=True).create(
             {
-                "resource_id": self.lot.asset_id.resource_id.id,
+                "resource_id": self.lot.asset_id.id,
                 "assignee_id": self.first.resource_id.id,
                 "custody_role": "operator",
                 "date_start": start,
@@ -234,7 +234,7 @@ class TestAssetTripReportHistory(TransactionCase):
         self.env.cr.execute(
             "UPDATE resource_gps_binding SET date_start = NULL, origin = 'legacy' "
             "WHERE resource_id = %s",
-            [self.lot.asset_id.resource_id.id],
+            [self.lot.asset_id.id],
         )
         self.env["resource.gps.binding"].invalidate_model()
         self.env["hr.attendance"].create(

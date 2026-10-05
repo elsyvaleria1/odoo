@@ -5,7 +5,7 @@ class WizardDeviceDeviceViewTrailResult(models.TransientModel):
     _inherit = "wizard.device.device.view.trail.result"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Asset/Vehicle",
     )
     operator_id = fields.Many2one(

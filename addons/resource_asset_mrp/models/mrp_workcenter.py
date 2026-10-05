@@ -7,7 +7,7 @@ class MrpWorkcenter(models.Model):
     _inherit = "mrp.workcenter"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Machine",
         compute="_compute_asset_id",
         inverse="_inverse_asset_id",
@@ -16,17 +16,32 @@ class MrpWorkcenter(models.Model):
         copy=False,
         readonly=False,
         value_sql="_asset_id_sql",
-        help="The asset represented by this work center's resource. The machine's downtime, custody and bookings are shared with the work center.",
+        help="The machine this work center's resource is. Its downtime, custody and bookings are the work center's.",
     )
 
-    @api.depends("resource_id", "resource_id.asset_id")
+    @api.depends("resource_id", "resource_id.kind_id")
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_asset_id(self):
         for workcenter in self:
-            workcenter.asset_id = workcenter.resource_id.asset_id
+            resource = workcenter.resource_id
+            workcenter.asset_id = resource if resource.kind_id else False
 
     def _search_asset_id(self, operator, value):
-        return Domain("resource_id.asset_id", operator, value)
+        if operator not in ("in", "not in", "any", "not any"):
+            return NotImplemented
+        positive = "in" if operator in ("in", "not in") else "any"
+        if positive == "in":
+            ids = [v for v in value if v]
+            domain = Domain("resource_id", "in", ids) & Domain(
+                "resource_id.kind_id", "!=", False
+            )
+            if len(ids) < len(value):
+                domain |= Domain("resource_id.kind_id", "=", False)
+        else:
+            domain = Domain("resource_id", "any", value) & Domain(
+                "resource_id.kind_id", "!=", False
+            )
+        return ~domain if operator.startswith("not") else domain
 
     def _asset_id_sql(self, field, alias, query=None):
         return self.env["resource.resource"]._asset_projection_sql(
@@ -36,9 +51,9 @@ class MrpWorkcenter(models.Model):
     def _check_identity_input(self, vals):
         if not vals.get("asset_id") or not vals.get("resource_id"):
             return
-        asset = self.env["resource.asset"].browse(vals["asset_id"])
+        asset = self.env["resource.resource"].browse(vals["asset_id"])
         asset.check_access("read")
-        if asset.resource_id.id != vals["resource_id"]:
+        if asset.id != vals["resource_id"]:
             raise ValidationError(
                 self.env._(
                     "The work center machine and resource must share one identity."
@@ -51,18 +66,18 @@ class MrpWorkcenter(models.Model):
             self._check_identity_input(vals)
             asset_id = vals.pop("asset_id", self.env.context.get("default_asset_id"))
             if asset_id:
-                asset = self.env["resource.asset"].browse(asset_id)
+                asset = self.env["resource.resource"].browse(asset_id)
                 asset.check_access("read")
                 given_resource = vals.get(
                     "resource_id", self.env.context.get("default_resource_id")
                 )
-                if given_resource and given_resource != asset.resource_id.id:
+                if given_resource and given_resource != asset.id:
                     raise ValidationError(
                         self.env._(
                             "The work center machine and resource must share one identity."
                         )
                     )
-                vals["resource_id"] = asset.resource_id.id
+                vals["resource_id"] = asset.id
                 vals.pop("resource_calendar_id", None)
         context = dict(self.env.context)
         context.pop("default_asset_id", None)
@@ -85,8 +100,8 @@ class MrpWorkcenter(models.Model):
             asset = workcenter.asset_id
             if asset:
                 asset.check_access("read")
-                target = asset.resource_id
-            elif workcenter.resource_id.asset_id:
+                target = asset
+            elif workcenter.resource_id.kind_id:
                 target = workcenter._provision_resource()
             else:
                 continue

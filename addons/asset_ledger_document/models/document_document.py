@@ -9,7 +9,7 @@ class Documents(models.Model):
     _inherit = "document.document"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         compute="_compute_asset_id",
         search="_search_asset_id",
         help="The asset this document is attached to",
@@ -19,10 +19,14 @@ class Documents(models.Model):
     def _compute_asset_id(self) -> None:
         # an asset's documents are filed under its resource, whose other
         # documents (a person's) name no asset
-        asset_model = self.env["resource.asset"]
+        asset_model = self.env["resource.resource"]
         reference = asset_model._get_reference_model_name()
         filed = self.filtered(lambda d: d.res_model == reference and d.res_id)
-        asset_ids = set(asset_model.browse(filed.mapped("res_id")).exists().ids)
+        asset_ids = set(
+            asset_model.with_context(active_test=False)
+            .search([("id", "in", filed.mapped("res_id")), ("kind_id", "!=", False)])
+            .ids
+        )
         for document in self:
             document.asset_id = (
                 document in filed
@@ -32,8 +36,9 @@ class Documents(models.Model):
 
     @api.model
     def _search_asset_id(self, operator: str, value: Any) -> Domain:
-        lot = self.env["resource.asset"]
+        lot = self.env["resource.resource"]
         reference = lot._get_reference_model_name()
+        things = Domain("kind_id", "!=", False)
         if operator == "in":
             values = list(value)
             sentinels = []
@@ -42,13 +47,14 @@ class Documents(models.Model):
             if any(v is False for v in values):
                 sentinels.append(
                     Domain("res_model", "!=", reference)
-                    | Domain("res_id", "not in", lot._search([]))
+                    | Domain("res_id", "not in", lot._search(things))
                 )
             value = OrderedSet(v for v in values if not isinstance(v, bool))
             if sentinels:
                 return Domain.OR([*sentinels, self._search_asset_id(operator, value)])
             query_model = lot._search(
-                Domain.OR(
+                things
+                & Domain.OR(
                     Domain(
                         lot._rec_name if isinstance(v, str) else "id",
                         operator,
@@ -59,9 +65,9 @@ class Documents(models.Model):
                 ),
             )
         elif operator == "any" and isinstance(value, Domain):
-            query_model = lot._search(value)
+            query_model = lot._search(things & value)
         elif operator.endswith("like") and not operator.startswith("not"):
-            query_model = lot._search([(lot._rec_name, operator, value)])
+            query_model = lot._search(things & Domain(lot._rec_name, operator, value))
         else:
             return NotImplemented
         return (

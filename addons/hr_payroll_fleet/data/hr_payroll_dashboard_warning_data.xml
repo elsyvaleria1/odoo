@@ -8,19 +8,21 @@
             <field name="name">Employees With Multiple Company Cars</field>
             <field name="country_id" eval="False" />
             <field
-                name="evaluation_code">if self.env['resource.asset'].has_access('read') and self.env['resource.assignment'].has_access('read'):
+                name="evaluation_code">if self.env['resource.asset.vehicle'].has_access('read') and self.env['resource.assignment'].has_access('read'):
     self.env.cr.execute("""
         SELECT employee.id
           FROM resource_assignment assignment
           JOIN resource_asset_vehicle vehicle
             ON vehicle.resource_id = assignment.resource_id
-           AND vehicle.active IS TRUE
+          JOIN resource_resource vehicle_resource
+            ON vehicle_resource.id = vehicle.id
+           AND vehicle_resource.active IS TRUE
           JOIN hr_employee employee ON employee.resource_id = assignment.assignee_id
          WHERE assignment.custody_role = 'operator'
            AND assignment.active IS TRUE
            AND assignment.date_start &lt;= (NOW() AT TIME ZONE 'utc')
            AND (assignment.date_end IS NULL OR assignment.date_end &gt; (NOW() AT TIME ZONE 'utc'))
-           AND vehicle.company_id = ANY(%s)
+           AND vehicle_resource.company_id = ANY(%s)
       GROUP BY employee.id
         HAVING COUNT(DISTINCT vehicle.id) &gt; 1
     """, (self.env.companies.ids, ))

@@ -15,11 +15,11 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
         ondelete={"asset": "set default", "operator": "set default"},
     )
     asset_ids = fields.Many2many(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         relation="gps_trail_wizard_asset_rel",
         column1="wizard_id",
         column2="asset_id",
-        domain="[('resource_id.gps_binding_ids', '!=', False)]",
+        domain="[('gps_binding_ids', '!=', False), ('kind_id', '!=', False)]",
         context={"active_test": False},
         help="Select assets/vehicles with GPS tracking devices",
     )
@@ -36,18 +36,18 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
         if self.selection_mode == "operator":
             self.operator_ids.check_access("read")
             resources = (
-                self.env["resource.asset"]
+                self.env["resource.resource"]
                 .with_context(active_test=False)
                 .search(
                     [
                         (
-                            "resource_id",
+                            "id",
                             "in",
                             self.env["resource.gps.binding"]._tracked_resource_ids(),
-                        )
+                        ),
+                        ("kind_id", "!=", False),
                     ]
                 )
-                .resource_id
             )
             periods = self.env["resource.gps.binding"]._custody_periods(
                 resources,
@@ -63,7 +63,7 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
         if self.selection_mode != "asset":
             return []
         self.asset_ids.check_access("read")
-        resources = self.asset_ids.resource_id
+        resources = self.asset_ids
         domain = [("resource_id", "in", resources.ids)]
         if self.date_to:
             domain.extend(
@@ -110,12 +110,12 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
     def _prepare_trail_logs(self, logs, source_mapping):
         logs, source_mapping = super()._prepare_trail_logs(logs, source_mapping)
         assets = (
-            self.env["resource.asset"]
+            self.env["resource.resource"]
             .with_context(active_test=False)
             .search(
                 [
                     (
-                        "resource_id",
+                        "id",
                         "in",
                         sorted(
                             {
@@ -124,14 +124,15 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
                                 if log.get("resource_id")
                             }
                         ),
-                    )
+                    ),
+                    ("kind_id", "!=", False),
                 ]
             )
         )
-        by_resource = {asset.resource_id.id: asset for asset in assets}
+        by_resource = {asset.id: asset for asset in assets}
         assignments = self.env["resource.assignment"].search(
             [
-                ("resource_id", "in", assets.resource_id.ids),
+                ("resource_id", "in", assets.ids),
                 ("custody_role", "=", "operator"),
                 ("date_start", "<=", self.date_to),
                 "|",
@@ -151,7 +152,7 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
         for log in logs:
             asset = by_resource.get(log.get("resource_id"), assets.browse())
             at = log["timestamp"]
-            holder = holders.get(asset.resource_id, assignments.browse()).filtered(
+            holder = holders.get(asset, assignments.browse()).filtered(
                 lambda assignment, at=at: (
                     assignment.date_start <= at
                     and (not assignment.date_end or assignment.date_end > at)

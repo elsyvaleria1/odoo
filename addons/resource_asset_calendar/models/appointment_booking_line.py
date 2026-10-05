@@ -9,7 +9,7 @@ class AppointmentBookingLine(models.Model):
     def _check_asset_bookable(self) -> None:
         states = None
         for line in self:
-            asset = line.sudo().resource_id.asset_id
+            asset = line.sudo().resource_id
             if not asset or asset._accepts_bookings():
                 continue
             states = states or dict(

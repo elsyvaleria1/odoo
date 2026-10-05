@@ -4,8 +4,8 @@ from odoo.libs.debug_log import DebugLog
 _debug = DebugLog(__name__)
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     # A card describes the asset, not the reader's data, and its balance is
     # the wallet app's to show: an asset user with no wallet rights reads the

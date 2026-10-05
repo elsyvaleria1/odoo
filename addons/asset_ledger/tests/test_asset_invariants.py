@@ -121,7 +121,7 @@ class TestAssetInvariants(TransactionCase):
         tracked = self._lot("INV-R")
         action = self.env.ref("asset_ledger.action_resource_asset_all")
         domain = ast.literal_eval(action.domain) if action.domain else []
-        assets = self.env["resource.asset"].search(domain)
+        assets = self.env["resource.resource"].search(domain)
         self.assertFalse(plain.asset_id)
         self.assertIn(tracked.asset_id, assets)
 
@@ -609,7 +609,7 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         """Read the column, not the cache: the cache would hide the bug."""
         self.env.flush_all()
         self.env.cr.execute(
-            "SELECT service_activity FROM resource_asset WHERE id = %s",
+            "SELECT service_activity FROM resource_resource WHERE id = %s",
             (self.asset.asset_id.id,),
         )
         return self.env.cr.fetchone()[0]
@@ -642,7 +642,7 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         self.assertEqual(self._stored_service_activity(), "overdue")
         self.assertIn(
             self.asset.asset_id,
-            self.env["resource.asset"].search([("service_activity", "=", "overdue")]),
+            self.env["resource.resource"].search([("service_activity", "=", "overdue")]),
             "the Service Overdue filter must find it once the cron has run",
         )
 
@@ -669,14 +669,14 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         self.assertTrue(cron.active)
         self.assertEqual(cron.repeat_unit, "day")
         self.assertEqual(cron.repeat_interval, 1)
-        self.assertEqual(cron.model_id.model, "resource.asset")
+        self.assertEqual(cron.model_id.model, "resource.resource")
 
 
 class TestOneNameForTheAsset(TransactionCase):
     """Six spellings for one relation is what hides duplicates between modules.
 
     Scoped to modules that depend on ``asset_ledger``, because that dependency
-    is what makes a serial an *asset*. The asset is ``resource.asset``; a
+    is what makes a serial an *asset*. The asset is ``resource.resource``; a
     relation to it, or the legacy one to the lot that carries it, is spelled
     ``asset_id``. A module referencing ``product.trace`` as an inventory identifier
     -- an RMA's returned unit, a lot rule's subject, the serial behind an asset
@@ -712,7 +712,7 @@ class TestOneNameForTheAsset(TransactionCase):
             for name, field in self.env[model_name]._fields.items():
                 if (
                     field.type == "many2one"
-                    and field.comodel_name in ("product.trace", "resource.asset")
+                    and field.comodel_name in ("product.trace", "resource.resource")
                     and field._module in ours
                     # A self-reference names a *different* asset -- the lot this
                     # one was reconditioned from -- not the asset this record is

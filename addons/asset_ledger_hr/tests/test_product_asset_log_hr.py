@@ -365,7 +365,7 @@ class TestOperatorTimeline(TransactionCase):
     def _rows(self, asset):
         return self.env["resource.assignment"].search(
             [
-                ("resource_id", "=", asset.asset_id.resource_id.id),
+                ("resource_id", "=", asset.asset_id.id),
                 ("custody_role", "=", "operator"),
             ],
             order="date_start asc, id asc",

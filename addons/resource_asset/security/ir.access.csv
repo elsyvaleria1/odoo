@@ -2,36 +2,11 @@ id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
 resource_assignment_rule_system,resource.assignment: administrators manage every assignment,resource.model_resource_assignment,base.group_system,permission,cud,,,
 access_resource_asset_kind_user,resource.asset.kind.user,model_resource_kind,base.group_user,permission,r,,,
 access_resource_asset_kind_manager,resource.asset.kind.manager,model_resource_kind,group_asset_manager,permission,cud,,,
-resource_asset_kind_visibility_rule,Assets: only the kinds the user is enabled for,model_resource_asset,group_asset_user,permission,cu,,,"[('kind_id', 'not in', user._get_hidden_asset_kinds())]"
-resource_asset_kind_visibility_rule_group_asset_manager,Assets: only the kinds the user is enabled for,model_resource_asset,group_asset_manager,permission,cud,,,"[('kind_id', 'not in', user._get_hidden_asset_kinds())]"
-access_resource_asset_employee,resource.asset.employee,model_resource_asset,base.group_user,permission,r,,,
+resource_asset_kind_visibility_rule,Assets: only the kinds the user is enabled for,resource.model_resource_resource,group_asset_user,permission,cu,,,"[('kind_id', '!=', False), ('kind_id', 'not in', user._get_hidden_asset_kinds())]"
+resource_asset_kind_visibility_rule_group_asset_manager,Assets: only the kinds the user is enabled for,resource.model_resource_resource,group_asset_manager,permission,cud,,,"[('kind_id', '!=', False), ('kind_id', 'not in', user._get_hidden_asset_kinds())]"
 resource_assignment_rule_asset_user,resource.assignment: asset users manage the custody of material resources,resource.model_resource_assignment,group_asset_user,permission,cud,all,,"[('resource_id.type', '=', 'material')]"
-access_resource_asset_property_user,resource.asset.property.user,model_resource_asset_property,group_asset_user,permission,cu,,,
-access_resource_asset_property_manager,resource.asset.property.manager,model_resource_asset_property,group_asset_manager,permission,d,,,
-access_resource_asset_property_employee,resource.asset.property.employee,model_resource_asset_property,base.group_user,permission,r,,,
-access_resource_asset_telecom_user,resource.asset.telecom.user,model_resource_asset_telecom,group_asset_user,permission,cu,,,
-access_resource_asset_telecom_manager,resource.asset.telecom.manager,model_resource_asset_telecom,group_asset_manager,permission,d,,,
-access_resource_asset_telecom_employee,resource.asset.telecom.employee,model_resource_asset_telecom,base.group_user,permission,r,,,
-access_resource_asset_device_user,resource.asset.device.user,model_resource_asset_device,group_asset_user,permission,cu,,,
-access_resource_asset_device_manager,resource.asset.device.manager,model_resource_asset_device,group_asset_manager,permission,d,,,
-access_resource_asset_device_employee,resource.asset.device.employee,model_resource_asset_device,base.group_user,permission,r,,,
-access_resource_asset_machinery_user,resource.asset.machinery.user,model_resource_asset_machinery,group_asset_user,permission,cu,,,
-access_resource_asset_machinery_manager,resource.asset.machinery.manager,model_resource_asset_machinery,group_asset_manager,permission,d,,,
-access_resource_asset_machinery_employee,resource.asset.machinery.employee,model_resource_asset_machinery,base.group_user,permission,r,,,
-access_resource_asset_equipment_user,resource.asset.equipment.user,model_resource_asset_equipment,group_asset_user,permission,cu,,,
-access_resource_asset_equipment_manager,resource.asset.equipment.manager,model_resource_asset_equipment,group_asset_manager,permission,d,,,
-access_resource_asset_equipment_employee,resource.asset.equipment.employee,model_resource_asset_equipment,base.group_user,permission,r,,,
-access_resource_asset_it_user,resource.asset.it.user,model_resource_asset_it,group_asset_user,permission,cu,,,
-access_resource_asset_it_manager,resource.asset.it.manager,model_resource_asset_it,group_asset_manager,permission,d,,,
-access_resource_asset_it_employee,resource.asset.it.employee,model_resource_asset_it,base.group_user,permission,r,,,
-access_resource_asset_furniture_user,resource.asset.furniture.user,model_resource_asset_furniture,group_asset_user,permission,cu,,,
-access_resource_asset_furniture_manager,resource.asset.furniture.manager,model_resource_asset_furniture,group_asset_manager,permission,d,,,
-access_resource_asset_furniture_employee,resource.asset.furniture.employee,model_resource_asset_furniture,base.group_user,permission,r,,,
-resource_asset_rule_multi_company,resource.asset: multi-company rule,model_resource_asset,base.group_everyone,guard,crud,company,,
 access_resource_identifier_type_asset_manager,resource.identifier.type.asset.manager,resource.model_resource_identifier_type,group_asset_manager,permission,cud,,,
 access_resource_identifier_asset_user,resource.identifier.asset.user,resource.model_resource_identifier,group_asset_user,permission,cud,,,
 access_resource_meter_asset_user,resource.meter.asset.user,resource.model_resource_meter,group_asset_user,permission,cud,,,
 access_resource_meter_reading_asset_user,resource.meter.reading.asset.user,resource.model_resource_meter_reading,group_asset_user,permission,ud,,,
 access_resource_meter_reading_employee,resource.meter.reading.employee,resource.model_resource_meter_reading,base.group_user,permission,c,,,
-resource_resource_rule_follows_asset_write,resource.resource: whoever may write an asset writes the resource it extends,resource.model_resource_resource,base.group_user,permission,u,,,"[('asset_id', 'access', 'write')]"
-resource_resource_rule_follows_asset_unlink,resource.resource: whoever may delete an asset deletes the resource it extends,resource.model_resource_resource,base.group_user,permission,d,,,"[('asset_id', 'access', 'unlink')]"

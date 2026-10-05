@@ -32,7 +32,7 @@ class DeviceGpsSpeedAlert(models.Model):
     )
     operator_id = fields.Many2one(comodel_name="hr.employee")
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Vehicle",
     )
     company_id = fields.Many2one(comodel_name="res.company")

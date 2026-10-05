@@ -9,19 +9,19 @@
     </record>
 
     <!-- The machines the work centres run on -->
-    <record id="asset_workcenter_1" model="resource.asset">
+    <record id="asset_workcenter_1" model="resource.resource">
         <field name="name">Drill 1</field>
         <field name="kind_id" ref="resource_asset.kind_machinery" />
         <field name="state">in_service</field>
     </record>
 
-    <record id="asset_workcenter_2" model="resource.asset">
+    <record id="asset_workcenter_2" model="resource.resource">
         <field name="name">Assembly 2</field>
         <field name="kind_id" ref="resource_asset.kind_machinery" />
         <field name="state">in_service</field>
     </record>
 
-    <record id="asset_workcenter_3" model="resource.asset">
+    <record id="asset_workcenter_3" model="resource.resource">
         <field name="name">Assembly 1</field>
         <field name="kind_id" ref="resource_asset.kind_machinery" />
         <field name="state">in_service</field>
@@ -40,7 +40,7 @@
     </record>
 
     <!-- Tools of the work centres -->
-    <record id="equipment_furniture1" model="resource.asset">
+    <record id="equipment_furniture1" model="resource.resource">
         <field name="name">Crosscut Saw: 8 ppi.</field>
         <field name="kind_id" ref="equipment_furniture_tools" />
         <field name="state">in_service</field>
@@ -50,16 +50,12 @@
     </record>
 
     <record id="equipment_furniture1_serial" model="resource.identifier">
-        <field
-            name="resource_id"
-            model="resource.asset"
-            search="[('id', '=', ref('equipment_furniture1'))]"
-            use="resource_id" />
+        <field name="resource_id" ref="equipment_furniture1" />
         <field name="type_id" ref="resource.identifier_type_serial" />
         <field name="value">FT/411/11112222</field>
     </record>
 
-    <record id="equipment_furniture2" model="resource.asset">
+    <record id="equipment_furniture2" model="resource.resource">
         <field name="name">Scrub Plane</field>
         <field name="kind_id" ref="equipment_furniture_tools" />
         <field name="state">in_service</field>
@@ -69,16 +65,12 @@
     </record>
 
     <record id="equipment_furniture2_serial" model="resource.identifier">
-        <field
-            name="resource_id"
-            model="resource.asset"
-            search="[('id', '=', ref('equipment_furniture2'))]"
-            use="resource_id" />
+        <field name="resource_id" ref="equipment_furniture2" />
         <field name="type_id" ref="resource.identifier_type_serial" />
         <field name="value">FT/411/11112223</field>
     </record>
 
-    <record id="equipment_furniture3" model="resource.asset">
+    <record id="equipment_furniture3" model="resource.resource">
         <field name="name">Drill Machine</field>
         <field name="kind_id" ref="equipment_furniture_tools" />
         <field name="state">in_service</field>
@@ -88,21 +80,17 @@
     </record>
 
     <record id="equipment_furniture3_serial" model="resource.identifier">
-        <field
-            name="resource_id"
-            model="resource.asset"
-            search="[('id', '=', ref('equipment_furniture3'))]"
-            use="resource_id" />
+        <field name="resource_id" ref="equipment_furniture3" />
         <field name="type_id" ref="resource.identifier_type_serial" />
         <field name="value">FT/421/33334444</field>
     </record>
 
-    <record id="maintenance.equipment_monitor1" model="resource.asset">
+    <record id="maintenance.equipment_monitor1" model="resource.resource">
         <field name="expected_mtbf" eval="1" />
         <field name="parent_id" ref="asset_workcenter_3" />
     </record>
 
-    <record id="maintenance.equipment_computer3" model="resource.asset">
+    <record id="maintenance.equipment_computer3" model="resource.resource">
         <field name="expected_mtbf" eval="1" />
         <field name="parent_id" ref="asset_workcenter_2" />
     </record>

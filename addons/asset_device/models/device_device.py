@@ -16,7 +16,7 @@ class DeviceDevice(models.Model):
     _inherit = "device.device"
 
     own_asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Device Asset Record",
         compute="_compute_own_asset_id",
         inverse="_inverse_own_asset_id",
@@ -28,14 +28,28 @@ class DeviceDevice(models.Model):
         help="The asset represented by this endpoint's resource. Several endpoints can represent one physical asset. Distinct from the resource a sensor observes.",
     )
 
-    @api.depends("resource_id", "resource_id.asset_id")
+    @api.depends("resource_id", "resource_id.kind_id")
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_own_asset_id(self):
         for device in self:
-            device.own_asset_id = device.resource_id.asset_id
+            resource = device.resource_id
+            device.own_asset_id = resource if resource.kind_id else False
 
     def _search_own_asset_id(self, operator, value):
-        return Domain("resource_id.asset_id", operator, value)
+        if operator not in ("in", "not in", "any", "not any"):
+            return NotImplemented
+        if operator in ("in", "not in"):
+            ids = [v for v in value if v]
+            domain = Domain("resource_id", "in", ids) & Domain(
+                "resource_id.kind_id", "!=", False
+            )
+            if len(ids) < len(value):
+                domain |= Domain("resource_id.kind_id", "=", False)
+        else:
+            domain = Domain("resource_id", "any", value) & Domain(
+                "resource_id.kind_id", "!=", False
+            )
+        return ~domain if operator.startswith("not") else domain
 
     def _own_asset_id_sql(self, field, alias, query=None):
         return self.env["resource.resource"]._asset_projection_sql(
@@ -47,8 +61,8 @@ class DeviceDevice(models.Model):
             asset = device.own_asset_id
             if asset:
                 asset.check_access("read")
-                device.resource_id = asset.resource_id
-            elif device.resource_id.asset_id:
+                device.resource_id = asset
+            elif device.resource_id.kind_id:
                 device.resource_id = False
 
     def _check_identity_input(self, vals):
@@ -56,7 +70,8 @@ class DeviceDevice(models.Model):
             return
         resource = self.env["resource.resource"].browse(vals["resource_id"])
         resource.check_access("read")
-        if resource.asset_id.id != (vals["own_asset_id"] or False):
+        own_asset = resource if resource.kind_id else resource.browse()
+        if own_asset.id != (vals["own_asset_id"] or False):
             raise ValidationError(
                 self.env._(
                     "The device asset and represented resource must share one identity."
@@ -75,9 +90,9 @@ class DeviceDevice(models.Model):
                 "own_asset_id", self.env.context.get("default_own_asset_id")
             )
             if asset_id:
-                asset = self.env["resource.asset"].browse(asset_id)
+                asset = self.env["resource.resource"].browse(asset_id)
                 asset.check_access("read")
-                resource_id = asset.resource_id.id
+                resource_id = asset.id
                 given_resource = vals.get(
                     "resource_id", self.env.context.get("default_resource_id")
                 )
@@ -115,11 +130,7 @@ class DeviceDevice(models.Model):
 
     def _asset_identity(self, code):
         self.check_singleton()
-        return (
-            self.own_asset_id.resource_id._get_identifier(code)
-            if self.own_asset_id
-            else False
-        )
+        return self.own_asset_id._get_identifier(code) if self.own_asset_id else False
 
     @api.depends("own_asset_id", "own_asset_id.identifier_ids.value")
     def _compute_imei(self) -> None:

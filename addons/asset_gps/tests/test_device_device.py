@@ -22,7 +22,7 @@ class TestRemoteDeviceAssetFields(DeviceDeviceAssetTestBase):
         resource = self.env["resource.resource"].create(
             {"name": "Assigned elsewhere", "type": "material"}
         )
-        target = self.env["resource.asset"].create(
+        target = self.env["resource.resource"].create(
             {
                 "name": "Audit target",
                 "kind_id": self.env.ref("resource_asset.kind_machinery").id,
@@ -71,15 +71,14 @@ class TestRemoteDeviceAssetFields(DeviceDeviceAssetTestBase):
     def test_tracking_is_owned_by_the_resource_identity(self):
         field = self.DeviceDevice._fields["asset_id"]
 
-        self.assertEqual(field.comodel_name, "resource.asset")
+        self.assertEqual(field.comodel_name, "resource.resource")
         tracked_field = self.DeviceDevice._fields["tracked_resource_id"]
         self.assertTrue(tracked_field.is_one2one)
         self.assertEqual(tracked_field.inverse_name, "gps_device_id")
         resource_field = self.env["resource.resource"]._fields["gps_device_id"]
         self.assertEqual(resource_field.index, "unique")
-        asset_field = self.env["resource.asset"]._fields["gps_device_id"]
-        self.assertEqual(asset_field.related, "resource_id.gps_device_id")
-        self.assertFalse(asset_field.store)
+        self.assertFalse(resource_field.related)
+        self.assertTrue(resource_field.store)
 
 
 class TestRemoteDeviceAssetComputation(DeviceDeviceAssetTestBase):
@@ -282,8 +281,9 @@ class TestRemoteDeviceAssetAction(DeviceDeviceAssetTestBase):
 
         action = device.action_view_tracked_asset()
 
+        # a vehicle-kind thing opens as the vehicle it is
         self.assertEqual(action["type"], "ir.actions.act_window")
-        self.assertEqual(action["res_model"], "resource.asset")
+        self.assertEqual(action["res_model"], "resource.asset.vehicle")
         self.assertEqual(action["res_id"], vehicle.asset_id.id)
 
     def test_the_two_asset_buttons_do_not_shadow_each_other(self):

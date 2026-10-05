@@ -542,7 +542,8 @@ class ResourceResource(models.Model):
         given = set(default or ())
         copies = []
         for resource, vals in zip(self, vals_list, strict=True):
-            vals = dict(vals, name=self.env._("%s (copy)", resource.name))
+            if "name" not in given:
+                vals = dict(vals, name=self.env._("%s (copy)", resource.name))
             company = self.env["res.company"].browse(
                 vals.get("company_id") or resource.company_id.id
             )
@@ -1757,8 +1758,11 @@ class ResourceResource(models.Model):
     def action_set_out_of_service(self) -> None:
         self._transition("out_of_service")
 
-    def action_dispose(self) -> None:
-        self._transition("disposed")
+    def action_dispose(self):
+        return self._dispose()
+
+    def _dispose(self, date: date | None = None) -> None:
+        self._transition("disposed", date=date)
 
     def _transition(self, state: str, date: date | None = None) -> None:
         self.write(self._get_transition_vals(state, date))

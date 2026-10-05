@@ -36,11 +36,11 @@ class TestWorkcenterMachinery(TransactionCase):
 
     def test_workcenter_only_accepts_machinery(self):
         field = self.env["mrp.workcenter"]._fields["asset_id"]
-        self.assertEqual(field.comodel_name, "resource.asset")
+        self.assertEqual(field.comodel_name, "resource.resource")
         self.assertIn("machinery", str(field.domain))
 
     def test_the_work_centre_runs_on_the_machine_resource(self):
-        self.assertEqual(self.workcenter.resource_id, self.asset.asset_id.resource_id)
+        self.assertEqual(self.workcenter.resource_id, self.asset.asset_id)
         self.assertEqual(self.asset.asset_id.workcenter_id, self.workcenter)
 
     def test_actual_fuel_efficiency_averages_fuel_logs(self):

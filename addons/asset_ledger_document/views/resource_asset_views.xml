@@ -21,7 +21,7 @@
 
     <record id="resource_asset_view_list_property_documents" model="ir.ui.view">
         <field name="name">resource.asset.property.list.documents</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_property" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='state']" position="before">
@@ -43,7 +43,7 @@
 
     <record id="resource_asset_view_form_documents" model="ir.ui.view">
         <field name="name">resource.asset.form.documents</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
         <field name="arch" type="xml">
             <group name="asset_lifecycle" position="after">

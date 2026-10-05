@@ -33,7 +33,7 @@ class TestActivitySchedule(ActivityScheduleHRCase):
             }
         )
         for employee in (cls.employee_1, cls.employee_2):
-            cls.env["resource.asset"].create(
+            cls.env["resource.resource"].create(
                 {
                     "name": f"Car of {employee.name}",
                     "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,

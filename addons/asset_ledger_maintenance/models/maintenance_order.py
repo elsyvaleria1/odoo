@@ -22,7 +22,7 @@ class MaintenanceOrder(models.Model):
             resources = self.new(
                 {"resource_ids": vals.get("resource_ids", default_resources)}
             ).resource_ids
-            if resources and all(resource.asset_id for resource in resources):
+            if resources and all(resource.kind_id for resource in resources):
                 vals["block_resource"] = False
         return super().create(vals_list)
 

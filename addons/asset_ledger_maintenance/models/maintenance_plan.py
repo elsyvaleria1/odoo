@@ -27,7 +27,7 @@ class MaintenancePlan(models.Model):
         tracking=True,
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         compute="_compute_asset_id",
         inverse="_inverse_asset_id",
         precompute=True,
@@ -162,23 +162,16 @@ class MaintenancePlan(models.Model):
                 )
         return defaults
 
-    @api.depends("resource_ids")
+    @api.depends("resource_ids", "resource_ids.kind_id")
     def _compute_asset_id(self) -> None:
-        assets = self.env["resource.asset"].search(
-            [("resource_id", "in", self.resource_ids._origin.ids)]
-        )
         for plan in self:
-            mine = assets.filtered(
-                lambda asset, resources=plan.resource_ids._origin: (
-                    asset.resource_id in resources
-                )
-            )
+            mine = plan.resource_ids._origin.filtered("kind_id")
             plan.asset_id = mine if len(mine) == 1 else False
 
     def _inverse_asset_id(self) -> None:
         for plan in self:
-            kept = plan.resource_ids.filtered(lambda resource: not resource.asset_id)
-            plan.resource_ids = kept | plan.asset_id.resource_id
+            kept = plan.resource_ids.filtered(lambda resource: not resource.kind_id)
+            plan.resource_ids = kept | plan.asset_id
 
     @api.depends("asset_id", "repeat_interval", "repeat_unit")
     def _compute_name(self):

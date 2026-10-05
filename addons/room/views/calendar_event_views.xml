@@ -109,7 +109,7 @@
                                 string="Room"
                                 placeholder="Select a Room..."
                                 widget="many2many_tags"
-                                domain="[('asset_id.kind_id.code', '=', 'room')]"
+                                domain="[('kind_id.code', '=', 'room')]"
                                 options="{'no_create': True}" />
                             <field name="stop" invisible="1" />
                             <field

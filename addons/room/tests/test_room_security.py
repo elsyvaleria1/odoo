@@ -31,7 +31,7 @@ class TestRoomSecurity(RoomCommon, MailCase):
             login="public_user",
             name="Public user",
         )
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "Van",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
@@ -44,7 +44,7 @@ class TestRoomSecurity(RoomCommon, MailCase):
         with self.assertRaises(exceptions.AccessError):
             self.env["calendar.event"].search([])
         with self.assertRaises(exceptions.AccessError):
-            self.env["resource.asset"].search([])
+            self.env["resource.resource"].search([])
 
     @users("employee")
     def test_an_employee_books_rooms_for_their_own_meetings(self):
@@ -95,7 +95,7 @@ class TestRoomSecurity(RoomCommon, MailCase):
             )
         )
         self.assertTrue(new_room.resource_id.access_token)
-        new_room.room_short_code = "new_room"
+        new_room.short_code = "new_room"
 
         with self.assertRaises(exceptions.AccessError):
             self.vehicle.with_env(self.env).write({"name": "Truck"})
@@ -111,4 +111,4 @@ class TestRoomSecurity(RoomCommon, MailCase):
     def test_a_room_manager_writes_the_resource_of_a_room_and_not_of_a_vehicle(self):
         self.rooms[0].with_env(self.env).resource_id.write({"name": "Room 2"})
         with self.assertRaises(exceptions.AccessError):
-            self.vehicle.with_env(self.env).resource_id.write({"name": "Truck"})
+            self.vehicle.with_env(self.env).write({"name": "Truck"})

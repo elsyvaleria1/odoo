@@ -217,7 +217,7 @@ class TestMaintenanceKindsAndDashboards(TransactionCase):
         )
 
     def test_an_asset_takes_its_kind_technician_unless_given_one(self):
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         asset = Asset.create({"name": "Probe asset", "kind_id": self.kind.id})
         self.assertEqual(asset.technician_user_id, self.technician)
         other = self.env.ref("base.user_admin")
@@ -229,23 +229,23 @@ class TestMaintenanceKindsAndDashboards(TransactionCase):
             }
         )
         self.assertEqual(explicit.technician_user_id, other)
-        with Form(Asset) as form:
+        with Form(Asset, view="resource_asset.resource_asset_view_form") as form:
             form.name = "Form asset"
             form.kind_id = self.kind
         self.assertEqual(form.record.technician_user_id, self.technician)
 
     def test_the_asset_counts_its_orders(self):
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {"name": "Probe asset", "kind_id": self.kind.id}
         )
         self.env["maintenance.order"].create(
             [
                 {
                     "name": "Done",
-                    "resource_ids": asset.resource_id.ids,
+                    "resource_ids": asset.ids,
                     "state": "done",
                 },
-                {"name": "Open", "resource_ids": asset.resource_id.ids},
+                {"name": "Open", "resource_ids": asset.ids},
             ]
         )
         self.assertEqual(asset.maintenance_count, 2)
@@ -322,7 +322,7 @@ class TestMaintenanceSchedule(TransactionCase):
 
 class TestMaintenanceReliabilityFigures(TransactionCase):
     def _asset_with_failures(self, date_in_service, failures):
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Reliability probe",
                 "kind_id": self.env.ref("resource_asset.kind_equipment").id,
@@ -333,7 +333,7 @@ class TestMaintenanceReliabilityFigures(TransactionCase):
             self.env["maintenance.order"].create(
                 {
                     "name": "Failure",
-                    "resource_ids": asset.resource_id.ids,
+                    "resource_ids": asset.ids,
                     "maintenance_type": "corrective",
                     "date_confirmed": date_confirmed,
                     "state": "done",
@@ -409,7 +409,7 @@ class TestMaintenanceAssetAccess(TransactionCase):
         cls.machinery = cls.env.ref("resource_asset.kind_machinery")
 
     def test_the_technician_reads_the_asset_they_maintain(self):
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Compressor",
                 "kind_id": self.machinery.id,
@@ -417,7 +417,7 @@ class TestMaintenanceAssetAccess(TransactionCase):
             }
         )
         order = self.env["maintenance.order"].create(
-            {"name": "Noise", "resource_ids": asset.resource_id.ids}
+            {"name": "Noise", "resource_ids": asset.ids}
         )
         self.assertEqual(order.user_id, self.technician)
         read = order.with_user(self.technician).web_read(
@@ -428,7 +428,7 @@ class TestMaintenanceAssetAccess(TransactionCase):
     def test_a_new_kind_brings_its_technician(self):
         # A kind with a model of its own is a table, and no row moves between
         # tables: the asset starts on a kind that stays in the root.
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {"name": "Lathe", "kind_id": self.env.ref("resource_asset.kind_tool").id}
         )
         kind = self.env["resource.kind"].create(

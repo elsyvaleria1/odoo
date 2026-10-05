@@ -23,19 +23,19 @@ class TestRoomBooking(RoomCommon):
         self.assertEqual(room.display_name, "Office 1 - Room 1")
 
     def test_an_asset_created_as_a_room_gets_its_kiosk(self):
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Board room",
                 "kind_id": self.env.ref("room.kind_room").id,
                 "state": "in_service",
             }
         )
-        self.assertEqual(asset._get_concrete()._name, "resource.asset.room")
-        self.assertTrue(asset.resource_id.access_token)
+        self.assertTrue(self.env["resource.asset.room"].browse(asset.id).exists())
+        self.assertTrue(asset.access_token)
 
     def test_an_asset_of_another_kind_cannot_become_a_room(self):
         # A room is a model of its own, and no row moves between tables.
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Parcel",
                 "kind_id": self.env.ref("resource_asset.kind_property").id,
@@ -136,7 +136,7 @@ class TestRoomBooking(RoomCommon):
             room.invalidate_recordset(["next_booking_start", "is_available"])
             self.assertFalse(room.is_available)
             self.assertEqual(room.next_booking_start, datetime(2023, 5, 15, 11, 0))
-            self.assertFalse(self.rooms[0].room_is_available)
+            self.assertFalse(self.rooms[0].is_available)
 
     def test_a_booking_moved_to_another_room_leaves_the_first_kiosk(self):
         sent = []
@@ -159,7 +159,7 @@ class TestRoomBooking(RoomCommon):
         self.assertIn(f"room#{self.resources[1].id}/booking/create", sent)
 
     def test_a_room_keeps_an_offer_it_is_given_beside_its_own(self):
-        asset = self.env["resource.asset"].create(
+        asset = self.env["resource.resource"].create(
             {
                 "name": "Projector room",
                 "kind_id": self.env.ref("room.kind_room").id,
@@ -169,12 +169,12 @@ class TestRoomBooking(RoomCommon):
         offer = self.env["appointment.type"].create(
             {"name": "Equipment booking", "schedule_based_on": "resources"}
         )
-        asset.resource_id.appointment_type_ids |= offer
-        self.assertTrue(asset.resource_id.access_token)
-        self.assertTrue(asset.resource_id.short_code)
-        self.assertIn(self.room_type, asset.resource_id.appointment_type_ids)
-        self.assertIn(offer, asset.resource_id.appointment_type_ids)
-        self.assertTrue(asset.resource_id.enforce_booking_limit)
+        asset.appointment_type_ids |= offer
+        self.assertTrue(asset.access_token)
+        self.assertTrue(asset.short_code)
+        self.assertIn(self.room_type, asset.appointment_type_ids)
+        self.assertIn(offer, asset.appointment_type_ids)
+        self.assertTrue(asset.enforce_booking_limit)
 
     @mute_logger("odoo.db.cursor")
     def test_kiosk_codes_are_unique(self):

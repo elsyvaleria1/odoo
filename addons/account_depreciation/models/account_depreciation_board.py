@@ -15,6 +15,10 @@ from odoo.tools import float_compare, float_is_zero, formatLang
 from odoo.tools.date_utils import end_of
 from odoo.tools.misc import clean_context
 
+from odoo.addons.resource_asset.models.mixin_resource_kind import (
+    without_resource_defaults,
+)
+
 _debug = DebugLog(__name__)
 
 DAYS_PER_MONTH = 30
@@ -31,19 +35,19 @@ RUNNING_BOARD = ("open", "paused")
 
 
 class AccountDepreciationBoard(models.Model):
-    """The depreciation of one asset: a facet of `resource.asset`, reached from the
-    asset through `board_id`. The board reads and writes the asset's own facts
+    """The depreciation of one asset: a facet of the thing's `resource.resource`,
+    reached from it through `board_id`. The board reads and writes the thing's own facts
     (name, company, value, dates) through delegation, and owns everything the
     accounting knows about depreciating it."""
 
     _name = "account.depreciation.board"
     _description = "Depreciation Board"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
-    _inherits = {"resource.asset": "asset_id"}
+    _inherits = {"resource.resource": "asset_id"}
     _check_company_auto = True
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         index="unique",
         required=True,
         ondelete="cascade",
@@ -335,6 +339,10 @@ class AccountDepreciationBoard(models.Model):
         "value_salvage",
         "original_move_line_ids",
     )
+
+    @api.model
+    def default_get(self, fields):
+        return without_resource_defaults(self, fields, super().default_get(fields))
 
     @api.constrains("depreciation_move_ids")
     def _check_depreciations(self) -> None:

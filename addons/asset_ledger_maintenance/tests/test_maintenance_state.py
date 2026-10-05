@@ -28,7 +28,7 @@ class TestMaintenanceState(TransactionCase):
             {
                 "name": "State probe",
                 "maintenance_type": maintenance_type,
-                "resource_ids": self.asset.asset_id.resource_id.ids,
+                "resource_ids": self.asset.asset_id.ids,
                 "date_scheduled_start": date_scheduled_start
                 or datetime.now() - timedelta(hours=hours_ago),
             }

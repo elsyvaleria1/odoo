@@ -9,12 +9,12 @@ class TestComplianceReportAssets(ComplianceCase):
             {"is_mandatory": False}
         )
         cls.asset_type = cls._type(
-            "SCOPE_ASSET", is_mandatory=True, applies_to="resource.asset"
+            "SCOPE_ASSET", is_mandatory=True, applies_to="resource.resource"
         )
         cls.partner_type = cls._type(
             "SCOPE_PARTNER_ONLY", is_mandatory=True, applies_to="res.partner"
         )
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Reported Asset",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
@@ -24,11 +24,11 @@ class TestComplianceReportAssets(ComplianceCase):
     def test_assets_are_an_entity_a_type_can_apply_to(self):
         selection = dict(self.env["document.type"]._selection_applies_to())
 
-        self.assertIn("resource.asset", selection)
+        self.assertIn("resource.resource", selection)
 
     def _report_row(self):
         return self.env["document.compliance.report"].search(
-            [("entity_type", "=", "resource.asset"), ("entity_id", "=", self.asset.id)]
+            [("entity_type", "=", "resource.resource"), ("entity_id", "=", self.asset.id)]
         )
 
     def test_an_asset_is_held_only_to_asset_types(self):
@@ -36,7 +36,7 @@ class TestComplianceReportAssets(ComplianceCase):
             self.asset_type,
             365,
             name="Insurance Policy",
-            res_model="resource.asset",
+            res_model="resource.resource",
             res_id=self.asset.id,
         )
         self._publish()
@@ -60,7 +60,7 @@ class TestComplianceReportAssets(ComplianceCase):
             self.asset_type,
             -1,
             name="Lapsed Policy",
-            res_model="resource.asset",
+            res_model="resource.resource",
             res_id=self.asset.id,
         )
         self._publish()
@@ -79,10 +79,10 @@ class TestKindScopedRequirements(ComplianceCase):
         )
         cls.vehicle_kind = cls.env.ref("resource_asset.kind_vehicle")
         cls.tool_kind = cls.env.ref("resource_asset.kind_tool")
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {"name": "Scoped Vehicle", "kind_id": cls.vehicle_kind.id}
         )
-        cls.tool = cls.env["resource.asset"].create(
+        cls.tool = cls.env["resource.resource"].create(
             {"name": "Scoped Tool", "kind_id": cls.tool_kind.id}
         )
 
@@ -91,7 +91,7 @@ class TestKindScopedRequirements(ComplianceCase):
         self.env["document.compliance.report"].refresh()
         self.env.invalidate_all()
         row = self.env["document.compliance.report"].search(
-            [("entity_type", "=", "resource.asset"), ("entity_id", "=", asset.id)]
+            [("entity_type", "=", "resource.resource"), ("entity_id", "=", asset.id)]
         )
         return row.total_required
 
@@ -99,7 +99,7 @@ class TestKindScopedRequirements(ComplianceCase):
         self._type(
             "VEHICLE_ONLY",
             is_mandatory=True,
-            applies_to="resource.asset",
+            applies_to="resource.resource",
             asset_kind_ids=[(6, 0, self.vehicle_kind.ids)],
         )
 
@@ -107,7 +107,7 @@ class TestKindScopedRequirements(ComplianceCase):
         self.assertEqual(self._required_of(self.tool), 0)
 
     def test_a_type_naming_no_kind_is_required_of_every_asset(self):
-        self._type("EVERY_KIND", is_mandatory=True, applies_to="resource.asset")
+        self._type("EVERY_KIND", is_mandatory=True, applies_to="resource.resource")
 
         self.assertEqual(self._required_of(self.vehicle), 1)
         self.assertEqual(self._required_of(self.tool), 1)
@@ -116,7 +116,7 @@ class TestKindScopedRequirements(ComplianceCase):
         self._type(
             "TWO_KINDS",
             is_mandatory=True,
-            applies_to="resource.asset",
+            applies_to="resource.resource",
             asset_kind_ids=[(6, 0, (self.vehicle_kind + self.tool_kind).ids)],
         )
 

@@ -331,7 +331,7 @@ class StockPickingBatch(models.Model):
     def _route_vehicle_position(self):
         """(latitude, longitude) of the vehicle from a recent GPS reading, or None."""
         self.check_singleton()
-        log = self.vehicle_id._gps_position(max_age=GPS_FRESH)
+        log = self.vehicle_id.resource_id._gps_position(max_age=GPS_FRESH)
         return (log.latitude, log.longitude) if log else None
 
     def _route_refresh_eta(self) -> bool:

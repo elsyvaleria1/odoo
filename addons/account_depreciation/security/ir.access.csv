@@ -1,6 +1,6 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
-access_resource_asset_account_user,resource.asset.account.user,resource_asset.model_resource_asset,account.group_account_user,permission,ud,,,
-access_resource_asset_account_invoice,resource.asset.account.invoice,resource_asset.model_resource_asset,account.group_account_invoice,permission,c,,,
+access_resource_asset_account_user,resource.asset.account.user,resource.model_resource_resource,account.group_account_user,permission,ud,,,"[('kind_id', '!=', False)]"
+access_resource_asset_account_invoice,resource.asset.account.invoice,resource.model_resource_resource,account.group_account_invoice,permission,c,,,"[('kind_id', '!=', False)]"
 access_account_depreciation_profile,account.depreciation.profile,model_account_depreciation_profile,account.group_account_readonly,permission,r,,,
 access_account_depreciation_profile_manager,account.depreciation.profile,model_account_depreciation_profile,account.group_account_user,permission,cud,,,
 access_asset_modify,wizard.account.depreciation.board.update,model_wizard_account_depreciation_board_update,account.group_account_user,permission,cru,,,

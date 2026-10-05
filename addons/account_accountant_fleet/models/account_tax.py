@@ -8,7 +8,7 @@ class AccountTax(models.Model):
         # EXTENDS 'account'
         results = super()._prepare_base_line_for_taxes_computation(record, **kwargs)
         results["asset_id"] = self._get_base_line_field_value_from_record(
-            record, "asset_id", kwargs, self.env["resource.asset"]
+            record, "asset_id", kwargs, self.env["resource.resource"]
         )
         return results
 
@@ -16,7 +16,7 @@ class AccountTax(models.Model):
         # EXTENDS 'account'
         results = super()._prepare_tax_line_for_taxes_computation(record, **kwargs)
         results["asset_id"] = self._get_base_line_field_value_from_record(
-            record, "asset_id", kwargs, self.env["resource.asset"]
+            record, "asset_id", kwargs, self.env["resource.resource"]
         )
         return results
 

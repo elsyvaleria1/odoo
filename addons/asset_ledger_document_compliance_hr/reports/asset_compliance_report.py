@@ -1,7 +1,7 @@
 from odoo import fields, models
 from odoo.tools import SQL
 
-from odoo.addons.resource_asset_hr.models.resource_asset import live_custody_subquery
+from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
 LIVE_MANAGER = live_custody_subquery("manager", "asset", "mgr")
 
@@ -18,7 +18,7 @@ class AssetComplianceReport(models.Model):
     def _get_from_tables(self) -> list:
         return [
             *super()._get_from_tables(),
-            ("resource_asset", "asset", "LEFT JOIN", "asset.id = adt.asset_id"),
+            ("resource_resource", "asset", "LEFT JOIN", "asset.id = adt.asset_id"),
             (SQL(f"LATERAL {LIVE_MANAGER}"), "mgr", "LEFT JOIN", "TRUE"),
         ]
 

@@ -5,7 +5,7 @@ class AccountAnalyticDistributionModel(models.Model):
     _inherit = "account.analytic.distribution.model"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         ondelete="cascade",
         help="Asset for which this analytic distribution will be automatically applied. "
         "When this asset is selected on an invoice line or sales order, the defined "

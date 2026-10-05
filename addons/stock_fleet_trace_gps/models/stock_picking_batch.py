@@ -56,7 +56,7 @@ class StockPickingBatch(models.Model):
     def _compute_has_trip_gps(self) -> None:
         for batch in self:
             batch.has_trip_gps = (
-                bool(batch.vehicle_id._gps_device_ids()) if batch.vehicle_id else False
+                bool(batch.vehicle_id.resource_id._gps_device_ids()) if batch.vehicle_id else False
             )
 
     # ------------------------------------------------------------------
@@ -133,7 +133,7 @@ class StockPickingBatch(models.Model):
             reason="a trip reads its vehicle's track",
         )
         for vehicle in trips.vehicle_id.filtered(
-            lambda vehicle: vehicle._gps_device_ids()
+            lambda vehicle: vehicle.resource_id._gps_device_ids()
         ):
             trips._trip_gps_sync_vehicle(vehicle)
 
@@ -146,7 +146,7 @@ class StockPickingBatch(models.Model):
         cursor = vehicle.trip_gps_cursor or (fields.Datetime.now() - FIRST_READ_WINDOW)
         logs = self.env["device.data.log.gps"].search(
             [
-                *vehicle._gps_observation_domain(),
+                *vehicle.resource_id._gps_observation_domain(),
                 ("timestamp", ">", cursor),
             ],
             order="timestamp asc, id asc",
@@ -240,7 +240,7 @@ class StockPickingBatch(models.Model):
             )
             return
         vals = {"trip_gps_exit_date": log.timestamp}
-        odometer = vehicle._gps_odometer_at(log.timestamp)
+        odometer = vehicle.resource_id._gps_odometer_at(log.timestamp)
         if odometer:
             vals["odometer_departure"] = odometer
         if log.fuel_level and trip.fuel_unit == "percent":
@@ -278,7 +278,7 @@ class StockPickingBatch(models.Model):
         if not trip:
             return
         vals = {"trip_gps_entry_date": log.timestamp}
-        odometer = vehicle._gps_odometer_at(log.timestamp)
+        odometer = vehicle.resource_id._gps_odometer_at(log.timestamp)
         if odometer and not trip.odometer_return:
             vals["odometer_return"] = odometer
         if log.fuel_level and trip.fuel_unit == "percent" and not trip.fuel_return:
@@ -344,7 +344,7 @@ class StockPickingBatch(models.Model):
         end = self.trip_gps_entry_date or self.date_return or fields.Datetime.now()
         return self.env["device.data.log.gps"].search(
             [
-                *self.vehicle_id._gps_observation_domain(),
+                *self.vehicle_id.resource_id._gps_observation_domain(),
                 ("timestamp", ">=", start),
                 ("timestamp", "<=", end),
             ],
@@ -418,7 +418,7 @@ class StockPickingBatch(models.Model):
     def _trip_gps_review_route(self) -> None:
         """Compare the track of the trip with its stops, idempotently."""
         self.check_singleton()
-        if not self.vehicle_id._gps_device_ids() or not self.date_departure:
+        if not self.vehicle_id.resource_id._gps_device_ids() or not self.date_departure:
             return
         warehouse = self.picking_type_id.warehouse_id
         vehicle = self.vehicle_id

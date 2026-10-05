@@ -4,11 +4,11 @@ from odoo import fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.resource.models.utils import OPERATOR_ROLE
-from odoo.addons.resource_asset.models.resource_asset import CUSTODY_SILENT
+from odoo.addons.resource_asset.models.resource_resource import CUSTODY_SILENT
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     def action_view_logs_assignation(self):
         return self._action_view_logs(
@@ -26,7 +26,7 @@ class ResourceAsset(models.Model):
             and not planned
             and not self.env.context.get(CUSTODY_SILENT)
         ):
-            self._book_operator_assignment()
+            self.filtered("kind_id")._book_operator_assignment()
 
     def action_accept_operator_change(self):
         assets = self.filtered("future_operator_id")

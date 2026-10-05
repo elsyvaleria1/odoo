@@ -12,10 +12,10 @@ def migrate_equipment_resources(env):
         return
     env.flush_all()
     cr.execute("""
-        SELECT DISTINCT workcenter.resource_id, asset.resource_id
+        SELECT DISTINCT workcenter.resource_id, thing.id
           FROM maintenance_equipment equipment
           LEFT JOIN mrp_workcenter workcenter ON workcenter.id = equipment.workcenter_id
-          LEFT JOIN resource_asset asset ON asset.id = equipment.asset_id
+          LEFT JOIN resource_resource thing ON thing.id = equipment.asset_id
          WHERE equipment.asset_id IS NOT NULL AND equipment.workcenter_id IS NOT NULL
     """)
     pairs = cr.fetchall()

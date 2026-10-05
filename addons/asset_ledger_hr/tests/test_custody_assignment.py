@@ -33,7 +33,7 @@ class TestCustodyAssignment(TransactionCase):
     def _open(self, role):
         return self.env["resource.assignment"].search(
             [
-                ("resource_id", "=", self.asset.resource_id.id),
+                ("resource_id", "=", self.asset.id),
                 ("custody_role", "=", role),
                 ("date_end", "=", False),
                 ("date_start", "<=", fields.Datetime.now()),
@@ -43,7 +43,7 @@ class TestCustodyAssignment(TransactionCase):
     def _planned(self):
         return self.env["resource.assignment"].search(
             [
-                ("resource_id", "=", self.asset.resource_id.id),
+                ("resource_id", "=", self.asset.id),
                 ("custody_role", "=", "operator"),
                 ("date_end", "=", False),
                 ("date_start", ">", fields.Datetime.now()),
@@ -62,7 +62,7 @@ class TestCustodyAssignment(TransactionCase):
             .with_context(active_test=False)
             .search(
                 [
-                    ("resource_id", "=", (resource or self.asset.resource_id).id),
+                    ("resource_id", "=", (resource or self.asset).id),
                     ("custody_role", "=", role),
                 ]
             )
@@ -103,7 +103,7 @@ class TestCustodyAssignment(TransactionCase):
         self.assertEqual(
             self.env["resource.assignment"].search_count(
                 [
-                    ("resource_id", "=", self.asset.resource_id.id),
+                    ("resource_id", "=", self.asset.id),
                     ("custody_role", "=", "operator"),
                 ]
             ),
@@ -149,7 +149,7 @@ class TestCustodyAssignment(TransactionCase):
             # Custody is read off the resource; a clock that moved needs
             # both records forgotten.
             self.asset.invalidate_recordset()
-            self.asset.resource_id.invalidate_recordset()
+            self.asset.invalidate_recordset()
             self.assertEqual(self.asset.operator_employee_id, self.other)
             self.assertFalse(self.asset.future_operator_employee_id)
 
@@ -187,7 +187,7 @@ class TestCustodyAssignment(TransactionCase):
         `resource.assignment.resource_id` is `ondelete="restrict"`, so a row
         left open by a deleted lot pins its `resource.resource` permanently.
         """
-        resource = self.asset.resource_id
+        resource = self.asset
 
         self.lot.unlink()
 
@@ -207,7 +207,7 @@ class TestCustodyAssignment(TransactionCase):
         first = self._open("operator")
         rival = self.env["resource.assignment"].create(
             {
-                "resource_id": self.asset.resource_id.id,
+                "resource_id": self.asset.id,
                 "assignee_id": self.other.resource_id.id,
                 "custody_role": "operator",
                 "date_start": fields.Datetime.now(),
@@ -237,7 +237,7 @@ class TestCustodyAssignment(TransactionCase):
 
         active = self.env["resource.assignment"].search(
             [
-                ("resource_id", "=", self.asset.resource_id.id),
+                ("resource_id", "=", self.asset.id),
                 ("custody_role", "=", "operator"),
                 ("state", "=", "active"),
             ]
@@ -311,13 +311,13 @@ class TestCustodyReadsFromTheLedger(TestCustodyAssignment):
     def test_the_asset_reads_its_operator_and_manager_off_the_ledger(self):
         self.assertEqual(self.asset.operator_employee_id, self.driver)
         self.assertEqual(self.asset.manager_employee_id, self.manager)
-        assets = self.env["resource.asset"].search(
+        assets = self.env["resource.resource"].search(
             [("operator_employee_id", "=", self.driver.id)]
         )
         self.assertIn(self.asset, assets)
         self.assertNotIn(
             self.asset,
-            self.env["resource.asset"].search([("operator_employee_id", "=", False)]),
+            self.env["resource.resource"].search([("operator_employee_id", "=", False)]),
         )
 
     def test_writing_the_asset_moves_the_lot(self):
@@ -342,7 +342,7 @@ class TestCustodyReadsFromTheLedger(TestCustodyAssignment):
         self.assertFalse(self.lot.asset_manager_id)
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.asset.resource_id.id,
+                "resource_id": self.asset.id,
                 "assignee_id": self.other.resource_id.id,
                 "custody_role": "manager",
             }

@@ -37,7 +37,7 @@ class ResourceAssetLog(models.Model):
     currency_id = fields.Many2one(related="company_id.currency_id")
     vendor_id = fields.Many2one(comodel_name="res.partner")
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         index=True,
         ondelete="cascade",
         check_company=True,

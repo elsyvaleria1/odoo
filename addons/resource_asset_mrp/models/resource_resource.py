@@ -1,8 +1,8 @@
 from odoo import fields, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     workcenter_id = fields.One2one(
         comodel_name="mrp.workcenter",

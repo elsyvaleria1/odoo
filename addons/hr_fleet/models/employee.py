@@ -40,9 +40,9 @@ class HrEmployee(models.Model):
         if operator not in ("in", "not in", "any", "not any"):
             return NotImplemented
         if operator in ("any", "not any"):
-            vehicles = self.env["resource.asset"].sudo().search(value)
+            vehicles = self.env["resource.asset.vehicle"].sudo().search(value)
         else:
-            vehicles = self.env["resource.asset"].sudo().browse(value)
+            vehicles = self.env["resource.asset.vehicle"].sudo().browse(value)
         domain = Domain("resource_id", "in", vehicles.operator_id.ids)
         return ~domain if operator.startswith("not") else domain
 

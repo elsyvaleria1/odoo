@@ -28,14 +28,14 @@ class StockPickingBatch(models.Model):
         self.check_singleton()
         if self.date_departure:
             raise UserError(self.env._("Trip %s has already departed.", self.name))
-        self.odometer_departure = self._require_vehicle().get_current_odometer()
+        self.odometer_departure = self._require_vehicle().resource_id.get_current_odometer()
 
     def action_read_gps_odometer_return(self) -> None:
         """Fill the return odometer from the vehicle's GPS before closing the trip."""
         self.check_singleton()
         if self.date_return:
             raise UserError(self.env._("Trip %s is already closed.", self.name))
-        self.odometer_return = self._require_vehicle().get_current_odometer()
+        self.odometer_return = self._require_vehicle().resource_id.get_current_odometer()
 
     def _require_vehicle(self):
         if not self.vehicle_id:
@@ -162,7 +162,7 @@ class StockPickingBatch(models.Model):
 
         :rtype: float
         """
-        vehicle = self.vehicle_id
+        vehicle = self.vehicle_id.resource_id
         # The last reading at or before a moment, not the closest on either side:
         # a tracker goes quiet with the engine off, and the odometer does not move
         # while it is.

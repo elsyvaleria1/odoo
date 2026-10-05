@@ -214,11 +214,7 @@
             <field name="tag_ids" eval="[Command.set([ref('vehicle_tag_junior')])]" />
         </record>
         <record id="odometer_meter_1" model="resource.meter">
-            <field
-                name="resource_id"
-                model="resource.asset"
-                search="[('id', '=', ref('vehicle_1'))]"
-                use="resource_id" />
+            <field name="resource_id" ref="vehicle_1" />
             <field name="name">Odometer</field>
             <field name="kind">odometer</field>
         </record>
@@ -251,11 +247,7 @@
                 eval="(DateTime.now() - timedelta(days=10)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
         <record id="odometer_meter_2" model="resource.meter">
-            <field
-                name="resource_id"
-                model="resource.asset"
-                search="[('id', '=', ref('vehicle_2'))]"
-                use="resource_id" />
+            <field name="resource_id" ref="vehicle_2" />
             <field name="name">Odometer</field>
             <field name="kind">odometer</field>
         </record>

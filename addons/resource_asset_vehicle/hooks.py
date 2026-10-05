@@ -5,7 +5,7 @@ from lxml import etree
 from odoo import api
 from odoo.tools import file_path
 
-from .table_inheritance import create_vehicle_table, move_vehicles_into_their_table
+from odoo.addons.resource_asset.models.resource_resource import KIND_MODEL_CREATING
 
 _logger = logging.getLogger(__name__)
 
@@ -57,11 +57,25 @@ def adopt_existing_manufacturers(cr) -> int:
 
 
 def pre_init_hook(env: api.Environment) -> None:
-    """Prepare the vehicle table and brands.
-
-    :param env: Odoo environment (pre-load: this module's models are not in the
-        registry yet, so only raw SQL is used).
-    """
-    create_vehicle_table(env.cr)
-    move_vehicles_into_their_table(env.cr)
     adopt_existing_manufacturers(env.cr)
+
+
+def post_init_hook(env: api.Environment) -> None:
+    """A vehicle-kind resource registered before this module gets the vehicle
+    row that extends it."""
+    Vehicle = env["resource.asset.vehicle"].with_context(active_test=False)
+    resources = (
+        env["resource.resource"]
+        .with_context(active_test=False)
+        .search(
+            [
+                ("kind_id", "=", Vehicle._get_kind().id),
+                ("id", "not in", Vehicle.search([]).ids),
+            ]
+        )
+    )
+    if resources:
+        Vehicle.with_context(**{KIND_MODEL_CREATING: Vehicle._name}).create(
+            [{"resource_id": resource.id} for resource in resources]
+        )
+        _logger.info("%s: %d vehicle(s) extended", _MODULE, len(resources))

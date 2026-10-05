@@ -100,7 +100,7 @@ class AccountFiscalReportHandler(models.AbstractModel):
         model_to_domain = {
             "account.fiscal.category": "account_id.fiscal_category_id",
             "account.account": "account_id",
-            "resource.asset": "asset_id",
+            "resource.asset.vehicle": "asset_id",
         }
 
         vehicle_audit = False
@@ -112,7 +112,7 @@ class AccountFiscalReportHandler(models.AbstractModel):
                 domain.append((model_to_domain[res_model], "=", res_id))
             if markup:
                 ctx["search_default_account_id"] = int(markup)
-            if res_model == "resource.asset":
+            if res_model == "resource.asset.vehicle":
                 vehicle_audit = True
             if res_model == "account.account":
                 account_audit = True

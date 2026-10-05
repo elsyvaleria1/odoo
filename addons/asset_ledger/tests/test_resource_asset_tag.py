@@ -12,7 +12,7 @@ class TestResourceAssetTag(TransactionCase):
         )
 
     def _asset(self, kind, name):
-        return self.env["resource.asset"].create(
+        return self.env["resource.resource"].create(
             {"name": name, "kind_id": self.env.ref(f"resource_asset.kind_{kind}").id}
         )
 
@@ -26,7 +26,7 @@ class TestResourceAssetTag(TransactionCase):
         self.assertEqual(tool.asset_tag_ids, self.urgent)
         self.assertEqual(vehicle.asset_tag_ids, self.urgent | self.leased)
         self.assertEqual(
-            self.env["resource.asset"].search(
+            self.env["resource.resource"].search(
                 [("asset_tag_ids", "in", self.leased.ids)]
             ),
             vehicle,

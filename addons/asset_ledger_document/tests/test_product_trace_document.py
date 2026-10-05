@@ -27,7 +27,7 @@ class TestStockLotDocuments(TransactionCase):
             values["centralize"] = centralize
         if values:
             setting.write(values)
-        self.env["resource.asset"].invalidate_model()
+        self.env["resource.resource"].invalidate_model()
         return setting
 
     def setUp(self):
@@ -489,18 +489,18 @@ class TestStockLotDocuments(TransactionCase):
                 self.env.ref(tag_xmlid).unlink()
                 self.env.registry.clear_cache()
 
-                described = self.env["resource.asset"].fields_get([field_name])
+                described = self.env["resource.resource"].fields_get([field_name])
                 self.assertEqual(
                     described[field_name]["domain"],
                     [(1, "=", 0)],
                     "a missing tag must match nothing, not raise",
                 )
-                self.env["resource.asset"].fields_get()
+                self.env["resource.resource"].fields_get()
 
     def test_document_tag_domain_uses_the_tag_when_present(self):
         tag = self.env.ref("asset_ledger_document.documents_tag_fuel_card")
         self.assertEqual(
-            self.env["resource.asset"].fields_get(["fuel_card_id"])["fuel_card_id"][
+            self.env["resource.resource"].fields_get(["fuel_card_id"])["fuel_card_id"][
                 "domain"
             ],
             [("tag_ids", "in", tag.ids)],

@@ -641,7 +641,7 @@ class TestStockLotHR(TransactionCase):
             self.assertTrue(self.ProductAssetLog._fields[name].index)
 
     def test_the_employee_fields_are_company_checked(self):
-        asset_model = self.env["resource.asset"]
+        asset_model = self.env["resource.resource"]
         for name in (
             "operator_employee_id",
             "manager_employee_id",
@@ -655,7 +655,7 @@ class TestStockLotHR(TransactionCase):
             self.assertTrue(self.ProductAssetLog._fields[name].check_company)
 
     def test_the_operator_picker_is_narrowed_to_the_assets_company(self):
-        field = self.env["resource.asset"]._fields["operator_employee_id"]
+        field = self.env["resource.resource"]._fields["operator_employee_id"]
         domain = field._description_domain(self.env)
 
         self.assertIn("company_id", str(domain))
@@ -827,7 +827,7 @@ class TestStockLotHR(TransactionCase):
             )
 
     def test_get_product_operator_assignment(self):
-        product = self.env["resource.asset"]._get_product_operator_assignment()
+        product = self.env["resource.resource"]._get_product_operator_assignment()
 
         self.assertIsInstance(product, type(self.env["product.product"]))
 

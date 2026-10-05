@@ -17,7 +17,7 @@ class TestHrFleetDriver(common.TransactionCase):
         )
 
     def _car(self, plate, **vals):
-        return self.env["resource.asset"].create(
+        return self.env["resource.resource"].create(
             {
                 "name": plate,
                 "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
@@ -39,7 +39,7 @@ class TestHrFleetDriver(common.TransactionCase):
             self.employee,
         )
         self.assertEqual(
-            self.env["resource.asset"].search(
+            self.env["resource.resource"].search(
                 [("operator_employee_id", "=", self.employee.id)]
             ),
             car,

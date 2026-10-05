@@ -1,1 +1,1 @@
-from . import resource_asset, resource_asset_log, product_trace
+from . import resource_resource, resource_asset_log, product_trace

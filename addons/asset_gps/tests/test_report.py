@@ -18,7 +18,7 @@ class TestGpsLogReportAssetFields(TransactionCase):
     def test_asset_id_is_many2one_to_resource_asset(self):
         field = self.env["device.data.log.gps.report"]._fields["asset_id"]
 
-        self.assertEqual(field.comodel_name, "resource.asset")
+        self.assertEqual(field.comodel_name, "resource.resource")
 
 
 class TestGpsLogReportQueryExtension(TransactionCase):
@@ -41,18 +41,18 @@ class TestGpsLogReportQueryExtension(TransactionCase):
         self.assertEqual(select_fields["asset_name"], "asset.name")
         self.assertEqual(select_fields["license_plate"], "plate.value")
 
-    def test_from_tables_include_resource_asset_join(self):
+    def test_from_tables_join_the_tracked_thing(self):
         from_tables = self.Report._get_from_tables()
 
-        lot_joins = [t for t in from_tables if t[0] == "resource_asset"]
+        thing_joins = [t for t in from_tables if t[1] == "asset"]
 
-        self.assertEqual(len(lot_joins), 1, "Expected exactly one resource_asset join")
+        self.assertEqual(len(thing_joins), 1, "Expected exactly one join for the thing")
 
-        _table, alias, join_type, condition = lot_joins[0]
+        table, _alias, join_type, condition = thing_joins[0]
 
-        self.assertEqual(alias, "asset")
+        self.assertEqual(table, "resource_resource")
         self.assertEqual(join_type, "LEFT JOIN")
-        self.assertIn("asset.resource_id", condition)
+        self.assertIn("asset.kind_id IS NOT NULL", condition)
         self.assertIn("tracked_resource.id", condition)
 
     def test_group_by_fields_include_asset_columns(self):

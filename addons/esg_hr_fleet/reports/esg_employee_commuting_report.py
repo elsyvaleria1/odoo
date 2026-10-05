@@ -13,8 +13,8 @@ class EsgEmployeeCommutingReport(models.Model):
             "product.product": ["product_tmpl_id"],
             "product.template": ["co2"],
             "res.company": ["weekly_days_at_office"],
-            "resource.resource": ["product_id"],
-            "resource.asset.vehicle": ["company_id", "resource_id"],
+            "resource.resource": ["company_id", "product_id"],
+            "resource.asset.vehicle": ["resource_id"],
             "resource.assignment": [
                 "active",
                 "assignee_id",
@@ -90,7 +90,7 @@ class EsgEmployeeCommutingReport(models.Model):
                 FROM (
                     SELECT v.id AS vehicle_id,
                            e.id AS driver_id,
-                           v.company_id,
+                           vr.company_id,
                            COALESCE(t.co2, 0) AS co2,
                            e.distance_home_work,
                            date_trunc('day', a.date_start) AS date_start,

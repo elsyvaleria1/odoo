@@ -2,7 +2,7 @@ from odoo import fields, models
 from odoo.db.schema import drop_view_if_exists
 from odoo.tools import SQL, frozendict
 
-from odoo.addons.resource_asset_hr.models.resource_asset import live_custody_subquery
+from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
 # UTC is the neutral fallback when a device has no configured timezone.
 DEFAULT_TZ = "UTC"
@@ -29,7 +29,7 @@ class DeviceGpsSpeedDay(models.Model):
             "res.partner": ["tz"],
             "resource.config": ["company_id", "resource_calendar_id"],
             "resource.calendar": ["tz"],
-            "resource.resource": ["tz"],
+            "resource.resource": ["kind_id", "tz"],
             "resource.gps.binding": [
                 "device_id",
                 "resource_id",
@@ -37,7 +37,6 @@ class DeviceGpsSpeedDay(models.Model):
                 "date_end",
                 "company_id",
             ],
-            "resource.asset": ["resource_id"],
             "resource.assignment": [
                 "resource_id",
                 "assignee_id",
@@ -61,7 +60,7 @@ class DeviceGpsSpeedDay(models.Model):
         readonly=True,
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Vehicle",
         readonly=True,
     )
@@ -135,7 +134,7 @@ class DeviceGpsSpeedDay(models.Model):
       JOIN device_device d ON d.id = l.device_id
       LEFT JOIN LATERAL (%(binding_query)s) binding ON TRUE
       LEFT JOIN resource_resource tracked_resource ON tracked_resource.id = binding.resource_id
-      LEFT JOIN resource_asset a ON a.resource_id = tracked_resource.id
+      LEFT JOIN resource_resource a ON a.id = tracked_resource.id AND a.kind_id IS NOT NULL
       LEFT JOIN LATERAL %(operator_query)s ON TRUE
       LEFT JOIN device_profile cfg ON cfg.id = d.config_id
       LEFT JOIN (%(device_timezones)s) device_clock ON device_clock.device_id = d.id

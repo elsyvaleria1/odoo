@@ -49,7 +49,7 @@ class TestMaintenancePlan(TransactionCase):
             plan.order_ids,
             [
                 {
-                    "resource_ids": self.equipment.asset_id.resource_id.ids,
+                    "resource_ids": self.equipment.asset_id.ids,
                     "maintenance_type": "preventive",
                 }
             ],
@@ -181,12 +181,12 @@ class TestMaintenancePlan(TransactionCase):
             {"name": "PLAN-DISTANCE-2", "product_id": self.equipment.product_id.id}
         )
         plan = self._plan()
-        self.assertEqual(plan.resource_ids, self.equipment.asset_id.resource_id)
+        self.assertEqual(plan.resource_ids, self.equipment.asset_id)
         with self.assertRaises(ValidationError):
             plan.write(
                 {
                     "distance_interval": 1000,
-                    "resource_ids": [Command.link(other.asset_id.resource_id.id)],
+                    "resource_ids": [Command.link(other.asset_id.id)],
                 }
             )
 

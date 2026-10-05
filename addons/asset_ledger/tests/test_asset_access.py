@@ -51,7 +51,7 @@ class TestAssetAccess(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestLedgerWritesThroughTheLot(TransactionCase):
-    """The ledger fields live on resource.asset; a stock user who may edit the
+    """The ledger fields live on resource.resource; a stock user who may edit the
     serial but holds no right on the asset still writes them through the lot."""
 
     @classmethod

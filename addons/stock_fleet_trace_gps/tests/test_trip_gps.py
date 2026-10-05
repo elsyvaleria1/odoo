@@ -52,7 +52,7 @@ class TestTripGps(TransactionCase):
         model = cls.env["product.product"].create(
             {"name": "Truck", "type": "consu", "asset_kind_id": kind.id}
         )
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {"name": "Truck", "kind_id": kind.id, "product_id": model.id}
         )
         cls.vehicle = cls.env["resource.asset.vehicle"].browse(cls.vehicle.id)

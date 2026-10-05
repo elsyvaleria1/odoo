@@ -3,7 +3,8 @@
 
     <record id="view_resource_asset_search_gps_trail" model="ir.ui.view">
         <field name="name">resource.asset.search.gps.trail</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <search string="Search Assets for GPS Trail">
                 <field
@@ -55,10 +56,6 @@
                 <field name="department_id" />
                 <field name="job_id" string="Job Position" />
                 <separator />
-                <filter
-                    name="has_asset_with_gps"
-                    string="Has Vehicle with GPS"
-                    domain="[('id', 'in', self.env['resource.asset'].search([('gps_device_id', '!=', False)]).mapped('operator_id').ids)]" />
                 <group>
                     <filter
                         name="group_by_department"

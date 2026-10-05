@@ -49,7 +49,7 @@ class ApprovalRequest(models.Model):
         help="Whether this approval category requires odometer reading",
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         compute="_compute_asset_id",
         store=True,
         readonly=False,
@@ -109,7 +109,7 @@ class ApprovalRequest(models.Model):
 
         assets_by_operator: dict[int, Any] = {}
         for asset in (
-            self.env["resource.asset"]
+            self.env["resource.resource"]
             .sudo()
             .search(
                 [

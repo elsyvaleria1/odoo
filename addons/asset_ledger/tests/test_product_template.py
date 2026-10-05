@@ -202,9 +202,9 @@ class TestProductTemplate(TransactionCase):
         self.assertTrue(van.volume_capacity_uom_name)
 
     def test_promoting_a_template_gives_its_lots_an_asset(self):
-        """Core creates the `resource.asset` from `stock.lot.create` alone, so
+        """Core creates the `resource.resource` from `stock.lot.create` alone, so
         a unit received before the promotion had none and stayed invisible to
-        every `resource.asset` consumer."""
+        every `resource.resource` consumer."""
         template = self._create_product(
             {
                 "name": "Promotable crate",

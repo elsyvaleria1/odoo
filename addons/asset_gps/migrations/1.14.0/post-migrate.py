@@ -1,15 +1,18 @@
 from odoo import SUPERUSER_ID, api
 from odoo.db import schema
 
+# where resource_asset 2.0 keeps what the asset tree held beside its resource
+LEGACY = "resource_asset_legacy"
+
 
 def migrate(cr, version):
-    if not version or not schema.column_exists(cr, "resource_asset", "gps_device_id"):
+    if not version or not schema.column_exists(cr, LEGACY, "gps_device_id"):
         return
     # A direct SQL transfer must enforce the new relation's company invariant.
     cr.execute("""
         SELECT a.id
-          FROM resource_asset a
-          JOIN resource_resource r ON r.id = a.resource_id
+          FROM resource_asset_legacy a
+          JOIN resource_resource r ON r.id = a.id
           JOIN device_device d ON d.id = a.gps_device_id
          WHERE d.company_id IS NOT NULL
            AND r.company_id IS DISTINCT FROM d.company_id
@@ -21,8 +24,8 @@ def migrate(cr, version):
     # Refuse ambiguity before changing either side of the identity.
     cr.execute("""
         SELECT a.id
-          FROM resource_asset a
-          JOIN resource_resource r ON r.id = a.resource_id
+          FROM resource_asset_legacy a
+          JOIN resource_resource r ON r.id = a.id
          WHERE a.gps_device_id IS NOT NULL
            AND r.gps_device_id IS NOT NULL
            AND a.gps_device_id != r.gps_device_id
@@ -35,7 +38,7 @@ def migrate(cr, version):
     cr.execute("""
         SELECT gps_device_id
           FROM (
-                SELECT resource_id, gps_device_id FROM resource_asset
+                SELECT id AS resource_id, gps_device_id FROM resource_asset_legacy
                  WHERE gps_device_id IS NOT NULL
                 UNION
                 SELECT id, gps_device_id FROM resource_resource
@@ -50,26 +53,13 @@ def migrate(cr, version):
     cr.execute("""
         UPDATE resource_resource r
            SET gps_device_id = a.gps_device_id
-          FROM resource_asset a
-         WHERE r.id = a.resource_id
+          FROM resource_asset_legacy a
+         WHERE r.id = a.id
            AND a.gps_device_id IS NOT NULL
            AND r.gps_device_id IS NULL
     """)
-    # CASCADE removes old report views; their init runs on module upgrade.
-    # Root DROP removes inherited columns; local child copies follow.
-    cr.execute("""
-        WITH RECURSIVE descendants AS (
-            SELECT 'resource_asset'::regclass::oid AS oid, 0 AS depth
-            UNION ALL
-            SELECT i.inhrelid, d.depth + 1
-              FROM pg_inherits i JOIN descendants d ON i.inhparent = d.oid
-        )
-        SELECT c.relname FROM descendants d JOIN pg_class c ON c.oid = d.oid
-         ORDER BY d.depth
-    """)
-    tables = [row[0] for row in cr.fetchall()]
-    for table in tables:
-        schema.drop_columns(cr, table, ["gps_device_id"])
+    # resource_asset 2.0 held the column for this migration, which takes it
+    schema.drop_columns(cr, LEGACY, ["gps_device_id"])
     # SQL transfer bypasses attachment write hooks. Rebuild settled local dates.
     env = api.Environment(cr, SUPERUSER_ID, {})
     env["resource.gps.binding"]._bootstrap_legacy()

@@ -13,7 +13,7 @@ class TestMrpMaintenance(common.TransactionCase):
 
         # Relative models
         cls.ResUsers = cls.env["res.users"]
-        cls.asset = cls.env["resource.asset"]
+        cls.asset = cls.env["resource.resource"]
         cls.workcenter = cls.env["mrp.workcenter"]
 
         # User references
@@ -73,7 +73,7 @@ class TestMrpMaintenance(common.TransactionCase):
             "name": name,
             "date_confirmed": date_confirmed,
             "user_id": self.user.id,
-            "resource_ids": asset.resource_id.ids,
+            "resource_ids": asset.ids,
             "maintenance_type": maintenance_type,
             "state": "confirmed",
             "maintenance_team_id": self.maintenance_team_id.id,
@@ -149,7 +149,7 @@ class TestMrpMaintenance(common.TransactionCase):
                 10-05-2018              = 05-05-2018 + 5day
         """
 
-        asset_form = Form(self.asset)
+        asset_form = Form(self.asset, view="resource_asset.resource_asset_view_form")
         asset_form.name = "Acer Laptop"
         asset_form.maintenance_team_id = self.maintenance_team_id
         asset_form.kind_id = self.kind_id
@@ -198,7 +198,7 @@ class TestMrpMaintenance(common.TransactionCase):
         latest failure of an asset's orders.
         """
 
-        asset_form = Form(self.asset)
+        asset_form = Form(self.asset, view="resource_asset.resource_asset_view_form")
         asset_form.name = "Acer Laptop"
         asset_form.maintenance_team_id = self.maintenance_team_id
         asset_form.kind_id = self.kind_id
@@ -450,7 +450,7 @@ class TestMrpMaintenance(common.TransactionCase):
 
     def test_workcenter_unavailability(self):
         self.env.user.group_ids += self.env.ref("mrp.group_mrp_routings")
-        asset_form = Form(self.asset)
+        asset_form = Form(self.asset, view="resource_asset.resource_asset_view_form")
         asset_form.name = "Screwdriver"
         asset_form.maintenance_team_id = self.maintenance_team_id
         asset_form.kind_id = self.kind_id
@@ -726,7 +726,7 @@ class TestMrpMaintenance(common.TransactionCase):
         workcenter.maintenance_team_id = workcenter_team
         self.assertEqual(press.maintenance_team_id, workcenter_team)
         order = self.env["maintenance.order"].create(
-            {"name": "Leak", "resource_ids": press.resource_id.ids}
+            {"name": "Leak", "resource_ids": press.ids}
         )
         self.assertEqual(order.maintenance_team_id, workcenter_team)
         self.assertEqual(workcenter.maintenance_count, 1)

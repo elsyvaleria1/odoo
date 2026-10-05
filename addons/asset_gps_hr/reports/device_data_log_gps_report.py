@@ -1,7 +1,7 @@
 from odoo import fields, models
 from odoo.tools import SQL
 
-from odoo.addons.resource_asset_hr.models.resource_asset import live_custody_subquery
+from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
 
 class DeviceGpsLogReport(models.Model):

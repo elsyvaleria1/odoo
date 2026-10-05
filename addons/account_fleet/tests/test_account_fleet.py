@@ -11,7 +11,7 @@ class TestAccountFleet(AccountTestInvoicingCommon):
         cls.env.user.group_ids |= cls.env.ref(
             "resource_asset.group_asset_user"
         ) | cls.env.ref("resource_asset_vehicle.fleet_group_user")
-        cls.car = cls.env["resource.asset"].create(
+        cls.car = cls.env["resource.resource"].create(
             {
                 "name": "Billed Car",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,

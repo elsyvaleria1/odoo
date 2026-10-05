@@ -65,7 +65,7 @@ class StockPickingBatch(models.Model):
                 )
                 .with_context(
                     gps_observation_domain=list(
-                        self.vehicle_id._gps_observation_domain()
+                        self.vehicle_id.resource_id._gps_observation_domain()
                     )
                 )
                 .action_generate_trails()
@@ -111,7 +111,7 @@ class StockPickingBatch(models.Model):
             not departed
         """
         self.check_singleton()
-        device = self.env["device.device"].browse(self.vehicle_id._gps_device_ids())
+        device = self.env["device.device"].browse(self.vehicle_id.resource_id._gps_device_ids())
         if not device:
             raise UserError(
                 self.env._(
@@ -158,7 +158,7 @@ class StockPickingBatch(models.Model):
                         start,
                         end,
                         observation_domain=list(
-                            self.vehicle_id._gps_observation_domain()
+                            self.vehicle_id.resource_id._gps_observation_domain()
                         ),
                     )
                 )

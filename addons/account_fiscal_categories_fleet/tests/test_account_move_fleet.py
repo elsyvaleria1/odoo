@@ -12,7 +12,7 @@ class TestAccountMoveFleet(AccountTestInvoicingCommon):
         cls.env.user.group_ids |= cls.env.ref(
             "resource_asset_vehicle.fleet_group_manager"
         )
-        cls.batmobile = cls.env["resource.asset"].create(
+        cls.batmobile = cls.env["resource.resource"].create(
             {
                 "name": "Batmobile",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,

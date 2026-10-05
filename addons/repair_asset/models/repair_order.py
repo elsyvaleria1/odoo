@@ -9,7 +9,7 @@ class RepairOrder(models.Model):
 
     # FIELDS
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         compute="_compute_asset_id",
         store=True,
         help="The asset this repair works on, when the repaired serial is one.",

@@ -5,7 +5,7 @@ class DeviceGpsLogReport(models.Model):
     _inherit = "device.data.log.gps.report"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         readonly=True,
     )
     asset_name = fields.Char(readonly=True)
@@ -35,10 +35,10 @@ class DeviceGpsLogReport(models.Model):
         )
         res.append(
             (
-                "resource_asset",
+                "resource_resource",
                 "asset",
                 "LEFT JOIN",
-                "asset.resource_id = tracked_resource.id",
+                "asset.id = tracked_resource.id AND asset.kind_id IS NOT NULL",
             ),
         )
         # The plate is an identifier row of the resource, whatever its kind.
@@ -53,7 +53,7 @@ class DeviceGpsLogReport(models.Model):
                 ),
                 "plate",
                 "LEFT JOIN",
-                "plate.resource_id = asset.resource_id",
+                "plate.resource_id = asset.id",
             ),
         )
         return res

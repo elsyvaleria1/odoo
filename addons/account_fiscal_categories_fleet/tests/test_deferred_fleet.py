@@ -63,7 +63,7 @@ class TestDeferredFleet(TestAccountReportsCommon):
             ],  # 15 days (=450/month)
         ]
 
-        cls.batmobile, cls.batpod = cls.env["resource.asset"].create(
+        cls.batmobile, cls.batpod = cls.env["resource.resource"].create(
             [
                 {
                     "name": name,

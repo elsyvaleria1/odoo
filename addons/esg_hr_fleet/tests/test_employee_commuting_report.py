@@ -37,7 +37,7 @@ class TestEmployeeCommutingReport(TransactionCase):
                 "co2": 120,
             }
         )
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "EcoCar",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
@@ -49,7 +49,7 @@ class TestEmployeeCommutingReport(TransactionCase):
     def test_commuting_report_simple_case(self):
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": self.bob.resource_id.id,
                 "custody_role": "operator",
                 "date_start": date(2024, 6, 1),
@@ -86,7 +86,7 @@ class TestEmployeeCommutingReport(TransactionCase):
     def test_report_date_boundaries_across_months(self):
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": self.bob.resource_id.id,
                 "custody_role": "operator",
                 "date_start": date(2024, 6, 10),
@@ -112,7 +112,7 @@ class TestEmployeeCommutingReport(TransactionCase):
 
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": self.bob.resource_id.id,
                 "custody_role": "operator",
                 "date_start": date(2024, 6, 1),
@@ -140,7 +140,7 @@ class TestEmployeeCommutingReport(TransactionCase):
 
         log = self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": self.bob.resource_id.id,
                 "custody_role": "operator",
                 "date_start": start_date,
@@ -181,7 +181,7 @@ class TestEmployeeCommutingReport(TransactionCase):
 
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": self.bob.resource_id.id,
                 "custody_role": "operator",
                 "date_start": date(2024, 6, 1),
@@ -209,7 +209,7 @@ class TestEmployeeCommutingReport(TransactionCase):
 
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": self.bob.resource_id.id,
                 "custody_role": "operator",
                 "date_start": date(2024, 6, 1),
@@ -237,7 +237,7 @@ class TestEmployeeCommutingReport(TransactionCase):
         rogue_driver = self.env["res.partner"].create({"name": "Ghost Rider"})
         self.env["resource.assignment"].create(
             {
-                "resource_id": self.vehicle.resource_id.id,
+                "resource_id": self.vehicle.id,
                 "assignee_id": rogue_driver._get_or_create_resources(self.company).id,
                 "custody_role": "operator",
                 "date_start": date(2024, 6, 1),
@@ -264,7 +264,7 @@ class TestEmployeeCommutingReport(TransactionCase):
         alice.distance_home_work = 20
         driver_alice = alice
 
-        vehicle2 = self.env["resource.asset"].create(
+        vehicle2 = self.env["resource.resource"].create(
             {
                 "name": "HybridCar",
                 "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
@@ -285,21 +285,21 @@ class TestEmployeeCommutingReport(TransactionCase):
         self.env["resource.assignment"].create(
             [
                 {
-                    "resource_id": self.vehicle.resource_id.id,
+                    "resource_id": self.vehicle.id,
                     "assignee_id": self.driver_bob.resource_id.id,
                     "custody_role": "operator",
                     "date_start": date(2024, 6, 1),
                     "date_end": date(2024, 6, 15),
                 },
                 {
-                    "resource_id": self.vehicle.resource_id.id,
+                    "resource_id": self.vehicle.id,
                     "assignee_id": driver_alice.resource_id.id,
                     "custody_role": "operator",
                     "date_start": date(2024, 6, 16),
                     "date_end": date(2024, 6, 30),
                 },
                 {
-                    "resource_id": vehicle2.resource_id.id,
+                    "resource_id": vehicle2.id,
                     "assignee_id": driver_alice.resource_id.id,
                     "custody_role": "operator",
                     "date_start": date(2024, 6, 1),
@@ -355,7 +355,7 @@ class TestEmployeeCommutingReport(TransactionCase):
         other_employee.distance_home_work = 50
         driver_other = other_employee
 
-        vehicle_other = self.env["resource.asset"].create(
+        vehicle_other = self.env["resource.resource"].create(
             {
                 "name": "OtherCar",
                 "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
@@ -376,14 +376,14 @@ class TestEmployeeCommutingReport(TransactionCase):
         self.env["resource.assignment"].create(
             [
                 {
-                    "resource_id": vehicle_other.resource_id.id,
+                    "resource_id": vehicle_other.id,
                     "assignee_id": driver_other.resource_id.id,
                     "custody_role": "operator",
                     "date_start": date(2024, 6, 1),
                     "date_end": date(2024, 6, 30),
                 },
                 {
-                    "resource_id": self.vehicle.resource_id.id,
+                    "resource_id": self.vehicle.id,
                     "assignee_id": self.driver_bob.resource_id.id,
                     "custody_role": "operator",
                     "date_start": date(2024, 6, 1),

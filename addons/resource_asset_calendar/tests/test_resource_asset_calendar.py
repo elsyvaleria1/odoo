@@ -12,7 +12,7 @@ class TestResourceAssetCalendar(TransactionCase):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, no_mail_to_attendees=True))
         cls.kind = cls.env.ref("resource_asset.kind_equipment")
-        cls.projector = cls.env["resource.asset"].create(
+        cls.projector = cls.env["resource.resource"].create(
             {"name": "Projector", "kind_id": cls.kind.id, "state": "in_service"}
         )
         cls.start = datetime(2026, 10, 5, 9, 0)
@@ -22,7 +22,7 @@ class TestResourceAssetCalendar(TransactionCase):
             {
                 "name": "Equipment booking",
                 "schedule_based_on": "resources",
-                "resource_ids": [Command.set(asset.resource_id.ids)],
+                "resource_ids": [Command.set(asset.ids)],
             }
         )
 
@@ -38,7 +38,7 @@ class TestResourceAssetCalendar(TransactionCase):
                 "booking_line_ids": [
                     Command.create(
                         {
-                            "resource_id": asset.resource_id.id,
+                            "resource_id": asset.id,
                             "capacity_reserved": 1,
                         }
                     )
@@ -50,18 +50,18 @@ class TestResourceAssetCalendar(TransactionCase):
         offer = self._offer(self.projector)
         self.assertEqual(self.projector.appointment_type_ids, offer)
         self.assertTrue(self.projector.is_bookable)
-        self.assertTrue(self.projector.resource_id.is_bookable)
+        self.assertTrue(self.projector.is_bookable)
 
     def test_the_asset_offers_itself(self):
         offer = self.env["appointment.type"].create(
             {"name": "Equipment booking", "schedule_based_on": "resources"}
         )
         self.projector.appointment_type_ids = offer
-        self.assertEqual(offer.resource_ids, self.projector.resource_id)
+        self.assertEqual(offer.resource_ids, self.projector)
 
     def test_assets_are_found_by_what_offers_them(self):
         offer = self._offer(self.projector)
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         self.assertEqual(
             Asset.search([("appointment_type_ids", "in", offer.ids)]), self.projector
         )
@@ -90,22 +90,22 @@ class TestResourceAssetCalendar(TransactionCase):
         values = {"resource_to_bookings": {}}
         self.assertTrue(
             offer._slot_availability_is_resource_available(
-                slot, self.projector.resource_id, values
+                slot, self.projector, values
             )
         )
         self.projector.state = "out_of_service"
         self.assertFalse(
             offer._slot_availability_is_resource_available(
-                slot, self.projector.resource_id, values
+                slot, self.projector, values
             )
         )
 
     def test_a_hard_reservation_on_the_asset_refuses_an_overlapping_booking(self):
-        self.projector.resource_id.enforce_booking_limit = True
+        self.projector.enforce_booking_limit = True
         self.env["resource.reservation"].create(
             {
                 "name": "Lamp replacement",
-                "resource_id": self.projector.resource_id.id,
+                "resource_id": self.projector.id,
                 "date_start": self.start,
                 "date_end": self.start + timedelta(hours=2),
                 "enforcement_mode": "hard",

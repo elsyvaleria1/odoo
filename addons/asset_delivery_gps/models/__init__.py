@@ -1,1 +1,1 @@
-from . import resource_asset, stock_picking, stock_picking_batch
+from . import resource_resource, stock_picking, stock_picking_batch

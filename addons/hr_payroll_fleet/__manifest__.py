@@ -1,6 +1,6 @@
 {
     "name": "Payroll Vehicle Data Warnings",
-    "version": "1.4",
+    "version": "1.5",
     "oldest_upgradable_version": "1.3",
     "category": "Human Resources/Payroll",
     "summary": "Warn about vehicle information needed for payroll",

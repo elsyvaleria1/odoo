@@ -31,17 +31,17 @@ class StockTripIncident(models.Model):
         """Place the incident where the GPS was, and note harsh driving near it."""
         self.check_singleton()
         vehicle = self.batch_id.vehicle_id
-        if not vehicle._gps_device_ids():
+        if not vehicle.resource_id._gps_device_ids():
             return
-        position = vehicle._gps_position(self.date)
+        position = vehicle.resource_id._gps_position(self.date)
         vals = {}
         if position and not (self.latitude or self.longitude):
             vals.update(latitude=position.latitude, longitude=position.longitude)
             if not self.odometer:
-                vals["odometer"] = vehicle._gps_odometer_at(self.date)
+                vals["odometer"] = vehicle.resource_id._gps_odometer_at(self.date)
         harsh = self.env["device.data.log.gps"].search(
             [
-                *vehicle._gps_observation_domain(),
+                *vehicle.resource_id._gps_observation_domain(),
                 ("timestamp", ">=", self.date - INCIDENT_EVENT_WINDOW),
                 ("timestamp", "<=", self.date + INCIDENT_EVENT_WINDOW),
                 ("event_type", "=", HARSH_DRIVING_EVENT),

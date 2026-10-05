@@ -292,46 +292,46 @@
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_fuel_card_civic_001'), ref('document_highway_pass_civic_001'), ref('document_insurance_civic_001'), ref('document_plate_civic_001'), ref('document_invoice_civic')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_civic_001')).asset_id.id}]" />
+        eval="[[ref('document_fuel_card_civic_001'), ref('document_highway_pass_civic_001'), ref('document_insurance_civic_001'), ref('document_plate_civic_001'), ref('document_invoice_civic')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_civic_001')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_fuel_card_f150_001'), ref('document_highway_pass_f150_001'), ref('document_insurance_f150_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_f150_001')).asset_id.id}]" />
+        eval="[[ref('document_fuel_card_f150_001'), ref('document_highway_pass_f150_001'), ref('document_insurance_f150_001')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_f150_001')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_highway_pass_model3_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_model3_001')).asset_id.id}]" />
+        eval="[[ref('document_highway_pass_model3_001')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('asset_ledger.stock_lot_model3_001')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_deed_main_office'), ref('document_permit_main_office'), ref('document_insurance_main_office'), ref('document_inspection_main_office')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_main_office')).asset_id.id}]" />
+        eval="[[ref('document_deed_main_office'), ref('document_permit_main_office'), ref('document_insurance_main_office'), ref('document_inspection_main_office')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_main_office')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_deed_warehouse_a'), ref('document_permit_warehouse_expansion'), ref('document_invoice_warehouse')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_warehouse_a')).asset_id.id}]" />
+        eval="[[ref('document_deed_warehouse_a'), ref('document_permit_warehouse_expansion'), ref('document_invoice_warehouse')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_warehouse_a')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_lease_retail_store'), ref('document_permit_retail_renovation')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_retail_store')).asset_id.id}]" />
+        eval="[[ref('document_lease_retail_store'), ref('document_permit_retail_renovation')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_property_retail_store')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_warranty_forklift_001'), ref('document_manual_forklift_001'), ref('document_safety_forklift_001'), ref('document_inspection_forklift')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_machinery_forklift_001')).asset_id.id}]" />
+        eval="[[ref('document_warranty_forklift_001'), ref('document_manual_forklift_001'), ref('document_safety_forklift_001'), ref('document_inspection_forklift')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_machinery_forklift_001')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_warranty_cnc_001'), ref('document_calibration_cnc_001'), ref('document_specs_cnc_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_machinery_cnc_001')).asset_id.id}]" />
+        eval="[[ref('document_warranty_cnc_001'), ref('document_calibration_cnc_001'), ref('document_specs_cnc_001')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_machinery_cnc_001')).asset_id.id}]" />
 
     <function
         model="document.document"
         name="write"
-        eval="[[ref('document_po_laptop_001'), ref('document_warranty_laptop_001'), ref('document_license_windows_laptop_001')], {'res_model': 'resource.asset', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_equipment_laptop_001')).asset_id.id}]" />
+        eval="[[ref('document_po_laptop_001'), ref('document_warranty_laptop_001'), ref('document_license_windows_laptop_001')], {'res_model': 'resource.resource', 'res_id': obj().env['product.trace'].browse(ref('stock_lot_equipment_laptop_001')).asset_id.id}]" />
 
 </odoo>

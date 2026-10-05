@@ -1,15 +1,12 @@
 from odoo import api, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     @api.depends("product_id", "license_plate", "vin_sn", "name", "kind_id")
     def _compute_display_name(self):
-        # A root-typed recordset runs the root's compute, so the vehicle's
-        # naming lives here, keyed on the kind, until reads dispatch to the
-        # concrete model.
-        vehicles = self.filtered(lambda asset: asset.kind_code == "vehicle")
+        vehicles = self.filtered(lambda resource: resource.kind_code == "vehicle")
         for vehicle in vehicles:
             parts = [
                 part
@@ -21,7 +18,7 @@ class ResourceAsset(models.Model):
             ]
             parts.append(vehicle._get_display_identity())
             vehicle.display_name = " / ".join(parts)
-        super(ResourceAsset, self - vehicles)._compute_display_name()
+        super(ResourceResource, self - vehicles)._compute_display_name()
 
     def _get_display_identity(self):
         """What names this unit among others of its model. A plate is how a
@@ -40,8 +37,7 @@ class ResourceAsset(models.Model):
             name = name[len(model) + 1 :]
         return name or self.env._("No Plate")
 
-    # the model year is the resource's; a vehicle's product fills it when the
-    # asset has none of its own
+    # a vehicle's product fills the model year when the vehicle has none
     @api.onchange("product_id")
     def _onchange_product_id_model_year(self) -> None:
         if not self.model_year and self.product_id.vehicle_model_year:
@@ -62,10 +58,10 @@ class ResourceAsset(models.Model):
                 vals["model_year"] = years[vals["product_id"]]
         return super().create(vals_list)
 
-    def _write_concrete(self, vals):
-        res = super()._write_concrete(vals)
+    def write(self, vals):
+        res = super().write(vals)
         if "product_id" in vals and "model_year" not in vals:
-            for asset in self:
-                if not asset.model_year and asset.product_id.vehicle_model_year:
-                    asset.model_year = int(asset.product_id.vehicle_model_year)
+            for resource in self:
+                if not resource.model_year and resource.product_id.vehicle_model_year:
+                    resource.model_year = int(resource.product_id.vehicle_model_year)
         return res

@@ -1,2 +1,2 @@
 from . import mrp_workcenter
-from . import resource_asset
+from . import resource_resource

@@ -5,7 +5,6 @@ from . import maintenance_profile
 from . import mixin_maintenance_target
 from . import resource_resource
 from . import resource_asset_kind
-from . import resource_asset
 from . import approval_category
 from . import resource_asset_part
 from . import access_anchors

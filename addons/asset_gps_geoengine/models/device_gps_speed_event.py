@@ -4,7 +4,7 @@ from odoo import api, fields, models
 from odoo.db.schema import drop_view_if_exists
 from odoo.tools import SQL, frozendict
 
-from odoo.addons.resource_asset_hr.models.resource_asset import live_custody_subquery
+from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
 # Two positions above the warning limit closer than this belong to the same
 # burst; a longer gap -- the vehicle slowed down, or the tracker went quiet --
@@ -38,7 +38,7 @@ class DeviceGpsSpeedEvent(models.Model):
                 "speed_limit_warning",
             ],
             "device.state.boundary": ["geom", "state_id"],
-            "resource.resource": ["tz"],
+            "resource.resource": ["kind_id", "tz"],
             "resource.gps.binding": [
                 "device_id",
                 "resource_id",
@@ -46,7 +46,6 @@ class DeviceGpsSpeedEvent(models.Model):
                 "date_end",
                 "company_id",
             ],
-            "resource.asset": ["resource_id"],
             "resource.assignment": [
                 "resource_id",
                 "assignee_id",
@@ -70,7 +69,7 @@ class DeviceGpsSpeedEvent(models.Model):
         readonly=True,
     )
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Vehicle",
         readonly=True,
     )
@@ -228,7 +227,7 @@ class DeviceGpsSpeedEvent(models.Model):
           JOIN device_device d ON d.id = l.device_id
           LEFT JOIN LATERAL (%(binding_query)s) binding ON TRUE
       LEFT JOIN resource_resource tracked_resource ON tracked_resource.id = binding.resource_id
-      LEFT JOIN resource_asset a ON a.resource_id = tracked_resource.id
+      LEFT JOIN resource_resource a ON a.id = tracked_resource.id AND a.kind_id IS NOT NULL
           LEFT JOIN LATERAL %(operator_query)s ON TRUE
       LEFT JOIN device_profile cfg ON cfg.id = d.config_id
          WHERE l.speed > COALESCE(cfg.speed_limit_warning, 80.0)

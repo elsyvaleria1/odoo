@@ -17,7 +17,7 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
         cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
 
     def _plain_asset(self, **vals):
-        return self.env["resource.asset"].create(
+        return self.env["resource.resource"].create(
             {"name": "Delivery van", "kind_id": self.vehicle.id, **vals}
         )
 
@@ -93,7 +93,7 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
             groups="base.group_user,resource_asset.group_asset_user",
         )
         van = (
-            self.env["resource.asset"]
+            self.env["resource.resource"]
             .with_user(asset_user)
             .create(
                 {

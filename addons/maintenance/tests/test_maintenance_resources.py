@@ -19,7 +19,7 @@ class TestMaintenanceResources(TransactionCase):
             ]
         ).action_archive()
         cls.machinery = cls.env.ref("resource_asset.kind_machinery")
-        cls.press = cls.env["resource.asset"].create(
+        cls.press = cls.env["resource.resource"].create(
             {"name": "Press 1", "kind_id": cls.machinery.id}
         )
         cls.team = cls.env["team.team"].create(
@@ -32,7 +32,7 @@ class TestMaintenanceResources(TransactionCase):
         return self.env["maintenance.order"].create(
             {
                 "name": "Oil change",
-                "resource_ids": [(6, 0, self.press.resource_id.ids)],
+                "resource_ids": [(6, 0, self.press.ids)],
                 "maintenance_team_id": self.team.id,
                 "date_scheduled_start": self.start,
                 "date_scheduled_end": self.end,
@@ -44,7 +44,7 @@ class TestMaintenanceResources(TransactionCase):
 
     def _bookings(self, asset=None):
         return self.env["resource.reservation"].search(
-            [("resource_id", "=", (asset or self.press).resource_id.id)]
+            [("resource_id", "=", (asset or self.press).id)]
         )
 
     def test_an_order_in_progress_puts_the_asset_under_maintenance(self):
@@ -63,13 +63,13 @@ class TestMaintenanceResources(TransactionCase):
         self.assertEqual(self.press.state, "in_service")
 
     def test_moving_an_order_to_another_asset_moves_the_maintenance(self):
-        other = self.env["resource.asset"].create(
+        other = self.env["resource.resource"].create(
             {"name": "Press 2", "kind_id": self.machinery.id}
         )
         (self.press | other).action_set_in_service()
         order = self._order(state="in_progress")
         self.assertEqual(self.press.state, "maintenance")
-        order.resource_ids = other.resource_id
+        order.resource_ids = other
         self.assertEqual(self.press.state, "in_service")
         self.assertEqual(other.state, "maintenance")
 
@@ -102,9 +102,9 @@ class TestMaintenanceResources(TransactionCase):
                 }
             ],
         )
-        unavailable = self.press.resource_id._get_unavailable_intervals(
+        unavailable = self.press._get_unavailable_intervals(
             datetime(2026, 3, 2, tzinfo=UTC), datetime(2026, 3, 3, tzinfo=UTC)
-        )[self.press.resource_id.id]
+        )[self.press.id]
         self.assertTrue(
             any(
                 s <= self.start.replace(tzinfo=UTC)
@@ -155,7 +155,7 @@ class TestMaintenanceResources(TransactionCase):
     def test_the_asset_counts_its_orders_and_lends_its_team(self):
         self.press.write({"maintenance_team_id": self.team.id})
         order = self.env["maintenance.order"].create({"name": "Check"})
-        order.resource_ids = self.press.resource_id
+        order.resource_ids = self.press
         self.assertEqual(order.maintenance_team_id, self.team)
         self.press.invalidate_recordset()
         self.assertEqual(self.press.maintenance_count, 1)
@@ -177,13 +177,15 @@ class TestMaintenanceResources(TransactionCase):
                 "technician_user_id": technician.id,
             }
         )
-        panel = self.env["resource.asset"].create({"name": "Panel", "kind_id": kind.id})
+        panel = self.env["resource.resource"].create(
+            {"name": "Panel", "kind_id": kind.id}
+        )
         self.assertEqual(panel.maintenance_team_id, electricians)
-        panel.resource_id.maintenance_profile_id.write(
+        panel.maintenance_profile_id.write(
             {"maintenance_team_id": False, "technician_user_id": False}
         )
         order = self.env["maintenance.order"].create(
-            {"name": "Check", "resource_ids": [(6, 0, panel.resource_id.ids)]}
+            {"name": "Check", "resource_ids": [(6, 0, panel.ids)]}
         )
         self.assertEqual(order.maintenance_team_id, electricians)
         self.assertEqual(order.user_id, technician)
@@ -203,7 +205,7 @@ class TestMaintenanceResources(TransactionCase):
         self.env["resource.reservation"].create(
             {
                 "name": "Production run",
-                "resource_id": self.press.resource_id.id,
+                "resource_id": self.press.id,
                 "date_start": datetime(2026, 3, 2, 11, 0),
                 "date_end": datetime(2026, 3, 2, 13, 0),
                 "enforcement_mode": "soft",
@@ -216,7 +218,7 @@ class TestMaintenanceResources(TransactionCase):
         self.env["resource.reservation"].create(
             {
                 "name": "Production run",
-                "resource_id": self.press.resource_id.id,
+                "resource_id": self.press.id,
                 "date_start": datetime(2026, 3, 2, 7, 0),
                 "date_end": datetime(2026, 3, 2, 10, 0),
                 "enforcement_mode": "soft",
@@ -225,7 +227,7 @@ class TestMaintenanceResources(TransactionCase):
         plan = self.env["maintenance.plan"].create(
             {
                 "name": "Monthly",
-                "resource_ids": [(6, 0, self.press.resource_id.ids)],
+                "resource_ids": [(6, 0, self.press.ids)],
                 "block_resource": True,
                 "repeat_anchor": "fixed",
                 "repeat_interval": 1,
@@ -242,18 +244,16 @@ class TestMaintenanceResources(TransactionCase):
         )
 
     def test_one_order_books_every_resource_it_names(self):
-        tractor = self.env["resource.asset"].create(
+        tractor = self.env["resource.resource"].create(
             {"name": "Tractor", "kind_id": self.machinery.id}
         )
-        order = self._order(
-            resource_ids=[(6, 0, (self.press | tractor).resource_id.ids)]
-        )
+        order = self._order(resource_ids=[(6, 0, (self.press | tractor).ids)])
         self.assertEqual(order.asset_ids, self.press | tractor)
         self.assertEqual(len(self._bookings()), 1)
         self.assertEqual(len(self._bookings(tractor)), 1)
 
     def test_maintaining_a_component_books_what_it_is_part_of(self):
-        line = self.env["resource.asset"].create(
+        line = self.env["resource.resource"].create(
             {"name": "Press line", "kind_id": self.machinery.id}
         )
         self.press.parent_id = line
@@ -265,7 +265,7 @@ class TestMaintenanceResources(TransactionCase):
         plan = self.env["maintenance.plan"].create(
             {
                 "name": "Weekly",
-                "resource_ids": [(6, 0, self.press.resource_id.ids)],
+                "resource_ids": [(6, 0, self.press.ids)],
                 "block_resource": True,
                 "repeat_anchor": "fixed",
                 "repeat_interval": 1,
@@ -292,13 +292,11 @@ class TestMaintenanceResources(TransactionCase):
     def test_a_machine_that_is_both_asset_and_resource_reports_one_mtbf(self):
         self.press.expected_mtbf = 30
         # The fact lives on the resource's one profile, whichever host wrote it.
-        self.assertEqual(
-            self.press.resource_id.maintenance_profile_id.expected_mtbf, 30
-        )
+        self.assertEqual(self.press.maintenance_profile_id.expected_mtbf, 30)
         self._order(maintenance_type="corrective", state="done")
         self.press.invalidate_recordset()
         self.assertEqual(self.press.maintenance_count, 1)
         self.assertEqual(
             self.press.maintenance_count,
-            len(self.press.resource_id.maintenance_ids),
+            len(self.press.maintenance_ids),
         )

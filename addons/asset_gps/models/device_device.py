@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
@@ -8,7 +9,7 @@ class DeviceDevice(models.Model):
     _inherit = "device.device"
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Assigned Asset",
         compute="_compute_tracked_asset_id",
         inverse="_inverse_tracked_asset_id",
@@ -17,32 +18,39 @@ class DeviceDevice(models.Model):
         help="Asset represented by the tracked resource, archived or not",
     )
 
-    @api.depends("tracked_resource_id", "tracked_resource_id.asset_id")
+    @api.depends("tracked_resource_id", "tracked_resource_id.kind_id")
     def _compute_tracked_asset_id(self):
         for device in self:
-            device.asset_id = device.tracked_resource_id.asset_id
+            tracked = device.tracked_resource_id
+            device.asset_id = tracked if tracked.kind_id else False
 
     def _inverse_tracked_asset_id(self):
-        # The adapter follows asset permissions, as the old asset-side inverse
-        # did. Granting broad resource writes to an asset editor is unnecessary.
         with self.env.cr.savepoint():
             for device in self:
                 target = device.asset_id
                 previous = device.tracked_resource_id
-                previous_asset = previous.asset_id
-                if previous and previous != target.resource_id:
-                    if previous_asset:
-                        previous_asset.gps_device_id = False
-                    elif target:
-                        # Moving away from a non-asset target requires that
-                        # target's resource authority; clearing an empty asset
-                        # projection must leave the non-asset target alone.
-                        previous.gps_device_id = False
+                # clearing an empty asset projection leaves a tracked resource
+                # that is not a thing alone
+                if previous and previous != target and (previous.kind_id or target):
+                    previous.gps_device_id = False
                 if target:
                     target.gps_device_id = device
 
     def _search_tracked_asset_id(self, operator, value):
-        return [("tracked_resource_id.asset_id", operator, value)]
+        if operator not in ("in", "not in", "any", "not any"):
+            return NotImplemented
+        if operator in ("in", "not in"):
+            ids = [v for v in value if v]
+            domain = Domain("tracked_resource_id", "in", ids) & Domain(
+                "tracked_resource_id.kind_id", "!=", False
+            )
+            if len(ids) < len(value):
+                domain |= Domain("tracked_resource_id.kind_id", "=", False)
+        else:
+            domain = Domain("tracked_resource_id", "any", value) & Domain(
+                "tracked_resource_id.kind_id", "!=", False
+            )
+        return ~domain if operator.startswith("not") else domain
 
     def action_view_tracked_asset(self) -> dict | None:
         # Not action_view_own_asset: asset_device names that for the asset a
@@ -53,11 +61,4 @@ class DeviceDevice(models.Model):
         if not self.asset_id:
             _debug.logic("tracked_asset.none", device=self)
             return None
-        return {
-            "name": self.asset_id.display_name,
-            "type": "ir.actions.act_window",
-            "res_model": "resource.asset",
-            "res_id": self.asset_id.id,
-            "view_mode": "form",
-            "target": "current",
-        }
+        return self.asset_id.get_formview_action()

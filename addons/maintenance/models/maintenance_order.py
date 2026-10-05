@@ -94,7 +94,7 @@ class MaintenanceOrder(models.Model):
         help="What this order maintains: machines, vehicles, work centres, any material resource. Each is booked, and so is every asset it is part of.",
     )
     asset_ids = fields.Many2many(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         string="Assets",
         compute="_compute_asset_ids",
         search="_search_asset_ids",
@@ -319,15 +319,10 @@ class MaintenanceOrder(models.Model):
         assets.exists()._sync_state_from_maintenance()
         return res
 
-    @api.depends("resource_ids")
+    @api.depends("resource_ids", "resource_ids.kind_id")
     def _compute_asset_ids(self) -> None:
-        assets = self.env["resource.asset"].search(
-            [("resource_id", "in", self.resource_ids._origin.ids)]
-        )
         for order in self:
-            order.asset_ids = assets.filtered_domain(
-                [("resource_id", "in", order.resource_ids._origin.ids)]
-            )
+            order.asset_ids = order.resource_ids._origin.filtered("kind_id")
 
     @api.depends("part_ids.review_state")
     def _compute_part_flagged_count(self) -> None:
@@ -419,11 +414,12 @@ class MaintenanceOrder(models.Model):
     def _search_asset_ids(self, operator, value):
         if operator not in ("in", "not in", "any", "not any"):
             return NotImplemented
+        Resource = self.env["resource.resource"]
         if operator in ("any", "not any"):
-            assets = self.env["resource.asset"].search(value)
+            assets = Resource.search(Domain("kind_id", "!=", False) & Domain(value))
         else:
-            assets = self.env["resource.asset"].browse(value)
-        domain = Domain("resource_ids", "in", assets.resource_id.ids)
+            assets = Resource.browse(value)
+        domain = Domain("resource_ids", "in", assets.ids)
         return ~domain if operator.startswith("not") else domain
 
     def _creation_subtype(self):
@@ -591,7 +587,7 @@ class MaintenanceOrder(models.Model):
         resources = self.resource_ids
         assets = self.asset_ids.parent_id
         while assets:
-            resources |= assets.resource_id
+            resources |= assets
             assets = assets.parent_id
         return resources
 

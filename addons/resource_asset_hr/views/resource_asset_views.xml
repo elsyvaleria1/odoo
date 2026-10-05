@@ -3,7 +3,7 @@
 
     <record id="resource_asset_view_form_inherit_hr" model="ir.ui.view">
         <field name="name">resource.asset.form.inherit.hr</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
         <field name="arch" type="xml">
             <xpath

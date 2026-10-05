@@ -10,7 +10,7 @@ class TestAssetDocuments(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.kind = cls.env.ref("resource_asset.kind_vehicle")
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {"name": "Van", "kind_id": cls.kind.id}
         )
         cls.setting = cls.env["resource.kind.document"].create(
@@ -31,7 +31,7 @@ class TestAssetDocuments(TransactionCase):
         self.assertTrue(self.asset.action_view_documents() is True)
 
     def test_a_kind_without_a_row_files_nothing(self):
-        other = self.env["resource.asset"].create(
+        other = self.env["resource.resource"].create(
             {"name": "Drill", "kind_id": self.env.ref("resource_asset.kind_tool").id}
         )
         self.assertFalse(other._get_document_folder())
@@ -71,7 +71,7 @@ class TestAssetDocuments(TransactionCase):
         self.assertFalse(setting.folder_id.folder_id)
 
     def test_a_page_of_assets_reads_its_settings_once(self):
-        assets = self.env["resource.asset"].create(
+        assets = self.env["resource.resource"].create(
             [{"name": f"Van {i}", "kind_id": self.kind.id} for i in range(6)]
         )
         Setting = type(self.env["resource.kind.document"])

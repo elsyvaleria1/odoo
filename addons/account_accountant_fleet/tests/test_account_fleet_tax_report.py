@@ -14,7 +14,7 @@ class TestAccountFleet(TestAccountTaxDetailsReport):
         self.env.user.group_ids += self.env.ref(
             "resource_asset_vehicle.fleet_group_manager"
         )
-        cars = self.env["resource.asset"].create(
+        cars = self.env["resource.resource"].create(
             [
                 {
                     "name": "Car 1",

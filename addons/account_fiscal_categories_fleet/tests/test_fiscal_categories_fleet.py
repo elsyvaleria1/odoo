@@ -57,7 +57,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             "default_account_expense_2"
         ].fiscal_category_id = cls.dna_category.id
 
-        cls.batmobile, cls.batpod = cls.env["resource.asset"].create(
+        cls.batmobile, cls.batpod = cls.env["resource.resource"].create(
             [
                 {
                     "name": name,

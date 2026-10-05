@@ -1,5 +1,4 @@
 import re
-import runpy
 from ast import literal_eval
 from datetime import UTC, date, datetime, timedelta
 
@@ -9,7 +8,7 @@ from psycopg.errors import UniqueViolation
 
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import Form, TransactionCase, new_test_user, tagged
-from odoo.tools import file_path, mute_logger
+from odoo.tools import mute_logger
 
 
 @tagged("post_install", "-at_install")
@@ -17,7 +16,7 @@ class TestResourceAsset(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Asset = cls.env["resource.asset"]
+        cls.Asset = cls.env["resource.resource"]
         cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
         cls.machinery = cls.env.ref("resource_asset.kind_machinery")
         cls.plate = cls.env.ref("resource.identifier_type_plate")
@@ -41,7 +40,7 @@ class TestResourceAsset(TransactionCase):
         whole = self._truck("Whole")
         other = self._truck("Other")
         child = self._truck("Member")
-        resource_ids = (whole | other | child).resource_id.ids
+        resource_ids = (whole | other | child).ids
         with freeze_time("2026-01-01 10:00:00"):
             child.parent_id = whole
         with freeze_time("2026-01-02 10:00:00"):
@@ -52,18 +51,16 @@ class TestResourceAsset(TransactionCase):
             self.assertIn(child, self.Asset.search([("parent_id", "=", other.id)]))
         history = self.env["resource.relation"].search(
             [
-                ("member_id", "=", child.resource_id.id),
+                ("member_id", "=", child.id),
             ],
             order="date_start",
         )
         self.assertEqual(len(history), 2)
         self.assertEqual(history[0].date_end, history[1].date_start)
-        self.assertEqual(
-            self._members(whole.resource_id, "2026-01-01 12:00:00"), child.resource_id
-        )
+        self.assertEqual(self._members(whole, "2026-01-01 12:00:00"), child)
         with freeze_time("2026-01-03 10:00:00"):
             child.parent_id = False
-        self.assertEqual((whole | other | child).resource_id.ids, resource_ids)
+        self.assertEqual((whole | other | child).ids, resource_ids)
         self.assertTrue(history.exists())
         with self.assertRaises(ValidationError):
             child.unlink()
@@ -74,8 +71,8 @@ class TestResourceAsset(TransactionCase):
         self.assertFalse(child.parent_id)
         self.env["resource.relation"].create(
             {
-                "parent_id": whole.resource_id.id,
-                "member_id": child.resource_id.id,
+                "parent_id": whole.id,
+                "member_id": child.id,
                 "date_start": False,
             }
         )
@@ -87,29 +84,33 @@ class TestResourceAsset(TransactionCase):
         user = new_test_user(
             self.env, login="component_editor", groups="resource_asset.group_asset_user"
         )
-        whole = self._truck("Whole")
-        child = self._truck("Member").with_user(user)
+        # a kind no group gates: a vehicle is the fleet officers' to write
+        crate = self.env["resource.kind"].create({"name": "Crate", "code": "crate"})
+        whole = self.Asset.create({"name": "Whole", "kind_id": crate.id})
+        child = self.Asset.create({"name": "Member", "kind_id": crate.id}).with_user(
+            user
+        )
         child.parent_id = whole
         self.assertEqual(child.parent_id, whole)
-        # the asset is its resource's row extended: the resource is written by
-        # whoever may write the asset, and by nobody who may not
+        # a thing is written by whoever may write things of its kind, and by
+        # nobody who may not
         bystander = new_test_user(self.env, login="component_bystander")
         with self.assertRaises(AccessError):
-            child.resource_id.with_user(bystander).capacity = 2
+            child.with_user(bystander).capacity = 2
         manager = new_test_user(
             self.env,
             login="component_manager",
             groups="resource_asset.group_asset_manager",
         )
-        child.resource_id.with_user(manager).capacity = 3
-        self.assertEqual(child.resource_id.capacity, 3)
+        child.with_user(manager).capacity = 3
+        self.assertEqual(child.capacity, 3)
         created = (
             self.Asset.with_user(user)
             .with_context(default_parent_id=whole.id)
             .create(
                 {
                     "name": "Default member",
-                    "kind_id": self.vehicle.id,
+                    "kind_id": crate.id,
                 }
             )
         )
@@ -123,14 +124,14 @@ class TestResourceAsset(TransactionCase):
         relation = self.env["resource.relation"].create(
             {
                 "parent_id": parent.id,
-                "member_id": child.resource_id.id,
+                "member_id": child.id,
                 "date_start": False,
             }
         )
         self.assertFalse(child.parent_id)
         child.parent_id = False
         self.assertFalse(relation.date_end)
-        self.assertEqual(self._members(parent), child.resource_id)
+        self.assertEqual(self._members(parent), child)
 
     def test_same_instant_parent_correction_preserves_planned_membership(self):
         whole = self._truck("Whole")
@@ -139,8 +140,8 @@ class TestResourceAsset(TransactionCase):
         Relation = self.env["resource.relation"]
         planned = Relation.create(
             {
-                "parent_id": whole.resource_id.id,
-                "member_id": child.resource_id.id,
+                "parent_id": whole.id,
+                "member_id": child.id,
                 "date_start": "2026-02-01 00:00:00",
             }
         )
@@ -148,14 +149,11 @@ class TestResourceAsset(TransactionCase):
             child.parent_id = whole
             child.parent_id = other
             current = Relation.search(
-                Relation._get_domain_live_relations()
-                + [("member_id", "=", child.resource_id.id)]
+                Relation._get_domain_live_relations() + [("member_id", "=", child.id)]
             )
-            self.assertEqual(current.parent_id, other.resource_id)
+            self.assertEqual(current.parent_id, other)
             self.assertEqual(current.date_end, planned.date_start)
-        self.assertEqual(
-            len(Relation.search([("member_id", "=", child.resource_id.id)])), 2
-        )
+        self.assertEqual(len(Relation.search([("member_id", "=", child.id)])), 2)
 
     def test_parent_edit_requires_authority_on_both_affected_assets(self):
         user = new_test_user(
@@ -165,7 +163,7 @@ class TestResourceAsset(TransactionCase):
         )
         whole = self._truck("Restricted whole")
         child = self._truck("Member")
-        model = self.env["ir.model"]._get(whole._get_concrete()._name)
+        model = self.env["ir.model"]._get(whole._name)
         self.env["ir.access"].create(
             {
                 "name": "Parent cannot be edited",
@@ -193,8 +191,8 @@ class TestResourceAsset(TransactionCase):
         child = self._truck("Shared member", company_id=False)
         self.env["resource.relation"].create(
             {
-                "parent_id": whole.resource_id.id,
-                "member_id": child.resource_id.id,
+                "parent_id": whole.id,
+                "member_id": child.id,
                 "date_start": False,
             }
         )
@@ -206,112 +204,26 @@ class TestResourceAsset(TransactionCase):
         with self.assertRaises(AccessError), self.cr.savepoint():
             child.with_user(user).parent_id = whole
 
-    def test_legacy_membership_migration_preserves_archived_components(self):
-        whole = self._truck("Legacy whole")
-        child = self._truck("Legacy member")
-        child.active = False
-        self.cr.execute(
-            "ALTER TABLE resource_asset ADD COLUMN legacy_parent_id integer"
-        )
-        self.cr.execute(
-            "UPDATE resource_asset SET legacy_parent_id = %s WHERE id = %s",
-            [whole.id, child.id],
-        )
-        migrate = runpy.run_path(
-            file_path("resource_asset/migrations/1.12/post-migrate.py")
-        )["migrate"]
-        migrate(self.cr, "1.11")
-        child.invalidate_recordset(["parent_id"])
-        self.assertEqual(child.parent_id, whole)
-        history = self.env["resource.relation"].search(
-            [("member_id", "=", child.resource_id.id)]
-        )
-        self.assertEqual(len(history), 1)
-        self.assertFalse(history.date_start)
-        self.cr.execute(
-            "SELECT 1 FROM information_schema.columns WHERE table_name='resource_asset' AND column_name='legacy_parent_id'"
-        )
-        self.assertFalse(self.cr.fetchone())
-
-    def test_legacy_membership_migration_rejects_conflicting_history(self):
-        whole = self._truck("Legacy whole")
-        other = self._truck("Existing whole")
-        child = self._truck("Member", parent_id=other.id)
-        self.cr.execute(
-            "ALTER TABLE resource_asset ADD COLUMN legacy_parent_id integer"
-        )
-        self.cr.execute(
-            "UPDATE resource_asset SET legacy_parent_id = %s WHERE id = %s",
-            [whole.id, child.id],
-        )
-        migrate = runpy.run_path(
-            file_path("resource_asset/migrations/1.12/post-migrate.py")
-        )["migrate"]
-        with self.assertRaises(ValueError), self.cr.savepoint():
-            migrate(self.cr, "1.11")
-        self.assertEqual(child.parent_id, other)
-        self.cr.execute(
-            "SELECT legacy_parent_id FROM resource_asset WHERE id = %s", [child.id]
-        )
-        self.assertEqual(self.cr.fetchone()[0], whole.id)
-
     def test_an_asset_is_a_material_resource(self):
         truck = self._truck()
-        self.assertEqual(truck.resource_id.type, "material")
-        self.assertEqual(truck.resource_id.name, "Truck")
-        self.assertEqual(truck.resource_id.asset_id, truck)
+        self.assertEqual(truck.type, "material")
+        self.assertEqual(truck.name, "Truck")
         truck.name = "Truck 7"
-        self.assertEqual(truck.resource_id.name, "Truck 7")
-
-    def test_an_asset_cannot_take_a_human_resource(self):
-        with self.assertRaises(ValidationError):
-            self.Asset.create(
-                {
-                    "name": "Human wrapped as equipment",
-                    "kind_id": self.machinery.id,
-                    "resource_id": self.driver.id,
-                }
-            )
+        self.assertEqual(truck.name, "Truck 7")
 
     def test_an_owned_material_resource_cannot_become_a_person(self):
         truck = self._truck()
         with self.assertRaises(ValidationError), self.cr.savepoint():
-            truck.resource_id.type = "human"
-
-    def test_one_resource_cannot_be_owned_by_two_asset_kinds(self):
-        truck = self._truck()
-        with self.assertRaises(ValidationError):
-            self.Asset.create(
-                {
-                    "name": "Same resource as machinery",
-                    "kind_id": self.machinery.id,
-                    "resource_id": truck.resource_id.id,
-                }
-            )
-
-    def test_archived_owners_still_hold_the_resource_identity(self):
-        truck = self._truck()
-        truck.active = False
-        with self.assertRaises(ValidationError):
-            self.Asset.create(
-                {
-                    "name": "Archived resource as machinery",
-                    "kind_id": self.machinery.id,
-                    "resource_id": truck.resource_id.id,
-                }
-            )
-
-    def test_rebinding_an_owner_cannot_take_another_owners_identity(self):
-        truck = self._truck()
-        press = self.Asset.create({"name": "Press", "kind_id": self.machinery.id})
-        with self.assertRaises(ValidationError):
-            press.resource_id = truck.resource_id
+            truck.type = "human"
 
     def test_the_asset_list_shows_whole_assets_and_hides_components(self):
         truck = self._truck()
         crane = self._truck("Crane on truck", parent_id=truck.id)
         action = self.env.ref("resource_asset.action_resource_asset")
-        self.assertEqual(action.context, "{'search_default_top_level': 1}")
+        self.assertEqual(
+            action.context,
+            "{'search_default_top_level': 1, 'default_type': 'material'}",
+        )
         search = self.env.ref("resource_asset.resource_asset_view_search")
         arch = etree.fromstring(search.arch)
         domain = arch.xpath("//filter[@name='top_level']")[0].get("domain")
@@ -320,43 +232,41 @@ class TestResourceAsset(TransactionCase):
         self.assertNotIn(crane, listed)
 
     def test_an_asset_created_through_a_form_is_active(self):
-        form = Form(self.Asset)
+        form = Form(self.Asset, view="resource_asset.resource_asset_view_form")
         form.name = "Form truck"
         form.kind_id = self.vehicle
         truck = form.save()
         self.assertTrue(truck.active)
-        self.assertTrue(truck.resource_id.active)
+        self.assertTrue(truck.active)
 
     def test_an_unscheduled_kind_is_available_around_the_clock(self):
         truck = self._truck(company_id=self.env.company.id)
-        self.assertEqual(truck.resource_calendar_id.schedule_type, "fully_flexible")
-        self.assertTrue(truck.resource_id._is_fully_flexible())
+        self.assertEqual(truck.calendar_id.schedule_type, "fully_flexible")
+        self.assertTrue(truck._is_fully_flexible())
 
     def test_a_scheduled_kind_takes_the_company_calendar(self):
         press = self.Asset.create({"name": "Press", "kind_id": self.machinery.id})
-        self.assertEqual(
-            press.resource_calendar_id, self.env.company.resource_calendar_id
-        )
+        self.assertEqual(press.calendar_id, self.env.company.resource_calendar_id)
 
     def test_a_shared_asset_of_a_scheduled_kind_takes_no_company_calendar(self):
         press = self.Asset.create(
             {"name": "Shared press", "kind_id": self.machinery.id, "company_id": False}
         )
         self.assertFalse(press.company_id)
-        self.assertFalse(press.resource_calendar_id.company_id)
-        self.assertTrue(press.resource_id._is_fully_flexible())
+        self.assertFalse(press.calendar_id.company_id)
+        self.assertTrue(press._is_fully_flexible())
 
     def test_an_explicit_calendar_wins(self):
         calendar = self.env["resource.calendar"].create({"name": "Nights", "tz": "UTC"})
-        truck = self._truck(resource_calendar_id=calendar.id)
-        self.assertEqual(truck.resource_calendar_id, calendar)
+        truck = self._truck(calendar_id=calendar.id)
+        self.assertEqual(truck.calendar_id, calendar)
 
     def test_missing_identifiers_follow_the_kind(self):
         truck = self._truck()
         self.assertEqual(truck.missing_identifier_type_ids, self.plate | self.vin)
         truck.identifier_ids = [(0, 0, {"type_id": self.plate.id, "value": "abc-123"})]
         self.assertEqual(truck.missing_identifier_type_ids, self.vin)
-        self.assertEqual(truck.resource_id._get_identifier("plate"), "abc-123")
+        self.assertEqual(truck._get_identifier("plate"), "abc-123")
         self.assertIn(
             truck,
             self.Asset.search([("missing_identifier_type_ids", "in", self.vin.ids)]),
@@ -483,7 +393,7 @@ class TestResourceAsset(TransactionCase):
         truck = self._truck()
         identifier = self.env["resource.identifier"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "type_id": self.vin.id,
                 "value": "1hgcm82633a-004352",
             }
@@ -497,7 +407,7 @@ class TestResourceAsset(TransactionCase):
         two = self._truck("Two", company_id=self.company_b.id)
         self.env["resource.identifier"].create(
             {
-                "resource_id": one.resource_id.id,
+                "resource_id": one.id,
                 "type_id": self.vin.id,
                 "value": "1HGCM82633A004352",
             }
@@ -505,7 +415,7 @@ class TestResourceAsset(TransactionCase):
         with self.assertRaises(ValidationError):
             self.env["resource.identifier"].create(
                 {
-                    "resource_id": two.resource_id.id,
+                    "resource_id": two.id,
                     "type_id": self.vin.id,
                     "value": "1hgcm82633a004352",
                 }
@@ -517,14 +427,14 @@ class TestResourceAsset(TransactionCase):
         three = self._truck("Three")
         self.env["resource.identifier"].create(
             {
-                "resource_id": one.resource_id.id,
+                "resource_id": one.id,
                 "type_id": self.plate.id,
                 "value": "ABC 123",
             }
         )
         self.env["resource.identifier"].create(
             {
-                "resource_id": two.resource_id.id,
+                "resource_id": two.id,
                 "type_id": self.plate.id,
                 "value": "ABC-123",
             }
@@ -532,7 +442,7 @@ class TestResourceAsset(TransactionCase):
         with self.assertRaises(ValidationError):
             self.env["resource.identifier"].create(
                 {
-                    "resource_id": three.resource_id.id,
+                    "resource_id": three.id,
                     "type_id": self.plate.id,
                     "value": "abc123",
                 }
@@ -543,7 +453,7 @@ class TestResourceAsset(TransactionCase):
         other = self._truck("Other")
         self.env["resource.identifier"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "type_id": self.plate.id,
                 "value": "ABC 123",
             }
@@ -562,7 +472,7 @@ class TestResourceAsset(TransactionCase):
         truck = self._truck()
         self.env["resource.identifier"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "type_id": self.plate.id,
                 "value": "A",
             }
@@ -574,7 +484,7 @@ class TestResourceAsset(TransactionCase):
             with self.env.cr.savepoint():
                 self.env["resource.identifier"].create(
                     {
-                        "resource_id": truck.resource_id.id,
+                        "resource_id": truck.id,
                         "type_id": self.plate.id,
                         "value": "B",
                     }
@@ -584,7 +494,7 @@ class TestResourceAsset(TransactionCase):
         truck = self._truck()
         meter = self.env["resource.meter"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "name": "Odometer",
                 "kind": "odometer",
             }
@@ -606,10 +516,10 @@ class TestResourceAsset(TransactionCase):
 
     def test_identifier_columns_read_and_write_the_identifier_rows(self):
         truck = self._truck(license_plate="ABC-123", vin_sn="1HGCM82633A004352")
-        self.assertEqual(truck.resource_id._get_identifier("plate"), "ABC-123")
+        self.assertEqual(truck._get_identifier("plate"), "ABC-123")
         self.assertFalse(truck.missing_identifier_type_ids)
         truck.license_plate = "XYZ-987"
-        self.assertEqual(truck.resource_id._get_identifier("plate"), "XYZ-987")
+        self.assertEqual(truck._get_identifier("plate"), "XYZ-987")
         truck.vin_sn = False
         self.assertEqual(truck.missing_identifier_type_ids, self.vin)
         self.assertEqual(self.Asset.search([("license_plate", "=", "XYZ-987")]), truck)
@@ -619,11 +529,11 @@ class TestResourceAsset(TransactionCase):
         self.assertFalse(truck.odometer_meter_id)
         self.assertEqual(truck.odometer, 0.0)
         self.env["resource.meter"].create(
-            {"resource_id": truck.resource_id.id, "name": "Hours", "kind": "hours"}
+            {"resource_id": truck.id, "name": "Hours", "kind": "hours"}
         ).record(40)
         meter = self.env["resource.meter"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "name": "Odometer",
                 "kind": "odometer",
             }
@@ -641,7 +551,7 @@ class TestResourceAsset(TransactionCase):
         self.assertFalse(truck.holder_id)
         assignment = self.env["resource.assignment"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "assignee_id": self.driver.id,
                 "custody_role": "operator",
                 "date_start": datetime.now() - timedelta(days=1),
@@ -657,13 +567,13 @@ class TestResourceAsset(TransactionCase):
         truck = self._truck()
         assignment = self.env["resource.assignment"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "assignee_id": self.driver.id,
                 "date_start": datetime.now() - timedelta(days=1),
             }
         )
         truck.action_archive()
-        self.assertFalse(truck.resource_id.active)
+        self.assertFalse(truck.active)
         self.assertTrue(assignment.date_end)
         self.assertEqual(assignment.state, "ended")
 
@@ -677,7 +587,7 @@ class TestResourceAsset(TransactionCase):
         )
         Assignment = self.env["resource.assignment"].with_user(asset_user)
         custody = Assignment.create(
-            {"resource_id": truck.resource_id.id, "assignee_id": self.driver.id}
+            {"resource_id": truck.id, "assignee_id": self.driver.id}
         )
         custody.note = "keys in the glovebox"
         custody.unlink()
@@ -703,7 +613,7 @@ class TestResourceAsset(TransactionCase):
         now = datetime.now()
         current = self.env["resource.assignment"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "assignee_id": self.driver.id,
                 "custody_role": "operator",
                 "date_start": now - timedelta(days=1),
@@ -714,7 +624,7 @@ class TestResourceAsset(TransactionCase):
         )
         planned = self.env["resource.assignment"].create(
             {
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "assignee_id": successor.id,
                 "custody_role": "operator",
                 "date_start": now + timedelta(days=3),
@@ -790,10 +700,10 @@ class TestResourceAsset(TransactionCase):
     def test_the_asset_reads_and_writes_its_resources_lifecycle(self):
         truck = self._truck(date_acquisition="2026-01-05", value_original=900.0)
         self.assertRecordValues(
-            truck.resource_id,
+            truck,
             [{"date_acquisition": date(2026, 1, 5), "value_original": 900.0}],
         )
-        truck.resource_id.date_acquisition = "2026-02-01"
+        truck.date_acquisition = "2026-02-01"
         self.assertEqual(truck.date_acquisition, date(2026, 2, 1))
         self.assertEqual(
             self.Asset.search([("date_acquisition", "=", "2026-02-01")]), truck
@@ -819,43 +729,28 @@ class TestResourceAsset(TransactionCase):
         with self.assertRaises(ValidationError):
             tractor.parent_id = engine
 
-    def test_a_resource_is_one_asset_at_most(self):
-        truck = self._truck()
-        with (
-            self.assertRaises(ValidationError),
-            mute_logger("odoo.sql_db", "odoo.db.cursor"),
-        ):
-            with self.env.cr.savepoint():
-                self.Asset.create(
-                    {
-                        "name": "Twin",
-                        "kind_id": self.vehicle.id,
-                        "resource_id": truck.resource_id.id,
-                    }
-                )
-
     def test_asset_books_like_any_resource(self):
         truck = self._truck()
         reservation = self.env["resource.reservation"].create(
             {
                 "name": "Delivery run",
-                "resource_id": truck.resource_id.id,
+                "resource_id": truck.id,
                 "date_start": datetime(2026, 3, 2, 8, 0),
                 "date_end": datetime(2026, 3, 2, 12, 0),
                 "enforcement_mode": "hard",
             }
         )
-        self.assertEqual(reservation.resource_id.asset_id, truck)
-        unavailable = truck.resource_id._get_unavailable_intervals(
+        self.assertEqual(reservation.resource_id, truck)
+        unavailable = truck._get_unavailable_intervals(
             datetime(2026, 3, 2, tzinfo=UTC),
             datetime(2026, 3, 3, tzinfo=UTC),
-        )[truck.resource_id.id]
+        )[truck.id]
         self.assertEqual(len(unavailable), 1)
 
     def test_every_asset_group_by_is_groupable(self):
         views = self.env["ir.ui.view"].search(
             [
-                ("model", "=", "resource.asset"),
+                ("model", "=", "resource.resource"),
                 ("type", "=", "search"),
                 ("mode", "=", "primary"),
             ]

@@ -8,8 +8,8 @@ ODOMETER_LOOKBACK_PARAM = "asset_gps.odometer_lookback_days"
 DEFAULT_ODOMETER_LOOKBACK_DAYS = 30
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     @api.model
     def _gps_odometer_lookback_days(self):
@@ -49,7 +49,7 @@ class ResourceAsset(models.Model):
     def _gps_odometer_split_ledgers(self, assets):
         """The assets whose stored ledger already spans more than one company.
 
-        ``resource.asset.log._check_ledger_does_not_span_companies`` refuses any
+        ``resource.log._check_ledger_does_not_span_companies`` refuses any
         write touching one of these, and says so in as many words: the split
         predates the write and re-saving will not clear it. Nothing a snapshot
         can do repairs it.
@@ -81,7 +81,9 @@ class ResourceAsset(models.Model):
 
     @api.model
     def _cron_record_gps_odometer(self):
-        tracked = self.search([("gps_device_id", "!=", False)])
+        tracked = self.search(
+            [("gps_device_id", "!=", False), ("kind_id", "!=", False)]
+        )
         if not tracked:
             return
         split = self._gps_odometer_split_ledgers(tracked)
@@ -99,9 +101,7 @@ class ResourceAsset(models.Model):
         log_model = self.env["resource.log"]
         # Snapshot dates belong to the resource's local day. Resources in the
         # same company may work in different timezones.
-        today_by_asset = {
-            asset.id: asset.resource_id._get_local_date() for asset in tracked
-        }
+        today_by_asset = {asset.id: asset._get_local_date() for asset in tracked}
         # One snapshot per asset per day, kept current: the cron runs every
         # few minutes, and a day's row follows the counter upward each time
         # the device has advanced, so the asset's odometer is live for

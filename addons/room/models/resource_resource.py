@@ -58,6 +58,21 @@ class ResourceResource(models.Model):
             room.is_available = not status[room.id]["is_reserved"]
             room.next_booking_start = status[room.id]["next_reservation_start"]
 
+    @api.depends("kind_id", "address_id.name")
+    def _compute_display_name(self):
+        super()._compute_display_name()
+        for resource in self:
+            if (
+                resource.kind_code == ROOM_KIND
+                and resource.name
+                and resource.address_id
+            ):
+                resource.display_name = f"{resource.address_id.name} - {resource.name}"
+
+    def _on_kind_changed(self, vals) -> None:
+        super()._on_kind_changed(vals)
+        self._setup_room_kiosk()
+
     def write(self, vals):
         res = super().write(vals)
         kiosk_fields = {
@@ -75,10 +90,7 @@ class ResourceResource(models.Model):
         return res
 
     def _get_room_resources(self):
-        """Select identities currently represented by a room asset."""
-        return self.filtered(
-            lambda resource: resource.sudo().asset_id.kind_id.code == ROOM_KIND
-        )
+        return self.filtered(lambda resource: resource.sudo().kind_id.code == ROOM_KIND)
 
     def _setup_room_kiosk(self) -> None:
         rooms = self._get_room_resources()

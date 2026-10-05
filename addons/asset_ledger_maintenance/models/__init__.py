@@ -5,6 +5,6 @@ from . import product_category
 from . import product_product
 from . import product_template
 from . import stock_location
-from . import resource_asset
+from . import resource_resource
 from . import product_trace
 from . import stock_warehouse

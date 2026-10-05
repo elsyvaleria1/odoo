@@ -1,6 +1,6 @@
 {
     "name": "Physical Assets",
-    "version": "1.21",
+    "version": "2.0",
     "oldest_upgradable_version": "1.10",
     "category": "Hidden",
     "summary": "Track physical asset identity, custody, meters and lifecycle",
@@ -20,7 +20,6 @@
         "views/resource_asset_kind_views.xml",
         "views/resource_identifier_type_views.xml",
         "views/resource_asset_views.xml",
-        "views/resource_asset_subtype_views.xml",
         "views/menuitems.xml",
     ],
 }

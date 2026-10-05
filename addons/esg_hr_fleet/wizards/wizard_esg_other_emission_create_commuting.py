@@ -41,8 +41,8 @@ class WizardEsgOtherEmissionCreateCommuting(models.TransientModel):
             return 0.0
 
         total_co2 = 0.0
-        vehicles = self.env["resource.asset"].search(
-            [("kind_id.code", "=", "vehicle"), ("company_id", "=", self.env.company.id)]
+        vehicles = self.env["resource.asset.vehicle"].search(
+            [("company_id", "=", self.env.company.id)]
         )
         vehicle_by_resource = {vehicle.resource_id: vehicle for vehicle in vehicles}
         period_start = fields.Datetime.to_datetime(self.date_start)

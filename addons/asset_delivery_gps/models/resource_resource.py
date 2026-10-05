@@ -12,8 +12,8 @@ TRIP_READING_MAX_AGE_PARAM = "asset_delivery_gps.trip_reading_max_age_minutes"
 DEFAULT_TRIP_READING_MAX_AGE_MINUTES = 120
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     def _get_last_gps_log(self, no_device_message: str):
         self.check_singleton()

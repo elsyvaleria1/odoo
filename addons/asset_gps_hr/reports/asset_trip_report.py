@@ -19,13 +19,8 @@ class AssetTripReport(models.Model):
             "hr.department": ["name"],
             "hr.employee": ["company_id", "current_version_id", "name", "resource_id"],
             "hr.version": ["department_id"],
-            "resource.asset": ["resource_id"],
-            "resource.asset.vehicle": [
-                "license_plate",
-                "name",
-                "resource_id",
-            ],
-            "resource.resource": ["fuel_cost_per_km", "tz"],
+            "resource.asset.vehicle": ["license_plate", "resource_id"],
+            "resource.resource": ["fuel_cost_per_km", "kind_id", "name", "tz"],
             "resource.gps.binding": [
                 "resource_id",
                 "device_id",
@@ -62,7 +57,7 @@ class AssetTripReport(models.Model):
     department_name = fields.Char(readonly=True)
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         readonly=True,
     )
     asset_name = fields.Char(readonly=True)
@@ -134,7 +129,7 @@ class AssetTripReport(models.Model):
                     ra.date_start,
                     ra.date_end
                 FROM (%(custody_periods)s) ra
-                JOIN resource_asset a ON a.resource_id = ra.resource_id
+                JOIN resource_resource a ON a.id = ra.resource_id AND a.kind_id IS NOT NULL
                 JOIN hr_employee e ON e.resource_id = ra.assignee_id
                 WHERE ra.custody_role = 'operator'
                   AND e.company_id = ra.company_id
@@ -182,7 +177,7 @@ class AssetTripReport(models.Model):
                 voh.device_id,
                 voh.company_id,
                 a.id AS asset_id,
-                a.name AS asset_name,
+                tracked_resource.name AS asset_name,
                 a.license_plate,
                 voh.operator_id AS operator_id,
                 he.name AS operator_name,

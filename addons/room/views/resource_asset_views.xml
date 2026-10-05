@@ -42,8 +42,8 @@
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <kanban sample="1">
-                <field name="room_is_available" />
-                <field name="room_next_booking_start" />
+                <field name="is_available" />
+                <field name="next_booking_start" />
                 <field name="active" />
                 <templates>
                     <t t-name="card" class="flex-row">
@@ -62,13 +62,13 @@
                             <footer class="pt-0">
                                 <div
                                     t-if="record.active.raw_value"
-                                    t-attf-class="py-1 px-2 text-bg-#{record.room_is_available.raw_value ? 'success' : 'danger'}">
-                                    <t t-if="record.room_is_available.raw_value">Available</t>
+                                    t-attf-class="py-1 px-2 text-bg-#{record.is_available.raw_value ? 'success' : 'danger'}">
+                                    <t t-if="record.is_available.raw_value">Available</t>
                                     <t t-else="">Busy</t>
-                                    <t t-if="record.room_next_booking_start.value">
+                                    <t t-if="record.next_booking_start.value">
                                         <t
                                             t-set="start_datetime"
-                                            t-value="dates.parseISO(record.room_next_booking_start.raw_value)" />
+                                            t-value="dates.parseISO(record.next_booking_start.raw_value)" />
                                         Until
                                         <t
                                             t-if="dates.hasSame(start_datetime, dates.now(), 'day')"
@@ -94,8 +94,8 @@
             <list sample="1">
                 <field name="name" />
                 <field name="address_id" string="Office" />
-                <field name="room_is_available" string="Is Currently Available" />
-                <field name="room_next_booking_start" />
+                <field name="is_available" string="Is Currently Available" />
+                <field name="next_booking_start" />
                 <field name="properties" />
             </list>
         </field>
@@ -112,18 +112,18 @@
                     name="action_view_room_booking_view"
                     type="object"
                     string="Open Room Display"
-                    invisible="not active or not room_short_code" />
+                    invisible="not active or not short_code" />
             </field>
             <notebook position="inside">
                 <page name="room" string="Room" invisible="not id">
                     <group>
                         <group>
-                            <field name="room_short_code" />
+                            <field name="short_code" />
                             <field
                                 name="room_booking_url"
                                 widget="CopyClipboardChar"
                                 invisible="not active" />
-                            <field name="room_next_booking_start" />
+                            <field name="next_booking_start" />
                             <button
                                 name="action_view_room_bookings"
                                 type="object"
@@ -131,10 +131,8 @@
                                 class="btn-link ps-0" />
                         </group>
                         <group>
-                            <field
-                                name="room_bookable_background_color"
-                                widget="color" />
-                            <field name="room_booked_background_color" widget="color" />
+                            <field name="bookable_background_color" widget="color" />
+                            <field name="booked_background_color" widget="color" />
                             <field name="room_background_image" widget="image" />
                         </group>
                     </group>

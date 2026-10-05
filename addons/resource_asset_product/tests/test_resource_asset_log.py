@@ -18,7 +18,7 @@ class TestResourceAssetLog(TransactionCase):
         )
 
     def _asset(self, **vals):
-        return self.env["resource.asset"].create(
+        return self.env["resource.resource"].create(
             {"name": "Compressor", "kind_id": self.kind.id, **vals}
         )
 
@@ -74,7 +74,7 @@ class TestResourceAssetLogOdometer(TransactionCase):
         cls.Log = cls.env["resource.log"]
         cls.km = cls.env.ref("uom.product_uom_km")
         cls.mile = cls.env.ref("uom.product_uom_mile")
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Loader",
                 "kind_id": cls.env.ref("resource_asset.kind_machinery").id,
@@ -156,7 +156,7 @@ class TestResourceAssetLedgerSurface(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.Log = cls.env["resource.log"]
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {"name": "Press", "kind_id": cls.env.ref("resource_asset.kind_tool").id}
         )
         cls.service = cls.env["product.product"].create(

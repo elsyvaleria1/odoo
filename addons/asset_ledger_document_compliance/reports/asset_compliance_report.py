@@ -33,7 +33,7 @@ class AssetComplianceReport(models.Model):
     )
 
     asset_id = fields.Many2one(
-        comodel_name="resource.asset",
+        comodel_name="resource.resource",
         readonly=True,
     )
     asset_name = fields.Char(
@@ -84,18 +84,17 @@ class AssetComplianceReport(models.Model):
                     pt.id as product_tmpl_id,
                     pt.name as product_name,
                     rr.kind_id AS asset_kind_id,
-                    ra.company_id,
-                    ra.id as asset_id,
-                    ra.name as asset_name,
+                    rr.company_id,
+                    rr.id as asset_id,
+                    rr.name as asset_name,
                     sq.location_id
-                FROM resource_asset ra
-                JOIN resource_resource rr ON rr.id = ra.resource_id
+                FROM resource_resource rr
                 JOIN product_product pp ON pp.id = rr.product_id
                 JOIN product_template pt ON pt.id = pp.product_tmpl_id
                 LEFT JOIN product_trace sl ON sl.id = rr.trace_id
                 LEFT JOIN stock_quant sq ON sq.trace_id = sl.id AND sq.quantity > 0
                 WHERE rr.kind_id IS NOT NULL
-                    AND ra.active = true
+                    AND rr.active = true
             ),
             asset_documents AS (
                 SELECT
@@ -127,7 +126,7 @@ class AssetComplianceReport(models.Model):
                 CROSS JOIN document_type dt
                 WHERE dt.active = true
                     AND dt.is_mandatory = true
-                    AND dt.applies_to IN ('all', 'resource.asset')
+                    AND dt.applies_to IN ('all', 'resource.resource')
                     AND (dt.company_id = a.company_id OR dt.company_id IS NULL)
             ),
             asset_doc_types AS (
@@ -176,14 +175,14 @@ class AssetComplianceReport(models.Model):
                     ar.is_mandatory
             )
             """,
-            asset_reference=self.env["resource.asset"]._get_reference_model_name(),
+            asset_reference=self.env["resource.resource"]._get_reference_model_name(),
         )
 
     def _get_fields_select(self) -> dict:
         return {
             "id": "ROW_NUMBER() OVER (ORDER BY adt.product_tmpl_id, adt.asset_id)",
             "entity_name": "adt.product_name",
-            "entity_type": "'resource.asset'",
+            "entity_type": "'resource.resource'",
             "entity_id": "adt.asset_id",
             "product_tmpl_id": "adt.product_tmpl_id",
             "product_name": "adt.product_name",
@@ -287,7 +286,7 @@ class AssetComplianceReport(models.Model):
     @api.readonly
     def action_view_asset_documents(self) -> dict:
         self.check_singleton()
-        reference = self.env["resource.asset"]._get_reference_model_name()
+        reference = self.env["resource.resource"]._get_reference_model_name()
         return {
             "name": f"Documents: {self.product_name}",
             "type": "ir.actions.act_window",

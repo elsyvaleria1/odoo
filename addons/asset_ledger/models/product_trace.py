@@ -3,7 +3,7 @@ import logging
 from odoo import api, fields, models
 
 from odoo.addons.resource.fields import ResourceIdentifier
-from odoo.addons.resource_asset.models.resource_asset import SKIP_IDENTITY_CHECK
+from odoo.addons.resource_asset.models.resource_resource import SKIP_IDENTITY_CHECK
 
 _logger = logging.getLogger(__name__)
 
@@ -57,27 +57,23 @@ class ProductTrace(models.Model):
         help="Mark as True if this asset was acquired as brand new.",
     )
 
-    license_plate = ResourceIdentifier(
-        identifier_code="plate", through="asset_id.resource_id"
-    )
+    license_plate = ResourceIdentifier(identifier_code="plate", through="asset_id")
     vin_sn = ResourceIdentifier(
         identifier_code="vin",
-        through="asset_id.resource_id",
+        through="asset_id",
         string="Serial Number / VIN",
     )
     cadastral_id = ResourceIdentifier(
         identifier_code="cadastral",
-        through="asset_id.resource_id",
+        through="asset_id",
         string="Cadastral ID",
     )
     engine_sn = ResourceIdentifier(
         identifier_code="engine",
-        through="asset_id.resource_id",
+        through="asset_id",
         string="Engine Serial Number",
     )
-    imei = ResourceIdentifier(
-        identifier_code="imei", through="asset_id.resource_id", string="IMEI"
-    )
+    imei = ResourceIdentifier(identifier_code="imei", through="asset_id", string="IMEI")
 
     date_acquisition = fields.Date(
         copy=False,
@@ -276,7 +272,7 @@ class ProductTrace(models.Model):
 
     @api.model
     def _cron_refresh_service_activity(self):
-        return self.env["resource.asset"]._cron_refresh_service_activity()
+        return self.env["resource.resource"]._cron_refresh_service_activity()
 
     def _action_view_logs(self, domain, default_log_type=None):
         self.check_singleton()

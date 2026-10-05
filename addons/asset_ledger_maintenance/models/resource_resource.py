@@ -1,8 +1,8 @@
 from odoo import fields, models
 
 
-class ResourceAsset(models.Model):
-    _inherit = "resource.asset"
+class ResourceResource(models.Model):
+    _inherit = "resource.resource"
 
     maintenance_ok = fields.Boolean(
         related="product_id.maintenance_ok",
@@ -25,7 +25,7 @@ class ResourceAsset(models.Model):
             "view_mode": "form",
             "target": "current",
             "context": {
-                "default_resource_ids": self.resource_id.ids,
+                "default_resource_ids": self.ids,
                 "default_company_id": self.company_id.id,
                 "default_maintenance_type": "corrective",
                 "default_block_resource": False,

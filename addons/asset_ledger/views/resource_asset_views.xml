@@ -54,7 +54,8 @@
 
     <record id="resource_asset_view_search_asset" model="ir.ui.view">
         <field name="name">resource.asset.asset.search</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <search string="Assets">
                 <field
@@ -113,7 +114,8 @@
 
     <record id="resource_asset_view_list_property" model="ir.ui.view">
         <field name="name">resource.asset.property.list</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <list
                 string="Properties"
@@ -148,7 +150,8 @@
 
     <record id="resource_asset_view_list_general" model="ir.ui.view">
         <field name="name">resource.asset.general.list</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <list
                 string="Assets"
@@ -190,7 +193,8 @@
 
     <record id="resource_asset_view_kanban_property" model="ir.ui.view">
         <field name="name">resource.asset.property.kanban</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <kanban
                 class="o_kanban_asset o_kanban_property"
@@ -330,7 +334,8 @@
 
     <record id="resource_asset_view_kanban_general" model="ir.ui.view">
         <field name="name">resource.asset.general.kanban</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
             <kanban
                 class="o_kanban_asset o_kanban_general"
@@ -460,7 +465,7 @@
 
     <record id="resource_asset_view_form_ledger" model="ir.ui.view">
         <field name="name">resource.asset.form.ledger</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//sheet/widget[@name='web_ribbon']" position="before">
@@ -584,7 +589,7 @@
 
     <record id="resource_asset_view_search_ledger" model="ir.ui.view">
         <field name="name">resource.asset.search.ledger</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
         <field name="arch" type="xml">
             <field name="holder_id" position="after">
@@ -602,9 +607,10 @@
 
     <record id="action_resource_asset_all" model="ir.actions.act_window">
         <field name="name">All Assets</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">list,kanban,form</field>
         <field name="search_view_id" ref="resource_asset_view_search_asset" />
+        <field name="domain">[('kind_id', '!=', False)]</field>
         <field name="context">{}</field>
         <field
             name="view_ids"
@@ -613,7 +619,7 @@
 
     <record id="action_resource_asset_property" model="ir.actions.act_window">
         <field name="name">Property Assets</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="resource_asset_view_search_asset" />
         <field name="domain">[('kind_code', '=', 'property')]</field>
@@ -627,7 +633,7 @@
 
     <record id="action_resource_asset_general" model="ir.actions.act_window">
         <field name="name">Equipment</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="resource_asset_view_search_asset" />
         <field name="domain">[('kind_code', '=', 'equipment')]</field>
@@ -641,7 +647,7 @@
 
     <record id="action_resource_asset_machinery" model="ir.actions.act_window">
         <field name="name">Machinery</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="resource_asset_view_search_asset" />
         <field name="domain">[('kind_code', '=', 'machinery')]</field>
@@ -655,7 +661,7 @@
 
     <record id="action_resource_asset_tools" model="ir.actions.act_window">
         <field name="name">Tools</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="resource_asset_view_search_asset" />
         <field name="domain">[('kind_code', '=', 'tool')]</field>
@@ -669,7 +675,7 @@
 
     <record id="action_resource_asset_it_asset" model="ir.actions.act_window">
         <field name="name">IT Assets</field>
-        <field name="res_model">resource.asset</field>
+        <field name="res_model">resource.resource</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="resource_asset_view_search_asset" />
         <field name="domain">[('kind_code', '=', 'it')]</field>

@@ -57,7 +57,7 @@ class TestTrip(TransactionCase):
                 "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
             }
         )
-        cls.vehicle = cls.env["resource.asset"].create(
+        cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "Truck",
                 "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
@@ -677,7 +677,7 @@ class TestTrip(TransactionCase):
         # is held to one trip at a time.
         broken = self._trip(self._picking())
         broken.action_depart()
-        rescue_vehicle = self.env["resource.asset"].create(
+        rescue_vehicle = self.env["resource.resource"].create(
             {
                 "name": "Rescue Truck",
                 "kind_id": self.env.ref("resource_asset.kind_vehicle").id,

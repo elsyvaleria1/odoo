@@ -14,7 +14,7 @@ class ProductTemplate(models.Model):
 
     def _compute_asset_count(self) -> None:
         counts = dict(
-            self.env["resource.asset"]._read_group(
+            self.env["resource.resource"]._read_group(
                 [("product_tmpl_id", "in", self.ids)],
                 ["product_tmpl_id"],
                 ["__count"],

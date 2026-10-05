@@ -53,7 +53,7 @@
             <main>
                 <owl-component
                     name="room.room_booking_view"
-                    t-att-props="json.dumps({                     'id': room.id,                     'description': room.asset_id.description or '',                     'name': room.name,                     'accessToken': room.access_token,                     'bookableBgColor': room.bookable_background_color,                     'bookedBgColor': room.booked_background_color,                     })" />
+                    t-att-props="json.dumps({                     'id': room.id,                     'description': room.description or '',                     'name': room.name,                     'accessToken': room.access_token,                     'bookableBgColor': room.bookable_background_color,                     'bookedBgColor': room.booked_background_color,                     })" />
             </main>
         </xpath>
     </template>

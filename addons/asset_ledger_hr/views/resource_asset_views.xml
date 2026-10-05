@@ -3,7 +3,7 @@
 
     <record id="view_form_resource_asset_hr" model="ir.ui.view">
         <field name="name">resource.asset.form.hr</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
         <field name="arch" type="xml">
             <field name="manager_id" position="after">
@@ -15,7 +15,7 @@
 
     <record id="view_list_resource_asset_hr" model="ir.ui.view">
         <field name="name">resource.asset.list.hr</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_view_list" />
         <field name="arch" type="xml">
             <field name="holder_id" position="after">
@@ -27,7 +27,7 @@
 
     <record id="view_search_resource_asset_hr" model="ir.ui.view">
         <field name="name">resource.asset.search.hr</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
         <field name="arch" type="xml">
             <field name="holder_id" position="after">
@@ -77,7 +77,7 @@
 
     <record id="resource_asset_view_list_general_hr" model="ir.ui.view">
         <field name="name">resource.asset.general.list.hr</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="asset_ledger.resource_asset_view_list_general" />
         <field name="arch" type="xml">
             <field name="name" position="after">
@@ -139,7 +139,7 @@
 
     <record id="resource_asset_view_form_hr_ledger" model="ir.ui.view">
         <field name="name">resource.asset.form.hr.ledger</field>
-        <field name="model">resource.asset</field>
+        <field name="model">resource.resource</field>
         <field name="inherit_id" ref="asset_ledger.resource_asset_view_form_ledger" />
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">

@@ -31,21 +31,21 @@ class TestTreeTriggers(TransactionCase):
                 },
             ]
         )
-        cls.asset = cls.env["resource.asset"].create(
+        cls.asset = cls.env["resource.resource"].create(
             {"name": "Tree vehicle", "kind_id": kind.id}
         )
         cls.vehicle = cls.env["resource.asset.vehicle"].browse(cls.asset.id)
 
-    def test_a_write_through_the_root_reaches_the_vehicle_dependents(self):
-        self.assertEqual(self.vehicle._get_concrete()._name, "resource.asset.vehicle")
+    def test_a_write_on_the_resource_reaches_the_vehicle_dependents(self):
+        self.assertEqual(self.vehicle._name, "resource.asset.vehicle")
         self.assertFalse(self.vehicle.model_year)
         self.assertFalse(self.vehicle.manufacturer_id)
 
-        self.asset._write_concrete({"product_id": self.model_a.id})
+        self.asset.write({"product_id": self.model_a.id})
         self.assertEqual(self.vehicle.manufacturer_id, self.brand_a)
         self.env.flush_all()
         self.env.invalidate_all()
         self.assertEqual(self.vehicle.model_year, 2020)
 
-        self.asset._write_concrete({"product_id": self.model_b.id})
+        self.asset.write({"product_id": self.model_b.id})
         self.assertEqual(self.vehicle.manufacturer_id, self.brand_b)

@@ -139,7 +139,7 @@ class TestDispatchMode(TransactionCase):
         model = self.env["product.product"].create(
             {"name": "Van model", "type": "consu", "asset_kind_id": kind.id}
         )
-        vehicle = self.env["resource.asset"].create(
+        vehicle = self.env["resource.resource"].create(
             {"name": "Van", "kind_id": kind.id, "product_id": model.id}
         )
         parcel = self._picking("third_party")

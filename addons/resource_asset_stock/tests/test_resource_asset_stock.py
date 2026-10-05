@@ -46,7 +46,7 @@ class TestResourceAssetStock(TransactionCase):
         self.assertEqual(asset.kind_id, self.vehicle)
         self.assertEqual(asset.product_id, self.product)
         self.assertEqual(asset.name, "Pickup PK-001")
-        self.assertEqual(asset.resource_id.type, "material")
+        self.assertEqual(asset.type, "material")
 
     def test_typing_a_product_gives_its_existing_serials_an_asset(self):
         mower = self.env["product.product"].create(
@@ -66,7 +66,7 @@ class TestResourceAssetStock(TransactionCase):
         )
         self.assertEqual(received.asset_id, asset)
         self.assertEqual(
-            self.env["resource.asset"].search_count([("trace_id", "=", received.id)]), 1
+            self.env["resource.resource"].search_count([("trace_id", "=", received.id)]), 1
         )
 
     def test_a_plain_serial_is_not_an_asset(self):
@@ -180,7 +180,7 @@ class TestResourceAssetStock(TransactionCase):
                 "location_id": self.stock_location.id,
             }
         )
-        drill = self.env["resource.asset"].create(
+        drill = self.env["resource.resource"].create(
             {
                 "name": "Drill",
                 "kind_id": self.env.ref("resource_asset.kind_tool").id,
@@ -252,6 +252,6 @@ class TestReceivingAnEnforcedAsset(TransactionCase):
 
     def test_the_receipt_exemption_does_not_leak_to_a_direct_create(self):
         with self.assertRaises(ValidationError):
-            self.env["resource.asset"].create(
+            self.env["resource.resource"].create(
                 {"name": "Direct", "kind_id": self.vehicle.id}
             )

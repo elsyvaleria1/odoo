@@ -37,7 +37,7 @@ class TestFleetVehicle(TransactionCase):
 
     def _vehicle(self, plate="PRB-001", **vals):
         asset = (
-            self.env["resource.asset"]
+            self.env["resource.resource"]
             .with_user(self.manager)
             .create(
                 {
@@ -56,7 +56,7 @@ class TestFleetVehicle(TransactionCase):
 
     def test_a_vehicle_is_an_asset_of_its_model(self):
         vehicle = self._vehicle()
-        self.assertEqual(vehicle._get_concrete()._name, "resource.asset.vehicle")
+        self.assertEqual(vehicle._name, "resource.asset.vehicle")
         self.assertEqual(self.model.asset_kind_code, "vehicle")
         self.assertEqual(vehicle.manufacturer_id, self.brand)
         self.assertEqual(
@@ -68,7 +68,7 @@ class TestFleetVehicle(TransactionCase):
         self.assertEqual(action.res_model, "resource.asset.vehicle")
         self.assertIn(vehicle.id, self.env[action.res_model].search([]).ids)
         self.assertFalse(
-            self.env["resource.asset"]
+            self.env["resource.resource"]
             .create(
                 {
                     "name": "Drill",
@@ -215,14 +215,14 @@ class TestFleetVehicle(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestVehicleIsItsOwnModel(TransactionCase):
-    """A vehicle's rows live in `resource_asset_vehicle`, which inherits
-    `resource_asset`. Everything a vehicle is stays declared on the root, so a
-    reference held as `resource.asset` still reads and writes it."""
+    """A vehicle is its resource's row extended: `resource.asset.vehicle` shares
+    its resource's id and holds what only vehicles have, and the resource holds
+    everything every thing has."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.Asset = cls.env["resource.asset"]
+        cls.Asset = cls.env["resource.resource"]
         cls.Vehicle = cls.env["resource.asset.vehicle"]
         cls.vehicle_kind = cls.env.ref("resource_asset.kind_vehicle")
         cls.tool_kind = cls.env.ref("resource_asset.kind_tool")
@@ -233,79 +233,54 @@ class TestVehicleIsItsOwnModel(TransactionCase):
             "resource.asset.vehicle",
         )
         self.assertEqual(
-            self.Asset._get_model_for_kind(self.tool_kind), "resource.asset"
+            self.Asset._get_model_for_kind(self.tool_kind), "resource.resource"
         )
-        self.assertIn("resource.asset.vehicle", self.Asset._get_model_names_in_tree())
 
     def test_a_kind_whose_code_names_no_model_is_a_plain_asset(self):
         drone = self.env["resource.kind"].create({"name": "Drone", "code": "drone"})
 
-        self.assertEqual(self.Asset._get_model_for_kind(drone), "resource.asset")
+        self.assertEqual(self.Asset._get_model_for_kind(drone), "resource.resource")
 
-    def test_the_vehicle_table_inherits_the_asset_table(self):
+    def test_a_vehicle_shares_its_resource_id(self):
+        vehicle = self.Vehicle.create({"name": "Shared"})
+
+        self.assertEqual(vehicle.id, vehicle.resource_id.id)
+        self.assertEqual(vehicle.kind_id, self.vehicle_kind)
+        self.assertEqual(vehicle.type, "material")
         self.env.cr.execute(
-            """
-            SELECT p.relname FROM pg_inherits i
-              JOIN pg_class c ON c.oid = i.inhrelid
-              JOIN pg_class p ON p.oid = i.inhparent
-             WHERE c.relname = 'resource_asset_vehicle'
-            """
+            "SELECT 1 FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid"
+            " WHERE c.relname = 'resource_asset_vehicle'"
         )
-        self.assertEqual(self.env.cr.fetchall(), [("resource_asset",)])
+        self.assertFalse(self.env.cr.fetchall())
 
-    def test_a_vehicle_created_as_an_asset_lands_in_the_vehicle_model(self):
-        """No caller has to know: the kind names the model and the root sends
-        the row there."""
+    def test_a_vehicle_created_as_a_resource_gets_its_vehicle_row(self):
+        """No caller has to know: the kind names the model that extends it."""
         asset = self.Asset.create(
             {"name": "Dispatched", "kind_id": self.vehicle_kind.id}
         )
 
-        self.assertEqual(asset._get_concrete()._name, "resource.asset.vehicle")
-        self.assertIn(asset.id, self.Vehicle.search([]).ids)
+        self.assertEqual(asset._name, "resource.resource")
+        self.assertTrue(self.Vehicle.browse(asset.id).exists())
 
-    def test_a_kind_naming_no_model_stays_an_asset(self):
+    def test_a_kind_naming_no_model_stays_a_plain_resource(self):
         asset = self.Asset.create({"name": "Plain", "kind_id": self.tool_kind.id})
 
-        self.assertEqual(asset._get_concrete()._name, "resource.asset")
+        self.assertFalse(self.Vehicle.browse(asset.id).exists())
 
-    def test_a_vehicle_is_read_and_written_through_the_root(self):
-        """The whole design rests on this: no caller holding a `resource.asset`
-        needs to know the row moved."""
-        vehicle = self.Vehicle.create(
-            {"name": "Through the root", "kind_id": self.vehicle_kind.id}
-        )
+    def test_a_vehicle_is_read_and_written_through_its_resource(self):
+        vehicle = self.Vehicle.create({"name": "Through the resource"})
 
         as_asset = self.Asset.browse(vehicle.id)
-        self.assertEqual(as_asset.name, "Through the root")
-        as_asset.name = "Renamed from the root"
-        self.assertEqual(vehicle.name, "Renamed from the root")
+        self.assertEqual(as_asset.name, "Through the resource")
+        as_asset.name = "Renamed through the resource"
+        self.assertEqual(vehicle.name, "Renamed through the resource")
         self.assertIn(
-            as_asset, self.Asset.search([("name", "=", "Renamed from the root")])
+            as_asset, self.Asset.search([("name", "=", "Renamed through the resource")])
         )
-
-    def test_a_compute_depending_on_the_root_fires_for_a_vehicle(self):
-        """`resource.resource.asset_id` depends on `resource.asset.resource_id`,
-        and a vehicle writes its own copy of that field. The trigger graph is
-        keyed by the Field object, so without the tree expansion this compute
-        would never hear about a vehicle."""
-        vehicle = self.Vehicle.create(
-            {"name": "Triggers", "kind_id": self.vehicle_kind.id}
-        )
-
-        self.assertEqual(vehicle.resource_id.asset_id, self.Asset.browse(vehicle.id))
-        self.assertIn(vehicle.id, vehicle.resource_id.asset_id.ids)
 
     def test_a_vehicle_takes_part_in_the_asset_hierarchy(self):
-        """`parent_id` names `resource.asset`, which is this model's tree root,
-        so it is a relation on itself here too."""
         whole = self.Asset.create({"name": "Machine", "kind_id": self.tool_kind.id})
-        part = self.Vehicle.create(
-            {
-                "name": "Mounted vehicle",
-                "kind_id": self.vehicle_kind.id,
-                "parent_id": whole.id,
-            }
-        )
+        part = self.Vehicle.create({"name": "Mounted vehicle", "parent_id": whole.id})
 
         self.assertEqual(part.parent_id, whole)
         self.assertIn(part.id, self.Asset.search([("id", "child_of", whole.id)]).ids)
@@ -333,14 +308,12 @@ class TestVehicleIsItsOwnModel(TransactionCase):
             created.mapped("name"), ["A vehicle", "A tool", "Another vehicle"]
         )
         self.assertEqual(
-            [record._get_concrete()._name for record in created],
-            ["resource.asset.vehicle", "resource.asset", "resource.asset.vehicle"],
+            [bool(self.Vehicle.browse(record.id).exists()) for record in created],
+            [True, False, True],
         )
 
-    def test_deleting_through_the_root_deletes_the_vehicle(self):
-        vehicle = self.Vehicle.create(
-            {"name": "Doomed", "kind_id": self.vehicle_kind.id}
-        )
+    def test_deleting_the_resource_deletes_the_vehicle(self):
+        vehicle = self.Vehicle.create({"name": "Doomed"})
         vehicle_id = vehicle.id
 
         self.Asset.browse(vehicle_id).unlink()
@@ -388,19 +361,6 @@ class TestVehicleInheritsWhatBindsAnAsset(TransactionCase):
         self.assertIn(mine, visible)
         self.assertNotIn(theirs, visible)
 
-    def test_the_root_rows_are_the_ones_a_subtype_answers_to(self):
-        Access = self.env["ir.access"]
-
-        self.assertEqual(
-            Access._get_models_bound_by("resource.asset.vehicle"),
-            ["resource.asset.vehicle", "resource.asset"],
-        )
-        self.assertEqual(
-            Access._get_models_bound_by("resource.asset"),
-            ["resource.asset"],
-            "a rule written for one subtype must not narrow its siblings",
-        )
-
 
 @tagged("post_install", "-at_install")
 class TestFleetActionContexts(TransactionCase):
@@ -443,16 +403,14 @@ class TestFleetActionContexts(TransactionCase):
 
 class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
     def test_the_root_reads_a_plate_through_the_rows_and_the_vehicle_stores_it(self):
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         Vehicle = self.env["resource.asset.vehicle"]
         for name in ("license_plate", "vin_sn", "engine_sn"):
             self.assertFalse(Asset._fields[name].store, name)
             self.assertTrue(Vehicle._fields[name].store, name)
-            for sibling in Asset._get_model_names_in_tree() - {Vehicle._name}:
-                self.assertFalse(self.env[sibling]._fields[name].store, sibling)
         self.env.cr.execute(
             "SELECT column_name FROM information_schema.columns"
-            " WHERE table_name = 'resource_asset' AND column_name = 'license_plate'"
+            " WHERE table_name = 'resource_resource' AND column_name = 'license_plate'"
         )
         self.assertFalse(self.env.cr.fetchall())
         tool = Asset.create(
@@ -462,7 +420,7 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
                 "license_plate": "TOOL-1",
             }
         )
-        self.assertEqual(tool.resource_id._get_identifier("plate"), "TOOL-1")
+        self.assertEqual(tool._get_identifier("plate"), "TOOL-1")
         self.assertEqual(tool.license_plate, "TOOL-1")
         self.assertIn(tool, Asset.search([("license_plate", "=", "TOOL-1")]))
         van = Asset.create(
@@ -477,7 +435,7 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         self.assertEqual(Vehicle.search([("license_plate", "=", "VAN-1")]).id, van.id)
 
     def test_a_deliberate_retype_moves_the_row_and_keeps_the_id(self):
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         tool_kind = self.env.ref("resource_asset.kind_tool")
         van = Asset.create(
             {
@@ -490,7 +448,6 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         with self.assertRaises(ValidationError):
             van.kind_id = tool_kind
         van._retype(tool_kind)
-        self.assertEqual(Asset.browse(van_id)._get_concrete()._name, "resource.asset")
         self.assertEqual(Asset.browse(van_id).kind_id, tool_kind)
         self.assertEqual(Asset.browse(van_id).license_plate, "RTY-1")
         self.assertFalse(
@@ -498,13 +455,13 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         )
         Asset.browse(van_id)._retype(self.env.ref("resource_asset.kind_vehicle"))
         vehicle = self.env["resource.asset.vehicle"].browse(van_id)
-        self.assertEqual(vehicle._get_concrete()._name, "resource.asset.vehicle")
+        self.assertTrue(vehicle.exists())
         self.assertEqual(vehicle.license_plate, "RTY-1")
 
 
 class TestAVehicleThreadsOnItsResource(TransactionCase):
     def test_the_vehicle_model_reads_and_writes_its_resource_thread(self):
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         Vehicle = self.env["resource.asset.vehicle"]
         van = Asset.create(
             {
@@ -530,15 +487,9 @@ class TestAVehicleThreadsOnItsResource(TransactionCase):
             views["models"]["resource.asset.vehicle"].get("thread_model"),
             "resource.resource",
         )
-        self.assertEqual(
-            Asset.get_views([[False, "form"]])["models"]["resource.asset"].get(
-                "thread_model"
-            ),
-            "resource.resource",
-        )
 
     def test_a_tracked_write_through_either_model_records_its_resource(self):
-        Asset = self.env["resource.asset"]
+        Asset = self.env["resource.resource"]
         Vehicle = self.env["resource.asset.vehicle"]
         van = Asset.create(
             {
@@ -568,16 +519,3 @@ class TestAVehicleThreadsOnItsResource(TransactionCase):
     def flush_tracking(self):
         self.env.flush_all()
         self.env.cr.precommit.run()
-
-
-class TestSetAsideColumnsAreSwept(TransactionCase):
-    def test_a_member_table_loses_the_copy_of_a_column_the_root_set_aside(self):
-        self.env.cr.execute(
-            "ALTER TABLE resource_asset_vehicle ADD COLUMN legacy_probe varchar"
-        )
-        self.env["resource.asset"]._drop_set_aside_member_columns()
-        self.env.cr.execute(
-            "SELECT 1 FROM information_schema.columns"
-            " WHERE table_name = 'resource_asset_vehicle' AND column_name = 'legacy_probe'"
-        )
-        self.assertFalse(self.env.cr.fetchall())
