@@ -2,6 +2,7 @@ from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.module_data import (
     UNDECLARED_REFERENCES,
     _model_column_of,
+    lift_columns,
     rehome_references,
     rekey_records,
 )
@@ -252,3 +253,56 @@ class TestRehomeReferences(TransactionCase):
         self.assertEqual(cr.fetchall(), [("probe.box", 3), ("res.partner", 3)])
         cr.execute("SELECT model FROM ir_model_data WHERE module = 'test_rehome'")
         self.assertEqual(cr.fetchall(), [("probe.crate",)])
+
+
+@tagged("post_install", "-at_install")
+class TestLiftColumns(TransactionCase):
+    """A box's columns become its shelf's, on the same id; a crate is a box."""
+
+    def setUp(self):
+        super().setUp()
+        self.env.cr.execute("""
+            CREATE TABLE probe_shelf (id int PRIMARY KEY, note varchar);
+            CREATE TABLE probe_box (id int PRIMARY KEY, size int, note varchar);
+            CREATE TABLE probe_crate (label varchar) INHERITS (probe_box);
+            INSERT INTO probe_shelf VALUES (1, NULL), (2, 'kept'), (3, NULL);
+            INSERT INTO probe_box VALUES (1, 10, 'one'), (2, 20, 'two');
+            INSERT INTO probe_crate (id, size, note, label) VALUES (3, 30, NULL, 'c');
+        """)
+
+    def _rows(self, query):
+        self.env.cr.execute(query)
+        return self.env.cr.fetchall()
+
+    def test_the_values_move_and_the_columns_go(self):
+        lift_columns(
+            self.env.cr,
+            "probe_box",
+            "probe_shelf",
+            ["size", "note"],
+            keep_target=["note"],
+        )
+        self.assertEqual(
+            self._rows("SELECT id, size, note FROM probe_shelf ORDER BY id"),
+            [(1, 10, "one"), (2, 20, "kept"), (3, 30, None)],
+        )
+        self.assertEqual(
+            self._rows(
+                "SELECT count(*) FROM information_schema.columns"
+                " WHERE table_name IN ('probe_box', 'probe_crate')"
+                " AND column_name IN ('size', 'note')"
+            ),
+            [(0,)],
+        )
+
+    def test_a_value_with_nowhere_to_go_drops_nothing(self):
+        self.env.cr.execute("INSERT INTO probe_box VALUES (4, 40, NULL)")
+        with self.assertRaisesRegex(ValueError, "1 row"):
+            lift_columns(self.env.cr, "probe_box", "probe_shelf", ["size"])
+        self.assertEqual(
+            self._rows(
+                "SELECT count(*) FROM information_schema.columns"
+                " WHERE table_name = 'probe_box' AND column_name = 'size'"
+            ),
+            [(1,)],
+        )

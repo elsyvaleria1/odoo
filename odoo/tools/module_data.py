@@ -826,6 +826,91 @@ def rehome_references(
     _debug.lifecycle("module_data.rehome_references", models=models, into=into)
 
 
+def lift_columns(
+    cr: BaseCursor,
+    source: str,
+    target: str,
+    columns: Collection[str],
+    *,
+    keep_target: Collection[str] = (),
+) -> list[str]:
+    # Columns of `source` (and of every table inheriting it in PostgreSQL)
+    # become `target`'s, row by row on the same id: copied, checked, then
+    # dropped. A column in `keep_target` keeps the target's own value where it
+    # has one. A row that held a value the target did not receive raises
+    # before anything is dropped, so a short copy fails the upgrade instead of
+    # losing what it missed. Returns the columns lifted.
+    lifted = [c for c in columns if column_exists(cr, source, c)]
+    for column in lifted:
+        name = SQL.identifier(column)
+        if not column_exists(cr, target, column):
+            cr.execute(
+                "SELECT format_type(atttypid, atttypmod) FROM pg_attribute"
+                " WHERE attrelid = %s::regclass AND attname = %s",
+                [source, column],
+            )
+            cr.execute(
+                SQL(
+                    "ALTER TABLE %s ADD COLUMN %s %s",
+                    SQL.identifier(target),
+                    name,
+                    SQL(cr.fetchone()[0]),
+                )
+            )
+        kept = column in keep_target
+        cr.execute(
+            SQL(
+                "UPDATE %s t SET %s = %s FROM %s s WHERE s.id = t.id",
+                SQL.identifier(target),
+                name,
+                SQL("COALESCE(t.%s, s.%s)", name, name) if kept else SQL("s.%s", name),
+                SQL.identifier(source),
+            )
+        )
+        cr.execute(
+            SQL(
+                "SELECT count(*) FROM %s s WHERE s.%s IS NOT NULL AND NOT EXISTS"
+                " (SELECT 1 FROM %s t WHERE t.id = s.id AND %s)",
+                SQL.identifier(source),
+                name,
+                SQL.identifier(target),
+                SQL("t.%s IS NOT NULL", name)
+                if kept
+                else SQL("t.%s IS NOT DISTINCT FROM s.%s", name, name),
+            )
+        )
+        if missed := cr.fetchone()[0]:
+            raise ValueError(
+                f"lift_columns: {missed} row(s) of {source}.{column} have no "
+                f"{target} row to receive their value; nothing was dropped"
+            )
+        _debug.lifecycle(
+            "module_data.lift_column", source=source, target=target, column=column
+        )
+    cr.execute(
+        """
+        WITH RECURSIVE tree(oid) AS (
+            SELECT %s::regclass::oid
+             UNION
+            SELECT inherit.inhrelid FROM pg_inherits inherit
+              JOIN tree ON inherit.inhparent = tree.oid
+        )
+        SELECT oid::regclass::text FROM tree
+        """,
+        [source],
+    )
+    for (table,) in cr.fetchall():
+        for column in lifted:
+            cr.execute(
+                SQL(
+                    "ALTER TABLE %s DROP COLUMN IF EXISTS %s",
+                    SQL.identifier(table),
+                    SQL.identifier(column),
+                )
+            )
+    return lifted
+
+
 def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, str]]:
     cr.execute(
         """
@@ -871,56 +956,6 @@ def _model_condition_of(
 
 def _model_condition(cr: BaseCursor, table: str, column: str, models: list[str]) -> SQL:
     if get_table_columns(cr, table)[column]["udt_name"] == "int4":
-        return SQL(
-            " AND %s IN (SELECT id FROM ir_model WHERE model = ANY(%s))",
-            SQL.identifier(column),
-            models,
-        )
-    return SQL(" AND %s = ANY(%s)", SQL.identifier(column), models)
-
-
-def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, str]]:
-    cr.execute(
-        """
-        WITH RECURSIVE tree(oid) AS (
-            SELECT %s::regclass::oid
-             UNION
-            SELECT inherit.inhrelid FROM pg_inherits inherit
-              JOIN tree ON inherit.inhparent = tree.oid
-        )
-        SELECT con.conrelid::regclass::text, con.conname, pg_get_constraintdef(con.oid)
-          FROM pg_constraint con JOIN tree ON con.confrelid = tree.oid
-         WHERE con.contype = 'f'
-        """,
-        [table],
-    )
-    return cr.fetchall()
-
-
-def _model_column_of(
-    cr: BaseCursor, table: str, res_column: str
-) -> tuple[str, bool] | None:
-    # a Many2oneReference names its model beside it, by name in a char column
-    # (res_id <-> res_model or model, cause_res_id <-> cause_model) or as an
-    # ir_model id (calendar_event.res_model_id): the column, and whether it is an id
-    prefix = res_column.removesuffix("res_id")
-    columns = get_table_columns(cr, table)
-    for base in (f"{prefix}res_model", f"{prefix}model"):
-        for candidate, is_id in ((base, False), (f"{base}_id", True)):
-            column = columns.get(candidate)
-            if column and (column["udt_name"] == "int4") == is_id:
-                return candidate, is_id
-    return None
-
-
-def _model_condition_of(
-    cr: BaseCursor, table: str, res_column: str, models: list[str]
-) -> SQL | None:
-    found = _model_column_of(cr, table, res_column)
-    if found is None:
-        return None
-    column, is_id = found
-    if is_id:
         return SQL(
             " AND %s IN (SELECT id FROM ir_model WHERE model = ANY(%s))",
             SQL.identifier(column),
