@@ -303,6 +303,187 @@ def rename_model(cr: BaseCursor, old: str, new: str) -> dict[str, str]:
     return relations
 
 
+def merge_model(cr: BaseCursor, old: str, into: str) -> None:
+    """`old` becomes part of `into`, a model that exists already: its records
+    are `into`'s under the same ids (moved by the caller first), its fields
+    join `into`'s, and every stored reference to its name follows. Its table
+    is the caller's to drop.
+
+    The registry rows `old` owned lose their xmlids instead of moving them:
+    an xmlid the loading module does not reload is deleted at the end of the
+    upgrade with the row it names, and here that row is `into`'s."""
+    cr.execute(SQL("SELECT model, id FROM ir_model WHERE model = ANY(%s)", [old, into]))
+    ids = dict(cr.fetchall())
+    if old not in ids or into not in ids:
+        return
+    old_id, into_id = ids[old], ids[into]
+    cr.execute(SQL("SELECT id FROM ir_model_fields WHERE model_id = %s", old_id))
+    field_ids = [row[0] for row in cr.fetchall()]
+    cr.execute(
+        SQL(
+            "SELECT id FROM ir_model_fields_selection WHERE field_id = ANY(%s)",
+            field_ids,
+        )
+    )
+    _drop_xmlids(cr, "ir.model.fields.selection", [row[0] for row in cr.fetchall()])
+    _drop_xmlids(cr, "ir.model.fields", field_ids)
+    _drop_xmlids(cr, "ir.model", [old_id])
+    for model, table, column in (
+        ("ir.model.inherit", "ir_model_inherit", "model_id"),
+        ("ir.model.constraint", "ir_model_constraint", "model"),
+    ):
+        cr.execute(
+            SQL(
+                "DELETE FROM %s WHERE %s = %s RETURNING id",
+                SQL.identifier(table),
+                SQL.identifier(column),
+                old_id,
+            )
+        )
+        _drop_xmlids(cr, model, [row[0] for row in cr.fetchall()])
+    cr.execute(
+        SQL("UPDATE ir_model_relation SET model = %s WHERE model = %s", into_id, old_id)
+    )
+    # a field `into` has already takes the old one's references; any other
+    # moves, keeping its id, so the history tracked under it stays readable
+    cr.execute(
+        SQL(
+            "SELECT o.id, n.id FROM ir_model_fields o LEFT JOIN ir_model_fields n "
+            "ON n.model_id = %s AND n.name = o.name WHERE o.model_id = %s",
+            into_id,
+            old_id,
+        )
+    )
+    fields = dict(cr.fetchall())
+    pairs = {o: n for o, n in fields.items() if n}
+    if pairs:
+        cr.execute(
+            SQL(
+                "SELECT o.id, n.id FROM ir_model_fields_selection o "
+                "LEFT JOIN ir_model_fields_selection n "
+                "ON n.field_id = (%s::jsonb ->> o.field_id::text)::int AND n.value = o.value "
+                "WHERE o.field_id = ANY(%s)",
+                Json({str(o): n for o, n in pairs.items()}),
+                list(pairs),
+            )
+        )
+        _fold(
+            cr,
+            "ir.model.fields.selection",
+            "ir_model_fields_selection",
+            dict(cr.fetchall()),
+        )
+        cr.execute(
+            SQL(
+                "UPDATE ir_model_fields_selection SET field_id = "
+                "(%s::jsonb ->> field_id::text)::int WHERE field_id = ANY(%s)",
+                Json({str(o): n for o, n in pairs.items()}),
+                list(pairs),
+            )
+        )
+        _fold(cr, "ir.model.fields", "ir_model_fields", pairs)
+    cr.execute(
+        SQL(
+            "UPDATE ir_model_fields SET model_id = %s, model = %s WHERE model_id = %s",
+            into_id,
+            into,
+            old_id,
+        )
+    )
+    _fold(cr, "ir.model", "ir_model", {old_id: into_id})
+    repoint_model_name_columns(cr, old, into)
+    _rewrite_reference_values(cr, old, into)
+    rewrite_quoted_model_names(cr, old, into)
+    _debug.lifecycle(
+        "module_data.merge_model",
+        old=old,
+        into=into,
+        fields=len(fields),
+        folded_fields=len(pairs),
+    )
+    _logger.info(
+        "merged model %s into %s: %d field(s), %d of them folded into one %s had",
+        old,
+        into,
+        len(fields),
+        len(pairs),
+        into,
+    )
+
+
+def clear_dangling_references(
+    cr: BaseCursor, models: Collection[str], table: str
+) -> None:
+    """A stored many2one or many2many to one of `models` that names no row of
+    `table` loses the value its foreign key will refuse: the row goes where
+    the field cascades, the value goes otherwise, and a required field that
+    does not cascade stops the upgrade instead."""
+    cr.execute(
+        SQL(
+            "SELECT model, name, ttype, on_delete, required, relation_table, column2 "
+            "FROM ir_model_fields WHERE relation = ANY(%s) AND store "
+            "AND ttype IN ('many2one', 'many2many')",
+            list(models),
+        )
+    )
+    for (
+        model,
+        name,
+        ttype,
+        on_delete,
+        required,
+        relation_table,
+        column2,
+    ) in cr.fetchall():
+        if ttype == "many2many":
+            target, column = relation_table, column2
+        else:
+            target, column = _table_of(model, cr), name
+        if not target or not column or not column_exists(cr, target, column):
+            continue
+        dangling = SQL(
+            "%s IS NOT NULL AND NOT EXISTS (SELECT 1 FROM %s r WHERE r.id = %s)",
+            SQL.identifier(column),
+            SQL.identifier(table),
+            SQL.identifier(target, column),
+        )
+        if ttype == "many2many" or on_delete == "cascade":
+            cr.execute(SQL("DELETE FROM %s WHERE %s", SQL.identifier(target), dangling))
+        elif required:
+            cr.execute(
+                SQL(
+                    "SELECT count(*) FROM %s WHERE %s", SQL.identifier(target), dangling
+                )
+            )
+            [[count]] = cr.fetchall()
+            if count:
+                raise ValueError(
+                    f"{target}.{column} names {count} row(s) that no longer exist, "
+                    "and the field is required: nothing was changed"
+                )
+            continue
+        else:
+            cr.execute(
+                SQL(
+                    "UPDATE %s SET %s = NULL WHERE %s",
+                    SQL.identifier(target),
+                    SQL.identifier(column),
+                    dangling,
+                )
+            )
+        if cr.rowcount:
+            _logger.warning(
+                "%s.%s named %d %s row(s) that no longer exist; %s",
+                target,
+                column,
+                cr.rowcount,
+                "/".join(models),
+                "deleted"
+                if ttype == "many2many" or on_delete == "cascade"
+                else "cleared",
+            )
+
+
 def _absorb_forerunner(
     cr: BaseCursor, old: str, new: str, old_table: str, new_table: str
 ) -> None:

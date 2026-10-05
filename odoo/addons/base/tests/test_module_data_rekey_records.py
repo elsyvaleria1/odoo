@@ -3,6 +3,7 @@ from odoo.tools.module_data import (
     UNDECLARED_REFERENCES,
     _model_column_of,
     lift_columns,
+    merge_model,
     rehome_references,
     rekey_records,
 )
@@ -328,4 +329,93 @@ class TestLiftColumns(TransactionCase):
                 " WHERE table_name = 'probe_box' AND column_name = 'size'"
             ),
             [(1,)],
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestMergeModel(TransactionCase):
+    """A model folded into one that exists already: its fields join, its
+    registry rows lose the xmlids the end of the upgrade would delete them by,
+    and what named it names the other."""
+
+    def _insert(self, query, args=()):
+        self.env.cr.execute(query + " RETURNING id", args)
+        return self.env.cr.fetchone()[0]
+
+    def _field(self, model_id, model, name):
+        return self._insert(
+            "INSERT INTO ir_model_fields (model_id, model, name, ttype, state, field_description)"
+            " VALUES (%s, %s, %s, 'char', 'base', '{\"en_US\": \"x\"}')",
+            [model_id, model, name],
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.old_id = self._insert(
+            "INSERT INTO ir_model (model, name, state) VALUES ('x.probe.old', '{\"en_US\": \"Old\"}', 'base')"
+        )
+        self.into_id = self._insert(
+            "INSERT INTO ir_model (model, name, state) VALUES ('x.probe.into', '{\"en_US\": \"Into\"}', 'base')"
+        )
+        self.old_shared = self._field(self.old_id, "x.probe.old", "shared")
+        self.only_old = self._field(self.old_id, "x.probe.old", "only_old")
+        self.into_shared = self._field(self.into_id, "x.probe.into", "shared")
+        for model, res_id, name in (
+            ("ir.model", self.old_id, "model_x_probe_old"),
+            ("ir.model.fields", self.only_old, "field_x_probe_old__only_old"),
+            ("x.probe.old", 7, "probe_record"),
+        ):
+            self.env.cr.execute(
+                "INSERT INTO ir_model_data (module, name, model, res_id)"
+                " VALUES ('probe', %s, %s, %s)",
+                [name, model, res_id],
+            )
+        self.default = self._insert(
+            "INSERT INTO ir_default (field_id, json_value) VALUES (%s, '\"a\"')",
+            [self.old_shared],
+        )
+        self.filter = self._insert(
+            "INSERT INTO ir_filters (name, model_id, domain, context, sort)"
+            " VALUES ('{\"en_US\": \"f\"}', 'x.probe.old', '[]', '{}', '[]')"
+        )
+
+    def _rows(self, query, args=()):
+        self.env.cr.execute(query, args)
+        return self.env.cr.fetchall()
+
+    def test_the_old_model_is_folded_into_the_existing_one(self):
+        merge_model(self.env.cr, "x.probe.old", "x.probe.into")
+
+        self.assertEqual(
+            self._rows("SELECT id FROM ir_model WHERE model = 'x.probe.old'"), []
+        )
+        self.assertEqual(
+            self._rows(
+                "SELECT model, model_id FROM ir_model_fields WHERE id = %s",
+                [self.only_old],
+            ),
+            [("x.probe.into", self.into_id)],
+            "a field the target lacks moves, keeping its id",
+        )
+        self.assertEqual(
+            self._rows(
+                "SELECT id FROM ir_model_fields WHERE id = %s", [self.old_shared]
+            ),
+            [],
+        )
+        self.assertEqual(
+            self._rows("SELECT field_id FROM ir_default WHERE id = %s", [self.default]),
+            [(self.into_shared,)],
+            "what named the folded field names the target's",
+        )
+        self.assertEqual(
+            self._rows("SELECT model_id FROM ir_filters WHERE id = %s", [self.filter]),
+            [("x.probe.into",)],
+        )
+        self.assertEqual(
+            self._rows(
+                "SELECT model, name FROM ir_model_data WHERE module = 'probe' ORDER BY name"
+            ),
+            [("x.probe.into", "probe_record")],
+            "the registry xmlids are dropped; a record's follows the model",
         )
