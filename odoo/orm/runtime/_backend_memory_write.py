@@ -34,7 +34,7 @@ class _InMemoryWriteMixin:
         row_dicts: list[dict[str, typing.Any]] = []
         new_ids: list[int] = []
         for stored in stored_list:
-            new_id = self.storage.allocate_next_id(model._table)
+            new_id = stored.get("id") or self.storage.allocate_next_id(model._table)
             row_dict: dict[str, typing.Any] = {"id": new_id}
             for fname, field in zip(columns, col_fields, strict=True):
                 if fname in stored:

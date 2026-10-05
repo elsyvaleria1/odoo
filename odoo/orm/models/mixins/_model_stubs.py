@@ -76,6 +76,7 @@ class _ModelStubs:
         _display_name_search_exact: tuple[str, ...]
         _inherits_sudo_fields: tuple[str, ...]
         _inherits_rules: bool
+        _inherits_shared_id: str
         _access_anchors: frozendict[str, str | Anchor]
         _access_residual_class: str | None
         _access_label_field: str | None
@@ -86,6 +87,7 @@ class _ModelStubs:
 
         def _is_table_inheritance_root(self) -> bool: ...
         def _get_root_model_name(self) -> str: ...
+        def _get_inherits_shared_parent(self) -> str: ...
         def _flush_table_inheritance_siblings(
             self,
             fnames: Collection[str] | None,

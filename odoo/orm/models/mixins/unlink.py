@@ -65,6 +65,9 @@ class UnlinkMixin(_ModelStubs):
         prof.mark("ondelete")
 
         self._unlink_inheritance_rows_cascaded()
+        shared_parents = (
+            self[self._inherits_shared_id] if self._inherits_shared_id else None
+        )
 
         self._defer_dependent_recomputes()
         self._discard_pending_recomputes()
@@ -107,6 +110,9 @@ class UnlinkMixin(_ModelStubs):
             typing.cast("BaseModel", ir_attachment_unlink).unlink()
 
         self._log_unlinked_ids(deleted_ids)
+        if shared_parents:
+            # the record was its parent's row extended: it goes with its parent
+            typing.cast("BaseModel", shared_parents).unlink()
 
         prof.stop("invalidate")
         self._log_unlink_profile(prof, len(deleted_ids))

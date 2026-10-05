@@ -294,6 +294,10 @@ class CreateMixin(_ModelStubs):
                 for parent, data in zip(parents, parent_data_list, strict=True):
                     data["stored"][parent_name] = parent.id
 
+        if shared := self._inherits_shared_id:
+            for data in data_list:
+                data["stored"]["id"] = data["stored"][shared]
+
     def _create_apply_inverses(
         self, data_list: list[dict[str, typing.Any]], inverses_by_hook: typing.Any
     ) -> None:
@@ -756,6 +760,10 @@ class CreateMixin(_ModelStubs):
 
         self._convert_column_values(stored_list, col_fields)
         ids = self.env.backend.create_rows(self, stored_list, columns, col_fields)
+        if self._inherits_shared_id:
+            # the id was the backend's to insert, and is the record's from here on
+            for stored in stored_list:
+                stored.pop("id", None)
 
         _debug.pipeline(
             "create.rows_inserted",

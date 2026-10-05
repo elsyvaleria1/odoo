@@ -177,3 +177,17 @@ class TestUnstoredInheritsSharedLine(models.Model):
     test_unstored_inherits_child_id = fields.Many2one(
         comodel_name="test.unstored.inherits.child"
     )
+
+
+class TestCrate(models.Model):
+    _name = "test.crate"
+    _inherits = {"test.unit": "unit_id"}
+    _inherits_shared_id = "unit_id"
+    _description = "Test Crate"
+
+    unit_id = fields.Many2one(
+        comodel_name="test.unit",
+        required=True,
+        ondelete="cascade",
+    )
+    label = fields.Char()

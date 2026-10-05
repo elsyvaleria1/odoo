@@ -89,14 +89,20 @@ class _PostgresWriteMixin:
             copy_rows = self._prepare_insert_rows(
                 model, stored_list, columns, col_fields
             )
+            # a row handed its id (one sharing its parent's) is not given another
+            given_ids = "id" in columns
             batch_ids = cr.copy_from(
                 model._table,
                 columns,
                 copy_rows,
-                returning_ids=True,
+                returning_ids=not given_ids,
                 binary=True,
             )
-            ids.extend(batch_ids or ())
+            ids.extend(
+                [stored["id"] for stored in stored_list]
+                if given_ids
+                else batch_ids or ()
+            )
             subprof.stop()
             subprof.report(
                 _orm_crud,

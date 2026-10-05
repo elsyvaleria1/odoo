@@ -209,6 +209,18 @@ written under it too (`_inherits_sudo_fields`, both directions). Plan of record:
 `agromarin-knowledge/plans/2026-09-19-company-tenant-party-architecture.md` (the
 integration audit that preceded it is no longer in the vault).
 
+### A row that extends its parent's
+
+A delegation normally gives the child an id of its own beside the link to its parent. A model
+that sets `_inherits_shared_id = "<link>"` is its parent's row extended instead (class-table
+inheritance): create inserts it with the id of the parent created or named for it, the registry
+adds `CHECK (id = <link>)`, and the link must cascade. One id names both, so a reference to the
+child is a reference to its parent; `_get_reference_model_name()` returns the parent's, which
+files the child's messages, followers and attachments under the parent; unlinking the child
+unlinks its parent, and the parent's delete cascades to the child's row. Unlike a
+table-inheritance tree (`mixin.table.inheritance.root`), every foreign key to the parent and to
+the child stays enforced by PostgreSQL. `test_inherits`' `test.crate` pins it.
+
 ## Lifecycle and the operations that cross stores
 
 | Operation | Crosses |

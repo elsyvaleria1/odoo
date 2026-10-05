@@ -611,18 +611,20 @@ def _add_table_objects(model_cls: type[BaseModel]) -> None:
             f"Model {model_cls._name!r}: registry class must not own "
             f"table-object definitions"
         )
-    set_class_attr(
-        model_cls,
-        "_table_objects",
-        frozendict(
-            {
-                cons.get_full_name(model_cls): cons
-                for cls in reversed(model_cls._model_classes__)
-                if isinstance(cls, models.MetaModel)
-                for cons in cls._table_object_definitions
-            }
-        ),
-    )
+    table_objects = {
+        cons.get_full_name(model_cls): cons
+        for cls in reversed(model_cls._model_classes__)
+        if isinstance(cls, models.MetaModel)
+        for cons in cls._table_object_definitions
+    }
+    if shared := model_cls._inherits_shared_id:
+        cons = models.Constraint(
+            f"CHECK(id = {shared})",
+            f"A record shares its id with its {shared}: neither changes.",
+        )
+        cons.name = "inherits_shared_id"
+        table_objects[cons.get_full_name(model_cls)] = cons
+    set_class_attr(model_cls, "_table_objects", frozendict(table_objects))
     if _debug.pipeline.enabled and model_cls._table_objects:
         _debug.pipeline(
             "registration.table_objects_collected",
@@ -648,6 +650,18 @@ def _check_inherits(model_cls: type[BaseModel]) -> None:
                 f"Field definition for _inherits reference {field_name!r} in {model_cls._name!r} "
                 "must be marked as 'delegate', 'required' with ondelete='cascade' or 'restrict'"
             )
+    shared = model_cls._inherits_shared_id
+    if not shared:
+        return
+    if shared not in model_cls._inherits.values():
+        raise TypeError(
+            f"_inherits_shared_id {shared!r} in {model_cls._name!r} names no _inherits reference"
+        )
+    if (model_cls._fields[shared].ondelete or "").lower() != "cascade":
+        raise TypeError(
+            f"_inherits reference {shared!r} in {model_cls._name!r} shares the record's id, "
+            "so deleting its parent deletes the record: it must be ondelete='cascade'"
+        )
 
 
 def _add_inherited_fields(model_cls: type[BaseModel]) -> None:

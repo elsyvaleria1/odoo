@@ -60,6 +60,9 @@ class _ModelMetadataMixin(_ModelStubs):
     _display_name_search_default: bool = False
     _display_name_search_exact: tuple[str, ...] = ()
     _inherits_sudo_fields: tuple[str, ...] = ()
+    # the `_inherits` field whose value is the record's own id: the row
+    # extends its parent's and is keyed by it (class-table inheritance)
+    _inherits_shared_id: str = ""
     _inherits_rules: bool = True
     _access_anchors: frozendict[str, str | Anchor] = frozendict()
     _access_audit: bool = False
@@ -136,5 +139,14 @@ class _ModelMetadataMixin(_ModelStubs):
         records for this model's rows. A model is its own reference; a member
         of a table-inheritance tree overrides this with its root, because a
         message, a follower or an attachment belongs to the row, whichever
-        model the row was read through."""
+        model the row was read through. A model sharing its parent's id is its
+        parent's row extended, so it references through its parent."""
+        if parent := self._get_inherits_shared_parent():
+            return self.env[parent]._get_reference_model_name()
         return self._name
+
+    def _get_inherits_shared_parent(self) -> str:
+        for parent, field_name in self._inherits.items():
+            if field_name == self._inherits_shared_id:
+                return parent
+        return ""
