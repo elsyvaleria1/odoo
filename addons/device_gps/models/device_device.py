@@ -39,20 +39,19 @@ class DeviceDevice(models.Model):
         )
 
     @api.model
-    def _gps_timezone_query(self, target=True):
-        """One timezone per device, usable by reports without business joins."""
+    def _gps_timezone_query(self):
+        """One timezone per device, its company's, usable by reports without
+        business joins."""
         return SQL(
             """
             SELECT d.id AS device_id,
-                   COALESCE(%s, p.tz, calendar.tz, 'UTC') AS tz
+                   COALESCE(p.tz, calendar.tz, 'UTC') AS tz
               FROM device_device d
-              LEFT JOIN resource_resource r ON r.gps_device_id = d.id
               LEFT JOIN res_company c ON c.id = d.company_id
               LEFT JOIN res_partner p ON p.id = c.partner_id
               LEFT JOIN resource_config config ON config.company_id = c.id
               LEFT JOIN resource_calendar calendar ON calendar.id = config.resource_calendar_id
-        """,
-            SQL("r.tz") if target else SQL("NULL"),
+        """
         )
 
     tracked_resource_id = fields.One2one(

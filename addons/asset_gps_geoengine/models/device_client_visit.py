@@ -135,7 +135,7 @@ class DeviceClientVisit(models.Model):
                 binding=self.env["resource.gps.binding"]._at_query(
                     SQL("v.device_id"), SQL("v.arrival")
                 ),
-                timezones=self.env["device.device"]._gps_timezone_query(target=False),
+                timezones=self.env["device.device"]._gps_timezone_query(),
             )
         )
         return {

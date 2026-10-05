@@ -152,9 +152,7 @@ class DeviceGpsSpeedDay(models.Model):
                 binding_query=self.env["resource.gps.binding"]._at_query(
                     SQL("l.device_id"), SQL("l.timestamp")
                 ),
-                device_timezones=self.env["device.device"]._gps_timezone_query(
-                    target=False
-                ),
+                device_timezones=self.env["device.device"]._gps_timezone_query(),
                 moving=MOVING_MIN_KMH,
             )
         )

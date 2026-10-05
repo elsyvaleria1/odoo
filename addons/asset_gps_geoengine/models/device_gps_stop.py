@@ -600,9 +600,7 @@ class DeviceGpsStop(models.Model):
            ) s ON TRUE
      WHERE k.duration_hours * 60 >= %(min_stop)s
                 """,
-                device_timezones=self.env["device.device"]._gps_timezone_query(
-                    target=False
-                ),
+                device_timezones=self.env["device.device"]._gps_timezone_query(),
                 position_binding=self.env["resource.gps.binding"]._at_query(
                     SQL("l.device_id"), SQL("l.timestamp")
                 ),

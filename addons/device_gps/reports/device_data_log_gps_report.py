@@ -651,9 +651,7 @@ class DeviceDataLogGpsReport(models.Model):
             binding_query=self.env["resource.gps.binding"]._at_query(
                 SQL("log.device_id"), SQL("log.timestamp")
             ),
-            device_timezones=self.env["device.device"]._gps_timezone_query(
-                target=False
-            ),
+            device_timezones=self.env["device.device"]._gps_timezone_query(),
             source=self._rolling_source_sql(),
             threshold=self._GPS_DRIFT_THRESHOLD_KM,
             max_gap=self._GPS_MAX_GAP_SECONDS,
