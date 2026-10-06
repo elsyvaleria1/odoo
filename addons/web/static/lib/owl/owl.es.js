@@ -1,28 +1,35 @@
 // ../owl-runtime/src/version.ts
 var version = "3.0.0-alpha.49";
 
-// ../owl-core/dist/owl-core.es.js
+// ../owl-core/src/owl_error.ts
 var OwlError = class extends Error {
-  cause;
 };
+
+// ../owl-core/src/status.ts
 var STATUS = {
   NEW: 0,
   MOUNTED: 1,
   // is ready, and in DOM. It has a valid el
   DESTROYED: 2
 };
+
+// ../owl-core/src/batched.ts
 function batched(callback) {
-  let scheduled = false;
+  let latestArgs = null;
   return function batchedCall(...args) {
+    const scheduled = latestArgs !== null;
+    latestArgs = args;
     if (!scheduled) {
-      scheduled = true;
       Promise.resolve().then(() => {
-        scheduled = false;
-        callback(...args);
+        const args2 = latestArgs;
+        latestArgs = null;
+        callback(...args2);
       });
     }
   };
 }
+
+// ../owl-core/src/debug.ts
 var DEBUG_CHANNELS = [
   "reactivity",
   "effect",
@@ -75,6 +82,8 @@ function debugNow() {
 function debugLog(channel, message, ...details) {
   sink(channel, message, details);
 }
+
+// ../owl-core/src/computations.ts
 function neverEqual() {
   return false;
 }
@@ -85,22 +94,8 @@ function toEqualsFn(equals) {
   if (!equals) {
     return Object.is;
   }
-  return (a, b) => {
-    const previousComputation = currentComputation;
-    currentComputation = void 0;
-    try {
-      return equals(a, b);
-    } finally {
-      currentComputation = previousComputation;
-    }
-  };
+  return (a, b) => untrack(() => equals(a, b));
 }
-var ComputationState = /* @__PURE__ */ ((ComputationState2) => {
-  ComputationState2[ComputationState2["EXECUTED"] = 0] = "EXECUTED";
-  ComputationState2[ComputationState2["STALE"] = 1] = "STALE";
-  ComputationState2[ComputationState2["PENDING"] = 2] = "PENDING";
-  return ComputationState2;
-})(ComputationState || {});
 var Link = class {
   dep;
   sub;
@@ -114,7 +109,8 @@ var Link = class {
   // what dep.activeLink pointed at before this run pointed it here
   rollback;
   // dep's value when sub read it: a signal written back to that value since
-  // (a write and its revert in one batch) has not changed for sub
+  // (a write and its revert in one batch) has not changed for sub. Nothing for
+  // a derived dep, whose recompute notifies sub itself.
   seen;
   constructor(dep, sub, version2, prevDep, nextDep, prevSub, rollback) {
     this.dep = dep;
@@ -125,9 +121,12 @@ var Link = class {
     this.prevSub = prevSub;
     this.nextSub = void 0;
     this.rollback = rollback;
-    this.seen = dep.value;
+    this.seen = seenValue(dep);
   }
 };
+function seenValue(dep) {
+  return dep.isDerived ? void 0 : dep.value;
+}
 var DEAD = -1;
 function createAtom(value, type) {
   return { type, value, subs: void 0, subsTail: void 0, activeLink: void 0 };
@@ -144,13 +143,14 @@ function hasObservers(atom) {
   return false;
 }
 var atomSymbol = /* @__PURE__ */ Symbol("Atom");
-var computationScopes = /* @__PURE__ */ new WeakMap();
+var scopeStack = [];
+var currentOwner;
 var observers = [];
 var immediateObservers = [];
 var currentComputation;
 var pendingDisposals = /* @__PURE__ */ new Set();
-var invalidations = 0;
-function createComputation(compute, isDerived, state = 1, immediate = false, name = "") {
+var graphWalk = [];
+function createComputation(compute, isDerived, state = 1 /* STALE */, immediate = false, name = "") {
   return {
     value: void 0,
     subs: void 0,
@@ -171,6 +171,8 @@ function createComputation(compute, isDerived, state = 1, immediate = false, nam
     owner: null,
     isEffect: false,
     running: false,
+    ownerDepth: 0,
+    forward: false,
     name
   };
 }
@@ -231,7 +233,7 @@ function track(dep, sub, tail) {
   if (next !== void 0) {
     if (next.dep === dep) {
       next.version = version2;
-      next.seen = dep.value;
+      next.seen = seenValue(dep);
       next.rollback = active;
       dep.activeLink = next;
       sub.depsTail = next;
@@ -268,7 +270,7 @@ function track(dep, sub, tail) {
 }
 function reuse(link, sub, tail, version2) {
   link.version = version2;
-  link.seen = link.dep.value;
+  link.seen = seenValue(link.dep);
   const next = tail !== void 0 ? tail.nextDep : sub.deps;
   if (link !== next) {
     const prevDep = link.prevDep;
@@ -333,11 +335,11 @@ function onWriteAtom(atom, comparable = false) {
   }
   for (let link = atom.subs; link !== void 0; link = link.nextSub) {
     const ctx = link.sub;
-    if (ctx.state === 0) {
+    const state = ctx.state;
+    if (state === 0 /* EXECUTED */ || ctx.forward) {
       if (link.version !== ctx.version) {
         continue;
       }
-      invalidations++;
       if (ctx.isDerived) {
         markDownstream(ctx);
       } else if (ctx.immediate) {
@@ -345,8 +347,13 @@ function onWriteAtom(atom, comparable = false) {
       } else {
         observers.push(ctx);
       }
+    } else if (state === 3 /* RUNNING */) {
+      if (link.version !== ctx.version) {
+        continue;
+      }
+      invalidatedWhileRunning(ctx);
     }
-    ctx.state = comparable && ctx.state !== 1 && !ctx.notifiesWithoutRecompute ? 2 : 1;
+    ctx.state = comparable && ctx.state !== 1 /* STALE */ && !ctx.notifiesWithoutRecompute ? 2 /* PENDING */ : 1 /* STALE */;
     if (ctx.isDerived && ctx.subs === void 0) {
       pendingDisposals.add(ctx);
     }
@@ -400,9 +407,12 @@ function updateEach(computations) {
   return errors;
 }
 function updateOwnerFirst(computation) {
+  if (computation.state === 0 /* EXECUTED */) {
+    return;
+  }
   let first = null;
   for (let owner = computation.owner; owner !== null; owner = owner.owner) {
-    if (owner.state !== 0 && !owner.running && owner.immediate === computation.immediate) {
+    if (owner.state !== 0 /* EXECUTED */ && !owner.running && (owner.isDerived || owner.immediate === computation.immediate)) {
       first = owner;
     }
   }
@@ -438,7 +448,7 @@ function processEffects() {
       pending.map((c) => c.name)
     );
   }
-  const errors = updateEach(pending);
+  let errors = updateEach(pending);
   if (pendingDisposals.size !== 0) {
     const candidates = pendingDisposals;
     pendingDisposals = /* @__PURE__ */ new Set();
@@ -447,7 +457,11 @@ function processEffects() {
         if (debug.computed) {
           debugLog("computed", `dispose unobserved ${computation.name}`);
         }
-        disposeComputation(computation);
+        try {
+          disposeComputation(computation);
+        } catch (error) {
+          (errors ||= []).push(error);
+        }
       }
     }
   }
@@ -461,76 +475,137 @@ function setComputation(computation) {
 }
 function updateComputation(computation) {
   const state = computation.state;
-  if (state === 0) {
+  if (state === 0 /* EXECUTED */) {
     return;
   }
-  if (state === 2) {
-    for (let link = computation.deps; link !== void 0; link = link.nextDep) {
-      const source = link.dep;
-      if (!source.isDerived) {
-        if (!Object.is(link.seen, source.value)) {
-          computation.state = 1;
+  if (computation.running) {
+    if (debug.error) {
+      debugLog("error", `cycle: ${computation.name} read while it runs`);
+    }
+    throw new OwlError(
+      `Cycle detected: ${computation.name || "a computation"} reads its own value`
+    );
+  }
+  if (state === 2 /* PENDING */) {
+    try {
+      for (let link = computation.deps; link !== void 0; link = link.nextDep) {
+        const source = link.dep;
+        if (!source.isDerived) {
+          if (!Object.is(link.seen, source.value)) {
+            computation.state = 1 /* STALE */;
+            break;
+          }
+          continue;
+        }
+        updateComputation(source);
+        if (computation.state === 1 /* STALE */) {
           break;
         }
-        continue;
       }
-      updateComputation(source);
-      if (computation.state === 1) {
-        break;
+    } catch (error) {
+      if (debug.error) {
+        debugLog("error", `${computation.name}: a source threw while it was checked`, error);
       }
+      computation.state = 0 /* EXECUTED */;
+      computation.forward = false;
+      throw error;
     }
-    if (computation.state !== 1) {
-      computation.state = 0;
+    if (computation.state !== 1 /* STALE */) {
+      computation.state = 0 /* EXECUTED */;
+      computation.forward = false;
       return;
     }
   }
-  const invalidationsBefore = invalidations;
+  computation.state = 3 /* RUNNING */;
+  computation.forward = false;
   computation.running = true;
   if (computation.isEffect ? debug.effect : computation.isDerived && debug.computed) {
     debugLog(computation.isEffect ? "effect" : "computed", `run ${computation.name}`);
   }
+  let releaseFailure = null;
   try {
+    if (computation.owned !== null && !computation.isEffect && !computation.tracksElsewhere) {
+      releaseFailure = releaseOwned(computation, "runs again");
+    }
     computation.value = computation.tracksElsewhere ? detachAndRun(computation) : runTracked(computation, computation.compute);
   } catch (error) {
     if (debug.error) {
       debugLog("error", `${computation.name} threw`, error);
     }
+    if (releaseFailure) {
+      Promise.reject(releaseFailure.error);
+    }
     throw error;
   } finally {
     computation.running = false;
-    try {
-      if (invalidations !== invalidationsBefore) {
-        settleDerivedSources(computation);
-      }
-    } finally {
-      computation.state = 0;
+    if (computation.state === 3 /* RUNNING */) {
+      computation.state = 0 /* EXECUTED */;
+    } else {
+      endInvalidatedRun(computation);
     }
+  }
+  if (releaseFailure) {
+    if (computation.isDerived) {
+      Promise.reject(releaseFailure.error);
+    } else {
+      throw releaseFailure.error;
+    }
+  }
+}
+function releaseOwned(computation, why) {
+  if (debug.effect) {
+    debugLog(
+      "effect",
+      `${computation.name} ${why}: dispose ${computation.owned.size} effect(s) it created`
+    );
+  }
+  try {
+    runUnowned(disposeOwned, computation);
+    return null;
+  } catch (error) {
+    return { error };
   }
 }
 function detachAndRun(computation) {
   computation.version++;
-  const previousComputation = currentComputation;
-  const previousObserver = currentObserver;
-  currentComputation = void 0;
-  currentObserver = void 0;
-  try {
-    return computation.compute();
-  } finally {
-    currentComputation = previousComputation;
-    currentObserver = previousObserver;
+  return runUnowned(computation.compute, void 0);
+}
+function forwardThrough(computation) {
+  computation.forward = false;
+  if (debug.reactivity) {
+    debugLog("reactivity", `forward through ${computation.name}`);
   }
 }
-function settleDerivedSources(computation) {
-  for (let link = computation.deps; link !== void 0; link = link.nextDep) {
-    const source = link.dep;
-    if (source.isDerived && source.state) {
-      if (debug.computed) {
-        debugLog(
-          "computed",
-          `settle ${source.name}, invalidated by ${computation.name}`
-        );
+function invalidatedWhileRunning(computation) {
+  if (debug.reactivity) {
+    debugLog("reactivity", `${computation.name} invalidated by a write during its run`);
+  }
+}
+function endInvalidatedRun(computation) {
+  if (computation.isDerived) {
+    computation.forward = true;
+    if (debug.computed) {
+      debugLog("computed", `${computation.name} ends out of date, a write reached it while it ran`);
+    }
+  } else {
+    computation.state = 0 /* EXECUTED */;
+  }
+  const stack = graphWalk;
+  stack.push(computation);
+  let current;
+  while (current = stack.pop()) {
+    for (let link = current.deps; link !== void 0; link = link.nextDep) {
+      const source = link.dep;
+      if (source.isDerived && source.state !== 0 /* EXECUTED */ && !source.forward) {
+        if (debug.reactivity) {
+          debugLog(
+            "reactivity",
+            `${source.name} forwards the next write, ${computation.name} read it`
+          );
+        }
+        source.forward = true;
+        stack.push(source);
       }
-      updateComputation(source);
     }
   }
 }
@@ -538,6 +613,7 @@ function runTracked(computation, fn) {
   const previousComputation = currentComputation;
   const previousObserver = currentObserver;
   computation.version++;
+  computation.ownerDepth = scopeStack.length;
   computation.depsTail = void 0;
   computation.prepared = false;
   currentComputation = computation;
@@ -549,6 +625,10 @@ function runTracked(computation, fn) {
     currentObserver = previousObserver;
     endTracking(computation);
   }
+}
+function getOwner() {
+  const owner = currentComputation ?? currentOwner;
+  return owner !== void 0 && owner.ownerDepth === scopeStack.length ? owner : void 0;
 }
 function endTracking(computation) {
   const tail = computation.depsTail;
@@ -583,36 +663,38 @@ function removeSources(computation) {
   computation.deps = void 0;
   computation.depsTail = void 0;
   computation.observed = null;
-  while (link !== void 0) {
-    const next = link.nextDep;
-    unlinkSub(link);
-    link = next;
-  }
-}
-function disposeComputation(computation) {
-  let link = computation.deps;
-  computation.deps = void 0;
-  computation.depsTail = void 0;
-  computation.observed = null;
   let failure = null;
   while (link !== void 0) {
     const next = link.nextDep;
     unlinkSub(link);
-    const derived = link.dep;
-    if (derived.isDerived && !hasObservers(derived)) {
+    const source = link.dep;
+    if (source.isDerived && !source.running && !hasObservers(source)) {
+      if (debug.computed) {
+        debugLog("computed", `dispose ${source.name}, ${computation.name} was its last observer`);
+      }
       try {
-        disposeComputation(derived);
+        disposeComputation(source);
       } catch (error) {
         failure ||= { error };
       }
     }
     link = next;
   }
-  computation.state = 1;
+  if (failure) {
+    throw failure.error;
+  }
+}
+function disposeComputation(computation) {
+  let failure = null;
   try {
-    disposeOwned(computation);
+    removeSources(computation);
   } catch (error) {
-    failure ||= { error };
+    failure = { error };
+  }
+  computation.state = computation.isDerived ? 1 /* STALE */ : 0 /* EXECUTED */;
+  if (computation.owned !== null) {
+    const releaseFailure = releaseOwned(computation, "is disposed");
+    failure ||= releaseFailure;
   }
   if (failure) {
     throw failure.error;
@@ -636,9 +718,11 @@ function disposeOwned(computation) {
     throw failure.error;
   }
 }
-var downstream = [];
 function markDownstream(computation) {
-  const stack = downstream;
+  const stack = graphWalk;
+  if (computation.forward) {
+    forwardThrough(computation);
+  }
   stack.push(computation);
   let current;
   while (current = stack.pop()) {
@@ -647,10 +731,21 @@ function markDownstream(computation) {
       if (observer.isDerived && observer.subs === void 0) {
         pendingDisposals.add(observer);
       }
-      if (observer.state || link.version !== observer.version) {
+      if (link.version !== observer.version) {
         continue;
       }
-      observer.state = observer.notifiesWithoutRecompute ? 1 : 2;
+      const state = observer.state;
+      if (state !== 0 /* EXECUTED */) {
+        if (observer.forward) {
+          forwardThrough(observer);
+          stack.push(observer);
+        } else if (state === 3 /* RUNNING */) {
+          invalidatedWhileRunning(observer);
+          observer.state = observer.notifiesWithoutRecompute ? 1 /* STALE */ : 2 /* PENDING */;
+        }
+        continue;
+      }
+      observer.state = observer.notifiesWithoutRecompute ? 1 /* STALE */ : 2 /* PENDING */;
       if (observer.isDerived) {
         stack.push(observer);
       } else if (observer.immediate) {
@@ -663,14 +758,44 @@ function markDownstream(computation) {
 }
 function untrack(fn) {
   const previousComputation = currentComputation;
+  const previousObserver = currentObserver;
+  if (previousComputation === void 0) {
+    if (previousObserver === void 0) {
+      return fn();
+    }
+    currentObserver = void 0;
+    try {
+      return fn();
+    } finally {
+      currentObserver = previousObserver;
+    }
+  }
+  const previousOwner = currentOwner;
+  currentOwner = previousComputation;
   currentComputation = void 0;
-  let result;
+  currentObserver = void 0;
   try {
-    result = fn();
+    return fn();
   } finally {
     currentComputation = previousComputation;
+    currentObserver = previousObserver;
+    currentOwner = previousOwner;
   }
-  return result;
+}
+function runUnowned(fn, arg) {
+  const previousComputation = currentComputation;
+  const previousObserver = currentObserver;
+  const previousOwner = currentOwner;
+  currentComputation = void 0;
+  currentObserver = void 0;
+  currentOwner = void 0;
+  try {
+    return fn(arg);
+  } finally {
+    currentComputation = previousComputation;
+    currentObserver = previousObserver;
+    currentOwner = previousOwner;
+  }
 }
 function observerNames(atom) {
   const names = [];
@@ -679,7 +804,9 @@ function observerNames(atom) {
   }
   return names;
 }
-var scopeStack = [];
+
+// ../owl-core/src/scope.ts
+var scopeStack2 = scopeStack;
 function runReversed(cbs, reportError) {
   for (let i = cbs.length - 1; i >= 0; i--) {
     try {
@@ -731,12 +858,12 @@ var Scope = class {
     if (this.status > STATUS.MOUNTED) {
       throw new OwlError("Cannot run a callback in a destroyed scope");
     }
-    scopeStack.push(this);
+    scopeStack2.push(this);
     let result;
     try {
       result = fn(...args);
     } finally {
-      scopeStack.pop();
+      scopeStack2.pop();
     }
     if (result !== null && typeof result?.then === "function") {
       return this._guard(result);
@@ -830,8 +957,11 @@ var Scope = class {
         runReversed(cbs, reportError);
       }
     } finally {
-      disposeUnobserved(this.computations.splice(0));
-      this.status = STATUS.DESTROYED;
+      try {
+        disposeUnobserved(this.computations.splice(0), reportError);
+      } finally {
+        this.status = STATUS.DESTROYED;
+      }
     }
   }
   /**
@@ -856,7 +986,7 @@ var Scope = class {
     if (this._destroyCbs) {
       runReversed(this._destroyCbs.splice(mark[1]), reportError);
     }
-    disposeUnobserved(this.computations.splice(mark[2]));
+    disposeUnobserved(this.computations.splice(mark[2]), reportError);
   }
   /**
    * Wrapper applied to lifecycle callbacks before they are stored. The base
@@ -870,16 +1000,20 @@ var Scope = class {
     return fn.bind(void 0, this);
   }
 };
-function disposeUnobserved(computations) {
+function disposeUnobserved(computations, reportError) {
   for (const computation of computations) {
     if (!hasObservers(computation)) {
-      disposeComputation(computation);
+      try {
+        disposeComputation(computation);
+      } catch (error) {
+        reportError(error);
+      }
     }
   }
 }
 function getScope() {
-  const len = scopeStack.length;
-  return len ? scopeStack[len - 1] : null;
+  const len = scopeStack2.length;
+  return len ? scopeStack2[len - 1] : null;
 }
 function isAbortError(e) {
   return typeof e === "object" && e !== null && e.name === "AbortError";
@@ -892,7 +1026,10 @@ function makeAbortError(cause) {
 function scopeName(scope) {
   return scope.componentName ?? scope.constructor.name;
 }
-var KEYCHANGES = /* @__PURE__ */ Symbol("Key changes");
+
+// ../owl-core/src/proxy.ts
+var KEYCHANGES = /* @__PURE__ */ Symbol("(keys)");
+var ITEMS = /* @__PURE__ */ Symbol("items");
 var objectToString = Object.prototype.toString;
 var objectHasOwnProperty = Object.prototype.hasOwnProperty;
 function canBeMadeReactive(value) {
@@ -900,63 +1037,124 @@ function canBeMadeReactive(value) {
     return false;
   }
   const raw = toRaw(value);
-  if (Array.isArray(raw) || raw instanceof Set || raw instanceof Map || raw instanceof WeakMap) {
-    return true;
-  }
-  return objectToString.call(raw) === "[object Object]";
+  return Array.isArray(raw) || collectionMethods(raw) !== null || objectToString.call(raw) === "[object Object]";
 }
-function possiblyReactive(val, shallow) {
-  return !shallow && canBeMadeReactive(val) ? proxy(val) : val;
+function reactiveValue(value, shallow) {
+  if (shallow || typeof value !== "object" || value === null) {
+    return value;
+  }
+  const reactive = deepProxies.get(value);
+  if (reactive ? isMarkedRaw(value) : !canBeMadeReactive(value)) {
+    return value;
+  }
+  return reactive ?? proxifyTarget(value, false);
 }
 var skipped = /* @__PURE__ */ new WeakSet();
+var rawPrototypes = /* @__PURE__ */ new WeakSet();
+var hasRawPrototypes = false;
+var builtinPrototypes = /* @__PURE__ */ new Set([
+  Object.prototype,
+  Array.prototype,
+  Map.prototype,
+  Set.prototype,
+  WeakMap.prototype,
+  Function.prototype
+]);
 function markRaw(value) {
-  skipped.add(value);
+  const raw = toRaw(value);
+  if (builtinPrototypes.has(raw)) {
+    throw new OwlError(
+      `markRaw(${raw.constructor.name}.prototype) would leave every ${raw.constructor.name} unobserved: mark the objects themselves, or the prototype of a class of your own`
+    );
+  }
+  skipped.add(raw);
+  if (isClassPrototype(raw)) {
+    rawPrototypes.add(raw);
+    hasRawPrototypes = true;
+  }
   return value;
 }
+function isClassPrototype(value) {
+  return objectHasOwnProperty.call(value, "constructor") && typeof value.constructor === "function" && value.constructor.prototype === value;
+}
+function isMarkedRaw(target) {
+  if (skipped.has(target)) {
+    return true;
+  }
+  if (hasRawPrototypes) {
+    for (let proto = Object.getPrototypeOf(target); proto; proto = Object.getPrototypeOf(proto)) {
+      if (rawPrototypes.has(proto)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function isLocked(target, key) {
+  const desc = Reflect.getOwnPropertyDescriptor(target, key);
+  return desc !== void 0 && desc.configurable === false && desc.writable === false;
+}
+var PRIVATE_MEMBER_ERROR = /^(?:Cannot (?:read|write) private member (#\S+)|Receiver must be an instance of class (\S+)|can't access private field or method|Cannot access invalid private field \(evaluating '[^']*?(#[\w$]+))/;
+function privateMemberError(error, target, key) {
+  const match = error instanceof TypeError && PRIVATE_MEMBER_ERROR.exec(error.message);
+  if (!match || !declaresMember(target, match[1] ?? match[3], match[2])) {
+    return error;
+  }
+  const name = target.constructor?.name || "TheClass";
+  return new OwlError(
+    `Cannot reach "${String(key)}" of a ${name} through a reactive proxy: ${match.input}. A proxy has no private members: mark the class raw with markRaw(${name}.prototype)`,
+    { cause: error }
+  );
+}
+function declaresMember(target, member, className) {
+  if (member === void 0 && className === void 0) {
+    return true;
+  }
+  for (let proto = Object.getPrototypeOf(target); proto; proto = Object.getPrototypeOf(proto)) {
+    const ctor = objectHasOwnProperty.call(proto, "constructor") ? proto.constructor : void 0;
+    if (typeof ctor === "function" && (className !== void 0 ? ctor.name === className : Function.prototype.toString.call(ctor).match(PRIVATE_NAMES)?.includes(member))) {
+      return true;
+    }
+  }
+  return false;
+}
+var PRIVATE_NAMES = /#[\p{ID_Continue}$\u200c\u200d]+/gu;
 function toRaw(value) {
-  return targets.has(value) ? targets.get(value) : value;
+  return targets.get(value) ?? value;
 }
 var itemAtoms = { keys: /* @__PURE__ */ new WeakMap(), objectKeys: /* @__PURE__ */ new WeakMap() };
 var presenceAtoms = { keys: /* @__PURE__ */ new WeakMap(), objectKeys: /* @__PURE__ */ new WeakMap() };
+var allAtoms = [itemAtoms, presenceAtoms];
 function isObjectKey(key) {
   return typeof key === "object" && key !== null || typeof key === "function";
 }
-function getTargetKeyAtom(target, key, atoms = itemAtoms) {
-  if (isObjectKey(key)) {
-    let table2 = atoms.objectKeys.get(target);
-    if (table2 === void 0) {
-      table2 = /* @__PURE__ */ new WeakMap();
-      atoms.objectKeys.set(target, table2);
-    }
-    let atom2 = table2.get(key);
-    if (atom2 === void 0) {
-      atom2 = createAtom(void 0, "key");
-      table2.set(key, atom2);
-    }
-    return atom2;
-  }
-  const table = getKeyAtoms(target, atoms);
-  let atom = table.get(key);
-  if (atom === void 0) {
-    atom = createAtom(void 0, "key");
-    table.set(key, atom);
-  }
-  return atom;
+function tablesOf(atoms, key) {
+  return isObjectKey(key) ? atoms.objectKeys : atoms.keys;
 }
-function getKeyAtoms(target, atoms) {
-  let table = atoms.keys.get(target);
+function keyTable(target, key, atoms) {
+  const tables = tablesOf(atoms, key);
+  let table = tables.get(target);
   if (table === void 0) {
-    table = /* @__PURE__ */ new Map();
-    atoms.keys.set(target, table);
+    tables.set(target, table = isObjectKey(key) ? /* @__PURE__ */ new WeakMap() : /* @__PURE__ */ new Map());
   }
   return table;
 }
-function findAtom(target, key, atoms) {
-  return isObjectKey(key) ? atoms.objectKeys.get(target)?.get(key) : atoms.keys.get(target)?.get(key);
+function atomOf(table, key) {
+  let atom = table.get(key);
+  if (atom === void 0) {
+    table.set(key, atom = createAtom(void 0, "key"));
+  }
+  return atom;
 }
-function onReadTargetKey(target, key) {
+function findAtom(target, key, atoms) {
+  return tablesOf(atoms, key).get(target)?.get(key);
+}
+function onReadTargetKey(target, key, atoms = itemAtoms) {
   if (isObserving()) {
-    onReadAtom(getTargetKeyAtom(target, key));
+    if (debug.reactivity) {
+      debugRead(target, key, atoms);
+    }
+    onReadAtom(atomOf(keyTable(target, key, atoms), key));
   }
 }
 function onWriteTargetKey(target, key, atoms = itemAtoms) {
@@ -969,46 +1167,43 @@ function onWriteTargetKey(target, key, atoms = itemAtoms) {
   }
 }
 function describeKey(key) {
-  return key === KEYCHANGES ? "(keys)" : String(key);
+  return key === KEYCHANGES || key === ITEMS ? key.description : String(key);
 }
-function onReadKeyPresence(target, key) {
-  if (isObserving()) {
-    onReadAtom(getTargetKeyAtom(target, key, presenceAtoms));
-  }
+function debugRead(target, key, atoms) {
+  const reader = getCurrentComputation();
+  const what = atoms === presenceAtoms ? `presence of ${String(key)}` : describeKey(key);
+  debugLog(
+    "reactivity",
+    `proxy read ${what} by ${reader ? reader.name || "a computation" : "an observe() view"}`,
+    target
+  );
 }
 function onWriteKeyPresence(target, key) {
   onWriteTargetKey(target, KEYCHANGES);
   onWriteTargetKey(target, key, presenceAtoms);
 }
 function releaseKey(target, key) {
-  releaseKeyAtom(target, key, itemAtoms);
-  releaseKeyAtom(target, key, presenceAtoms);
-}
-function releaseKeyAtom(target, key, atoms) {
-  const atom = findAtom(target, key, atoms);
-  if (atom !== void 0 && !hasObservers(atom)) {
-    if (isObjectKey(key)) {
-      atoms.objectKeys.get(target).delete(key);
-    } else {
-      atoms.keys.get(target).delete(key);
+  for (const atoms of allAtoms) {
+    const table = tablesOf(atoms, key).get(target);
+    const atom = table?.get(key);
+    if (atom !== void 0 && !hasObservers(atom)) {
+      table.delete(key);
     }
   }
 }
 function onWriteDroppedIndices(target, newLength, oldLength) {
-  onWriteDroppedIndicesIn(target, newLength, oldLength, itemAtoms);
-  onWriteDroppedIndicesIn(target, newLength, oldLength, presenceAtoms);
-}
-function onWriteDroppedIndicesIn(target, newLength, oldLength, atoms) {
-  const table = atoms.keys.get(target);
-  if (table !== void 0) {
-    if (oldLength - newLength <= table.size) {
-      for (let i = newLength; i < oldLength; i++) {
-        onWriteDroppedIndex(target, String(i), atoms);
-      }
-    } else {
-      for (const key of table.keys()) {
-        if (typeof key === "string" && isIndexIn(key, newLength, oldLength)) {
-          onWriteDroppedIndex(target, key, atoms);
+  for (const atoms of allAtoms) {
+    const table = atoms.keys.get(target);
+    if (table !== void 0) {
+      if (oldLength - newLength <= table.size) {
+        for (let i = newLength; i < oldLength; i++) {
+          onWriteDroppedIndex(target, String(i), atoms);
+        }
+      } else {
+        for (const key of table.keys()) {
+          if (typeof key === "string" && isIndexIn(key, newLength, oldLength)) {
+            onWriteDroppedIndex(target, key, atoms);
+          }
         }
       }
     }
@@ -1036,7 +1231,7 @@ function proxifyTarget(target, shallow) {
     }
     target = raw;
   }
-  if (skipped.has(target)) {
+  if (isMarkedRaw(target)) {
     return target;
   }
   const cache3 = shallow ? shallowProxies : deepProxies;
@@ -1044,16 +1239,8 @@ function proxifyTarget(target, shallow) {
   if (reactive) {
     return reactive;
   }
-  let handler;
-  if (target instanceof Map) {
-    handler = collectionsProxyHandler(target, "Map", shallow);
-  } else if (target instanceof Set) {
-    handler = collectionsProxyHandler(target, "Set", shallow);
-  } else if (target instanceof WeakMap) {
-    handler = collectionsProxyHandler(target, "WeakMap", shallow);
-  } else {
-    handler = new BasicHandler(shallow);
-  }
+  const methodKeys = collectionMethods(target);
+  const handler = methodKeys ? new CollectionHandler(methodKeys, shallow) : new BasicHandler(shallow);
   const proxy2 = new Proxy(target, handler);
   cache3.set(target, proxy2);
   targets.set(proxy2, target);
@@ -1067,32 +1254,48 @@ function observe(target, callback) {
   const computation = createComputation(
     () => untrack(callback),
     false,
-    0,
+    0 /* EXECUTED */,
     true,
     `observe ${callback.name || "callback"}`
   );
   computation.notifiesWithoutRecompute = true;
   const views = /* @__PURE__ */ new WeakMap();
   const read = (fn) => withObserver(computation, fn);
-  const wrap = (value) => typeof value === "object" && value !== null && targets.has(value) ? view(value) : value;
+  const wrap = (value) => targets.has(value) ? view(value) : value;
   function view(target2) {
     const reactive = viewBases.get(target2) ?? target2;
-    let result = views.get(reactive);
-    if (result) {
-      return result;
+    const known = views.get(reactive);
+    if (known) {
+      return known;
     }
     const raw = toRaw(reactive);
-    const isCollection = raw instanceof Map || raw instanceof Set || raw instanceof WeakMap;
-    result = new Proxy(reactive, {
+    const methodKeys = collectionMethods(raw);
+    let methods;
+    const self = new Proxy(reactive, {
       get(r, key, receiver) {
         const value = read(() => Reflect.get(r, key, receiver));
-        if (isCollection && typeof value === "function") {
-          return (...args) => {
-            const result2 = read(() => value.apply(r, args));
-            return isIterator(result2) ? observedIterator(result2) : wrap(result2);
-          };
+        if (typeof value !== "function") {
+          const result = wrap(value);
+          return result !== value && isLocked(raw, key) ? value : result;
         }
-        return wrap(value);
+        if (!methodKeys?.has(key) && !viewReaders.has(value)) {
+          return value;
+        }
+        let method = (methods ??= /* @__PURE__ */ new Map()).get(value);
+        if (!method) {
+          methods.set(
+            value,
+            method = methodKeys && key === "forEach" ? (callback2, thisArg) => {
+              for (const [k, v] of self.entries()) {
+                callback2.call(thisArg, v, k, self);
+              }
+            } : (...args) => {
+              const result = read(() => value.apply(r, args));
+              return isIterator(result) ? observedIterator(result) : wrap(result);
+            }
+          );
+        }
+        return method;
       },
       has(r, key) {
         return read(() => Reflect.has(r, key));
@@ -1110,10 +1313,10 @@ function observe(target, callback) {
         return Reflect.deleteProperty(r, key);
       }
     });
-    views.set(reactive, result);
-    viewBases.set(result, reactive);
-    targets.set(result, raw);
-    return result;
+    views.set(reactive, self);
+    viewBases.set(self, reactive);
+    targets.set(self, raw);
+    return self;
   }
   function observedIterator(iterator) {
     return {
@@ -1143,91 +1346,105 @@ var BasicHandler = class {
     this.shallow = shallow;
     this.keyAtoms = void 0;
   }
+  // what the atoms of the target's own properties are keyed by: the target,
+  // or for a collection an object standing for its properties
+  host(target) {
+    return target;
+  }
   get(target, key, receiver) {
     if (isObserving()) {
-      let table = this.keyAtoms;
-      if (table === void 0) {
-        table = this.keyAtoms = getKeyAtoms(target, itemAtoms);
+      if (debug.reactivity) {
+        debugRead(target, key, itemAtoms);
       }
-      let atom = table.get(key);
-      if (atom === void 0) {
-        atom = createAtom(void 0, "key");
-        table.set(key, atom);
-      }
-      onReadAtom(atom);
+      onReadAtom(atomOf(this.keyAtoms ??= keyTable(this.host(target), key, itemAtoms), key));
     }
-    const value = Reflect.get(target, key, receiver);
+    let value;
+    try {
+      value = Reflect.get(target, key, receiver);
+    } catch (error) {
+      throw privateMemberError(error, target, key);
+    }
     if (typeof value === "function") {
-      return arrayMethods.get(value) ?? value;
+      return replacedMethods.get(value) ?? value;
     }
-    if (this.shallow || typeof value !== "object" || value === null) {
-      return value;
-    }
-    const reactive = deepProxies.get(value);
-    if (reactive ? skipped.has(value) : !canBeMadeReactive(value)) {
-      return value;
-    }
-    const desc = Object.getOwnPropertyDescriptor(target, key);
-    if (desc && !desc.writable && !desc.configurable) {
-      return value;
-    }
-    return reactive ?? proxifyTarget(value, false);
+    const result = reactiveValue(value, this.shallow);
+    return result !== value && isLocked(target, key) ? value : result;
   }
   set(target, key, value, receiver) {
-    return isObserving() ? untrack(() => writeKey(target, key, value, receiver)) : writeKey(target, key, value, receiver);
+    const shallow = this.shallow;
+    const atoms = this.host(target);
+    try {
+      return isObserving() ? untrack(() => writeKey(target, key, value, receiver, shallow, atoms)) : writeKey(target, key, value, receiver, shallow, atoms);
+    } catch (error) {
+      throw privateMemberError(error, target, key);
+    }
   }
   deleteProperty(target, key) {
     const hadKey = objectHasOwnProperty.call(target, key);
     const ret = Reflect.deleteProperty(target, key);
     if (hadKey && ret) {
-      onWriteKeyPresence(target, key);
-      onWriteTargetKey(target, key);
-      releaseKey(target, key);
-      if (Array.isArray(target)) {
-        onWriteItems(target);
-      }
+      batch(() => {
+        const atoms = this.host(target);
+        onWriteKeyPresence(atoms, key);
+        onWriteTargetKey(atoms, key);
+        releaseKey(atoms, key);
+        if (Array.isArray(target)) {
+          onWriteItems(target);
+        }
+      });
     }
     return ret;
   }
   ownKeys(target) {
-    onReadTargetKey(target, KEYCHANGES);
+    onReadTargetKey(this.host(target), KEYCHANGES);
     return Reflect.ownKeys(target);
   }
   has(target, key) {
-    onReadKeyPresence(target, key);
+    onReadTargetKey(this.host(target), key, presenceAtoms);
     return Reflect.has(target, key);
   }
 };
-function writeKey(target, key, value, receiver) {
-  const hadKey = objectHasOwnProperty.call(target, key);
-  const originalValue = Reflect.get(target, key, receiver);
+function writeKey(target, key, value, receiver, shallow, atoms) {
+  const stored = shallow ? value : toRaw(value);
+  const own = Reflect.getOwnPropertyDescriptor(target, key);
+  return own !== void 0 && "value" in own && !Array.isArray(target) ? write(target, key, stored, receiver, own, atoms) : batch(() => write(target, key, stored, receiver, own, atoms));
+}
+function write(target, key, stored, receiver, own, atoms) {
   const isArray2 = Array.isArray(target);
-  const originalLength = isArray2 ? target.length : 0;
-  const ret = Reflect.set(target, key, toRaw(value), receiver);
-  const created = !hadKey && objectHasOwnProperty.call(target, key);
-  if (created) {
-    onWriteKeyCreated(target, key, originalLength);
+  const length = isArray2 ? target.length : 0;
+  const before = own !== void 0 && "value" in own ? own.value : Reflect.get(target, key, receiver);
+  if (!Reflect.set(target, key, stored, receiver)) {
+    return false;
   }
-  if (key === "length" && isArray2) {
-    onWriteTargetKey(target, key);
-    if (target.length < originalValue) {
-      onWriteTargetKey(target, KEYCHANGES);
-      onWriteDroppedIndices(target, target.length, originalValue);
-    }
-    onWriteItems(target);
-  } else if (!Object.is(originalValue, Reflect.get(target, key, receiver))) {
-    onWriteTargetKey(target, key);
-    if (isArray2) {
+  if (isArray2 && key === "length") {
+    if (target.length !== length) {
+      onWriteTargetKey(target, key);
+      if (target.length < length) {
+        onWriteTargetKey(target, KEYCHANGES);
+        onWriteDroppedIndices(target, target.length, length);
+      }
       onWriteItems(target);
     }
-  } else if (created && isArray2) {
+    return true;
+  }
+  const created = own === void 0 && objectHasOwnProperty.call(target, key);
+  const changed = !Object.is(before, Reflect.get(target, key, receiver));
+  if (created) {
+    onWriteKeyPresence(atoms, key);
+  }
+  if (isArray2 && target.length !== length) {
+    onWriteTargetKey(target, "length");
+  }
+  if (changed) {
+    onWriteTargetKey(atoms, key);
+  }
+  if (isArray2 && (created || changed)) {
     onWriteItems(target);
   }
-  return ret;
+  return true;
 }
-var itemsAtoms = /* @__PURE__ */ new WeakMap();
 function onWriteItems(target) {
-  const atom = itemsAtoms.get(target);
+  const atom = findAtom(target, ITEMS, itemAtoms);
   if (atom !== void 0) {
     onWriteAtom(atom);
   }
@@ -1240,155 +1457,180 @@ function readArrayItems(array) {
   if (raw === void 0 || deepProxies.get(raw) !== array || !isPlainArray(raw)) {
     return array;
   }
-  if (isObserving()) {
-    let atom = itemsAtoms.get(raw);
-    if (atom === void 0) {
-      atom = createAtom(void 0, "key");
-      itemsAtoms.set(raw, atom);
-    }
-    onReadAtom(atom);
-  }
+  onReadTargetKey(raw, ITEMS);
   if (Object.isFrozen(raw)) {
     return raw.slice();
   }
   const length = raw.length;
   const items = new Array(length);
   for (let i = 0; i < length; i++) {
-    items[i] = deepItem(raw[i]);
+    items[i] = reactiveValue(raw[i], false);
   }
   return items;
 }
-function deepItem(value) {
-  if (typeof value !== "object" || value === null) {
-    return value;
-  }
-  const reactive = deepProxies.get(value);
-  if (reactive ? skipped.has(value) : !canBeMadeReactive(value)) {
-    return value;
-  }
-  return reactive ?? proxifyTarget(value, false);
-}
-function onWriteKeyCreated(target, key, originalLength) {
-  onWriteKeyPresence(target, key);
-  if (key !== "length" && Array.isArray(target) && target.length !== originalLength) {
-    onWriteTargetKey(target, "length");
-  }
-}
-var arrayMethods = /* @__PURE__ */ new Map();
+var replacedMethods = /* @__PURE__ */ new Map();
 for (const name of ["copyWithin", "fill", "reverse", "sort"]) {
   const method = Array.prototype[name];
-  arrayMethods.set(method, function(...args) {
+  replacedMethods.set(method, function(...args) {
     return batch(() => method.apply(this, args));
   });
 }
 for (const name of ["pop", "push", "shift", "splice", "unshift"]) {
   const method = Array.prototype[name];
-  arrayMethods.set(method, function(...args) {
+  replacedMethods.set(method, function(...args) {
     return batch(() => untrack(() => method.apply(this, args)));
   });
 }
+var viewReaders = /* @__PURE__ */ new Set();
 for (const name of ["includes", "indexOf", "lastIndexOf"]) {
   const method = Array.prototype[name];
-  arrayMethods.set(method, function(...args) {
-    const result = method.apply(this, args);
+  const search = function(...args) {
+    const raw = toRaw(this);
+    const plain = isPlainArray(raw);
+    if (plain) {
+      onReadTargetKey(raw, ITEMS);
+    }
+    const result = method.apply(plain ? raw : this, args);
+    const item = args[0];
     if (result !== -1 && result !== false) {
       return result;
     }
-    return method.apply(toRaw(this), [toRaw(args[0]), ...args.slice(1)]);
-  });
-}
-var deepHandler = new BasicHandler(false);
-var shallowHandler = new BasicHandler(true);
-function makeKeyObserver(methodName, target, shallow) {
-  return (key) => {
-    key = toRaw(key);
-    if (methodName === "has") {
-      onReadKeyPresence(target, key);
-    } else {
-      onReadTargetKey(target, key);
+    if (plain && (typeof item !== "object" || item === null || toRaw(item) === item)) {
+      return result;
     }
-    return possiblyReactive(target[methodName](key), shallow);
+    args[0] = toRaw(item);
+    return method.apply(raw, args);
   };
+  replacedMethods.set(method, search);
+  viewReaders.add(search);
+}
+var hasOwnPropertyReader = function(key) {
+  const raw = toRaw(this);
+  onReadTargetKey(
+    collectionMethods(raw) ? propertyHost(raw) : raw,
+    typeof key === "symbol" ? key : String(key),
+    presenceAtoms
+  );
+  return objectHasOwnProperty.call(raw, key);
+};
+replacedMethods.set(objectHasOwnProperty, hasOwnPropertyReader);
+viewReaders.add(hasOwnPropertyReader);
+var propertyHosts = /* @__PURE__ */ new WeakMap();
+function propertyHost(target) {
+  let host = propertyHosts.get(target);
+  if (host === void 0) {
+    propertyHosts.set(target, host = {});
+  }
+  return host;
+}
+function makeMethod(key, target, shallow) {
+  switch (key) {
+    case "has":
+      return (item) => {
+        item = toRaw(item);
+        onReadTargetKey(target, item, presenceAtoms);
+        return target.has(item);
+      };
+    case "get":
+      return (item) => {
+        item = toRaw(item);
+        onReadTargetKey(target, item);
+        return reactiveValue(target.get(item), shallow);
+      };
+    case "add":
+    case "set":
+    case "delete":
+      return delegateAndNotify(key, target, shallow);
+    case "clear":
+      return makeClearNotifier(target);
+    case "forEach":
+      return makeForEachObserver(target, shallow);
+    case "keys":
+    case "values":
+    case "entries":
+    case Symbol.iterator:
+      return makeIteratorObserver(key, target, shallow);
+  }
+  return makeSetOperation(key, target);
 }
 function makeIteratorObserver(methodName, target, shallow) {
-  const yieldsEntries = methodName === "entries" || methodName === Symbol.iterator && target instanceof Map;
-  const readsValues = target instanceof Map && methodName !== "keys";
+  const isMap = target instanceof Map;
+  const entries = methodName === "entries" || methodName === Symbol.iterator && isMap;
+  const readsValues = isMap && methodName !== "keys";
   return function* () {
     onReadTargetKey(target, KEYCHANGES);
-    for (const entry of target.entries()) {
+    for (const item of entries || readsValues ? target.entries() : target.keys()) {
       if (readsValues) {
-        onReadTargetKey(target, entry[0]);
+        onReadTargetKey(target, item[0]);
       }
-      const item = yieldsEntries ? entry : methodName === "keys" ? entry[0] : entry[1];
-      if (shallow) {
-        yield item;
-      } else if (yieldsEntries) {
-        yield [possiblyReactive(entry[0], false), possiblyReactive(entry[1], false)];
+      if (!entries) {
+        yield reactiveValue(readsValues ? item[1] : item, shallow);
       } else {
-        yield possiblyReactive(item, false);
+        if (!shallow) {
+          item[0] = reactiveValue(item[0], false);
+          item[1] = reactiveValue(item[1], false);
+        }
+        yield item;
       }
     }
   };
 }
 function makeForEachObserver(target, shallow) {
   const readsValues = target instanceof Map;
-  return function forEach(forEachCb, thisArg) {
+  return function forEach(callback, thisArg) {
+    const collection = this ?? reactiveValue(target, shallow);
     onReadTargetKey(target, KEYCHANGES);
-    target.forEach(function(val, key, targetObj) {
+    target.forEach((value, key) => {
       if (readsValues) {
         onReadTargetKey(target, key);
       }
-      forEachCb.call(
+      callback.call(
         thisArg,
-        possiblyReactive(val, shallow),
-        possiblyReactive(key, shallow),
-        possiblyReactive(targetObj, shallow)
+        reactiveValue(value, shallow),
+        reactiveValue(key, shallow),
+        collection
       );
-    }, thisArg);
+    });
   };
 }
 function membersByRaw(members) {
   const byRaw = /* @__PURE__ */ new Map();
-  for (const member of members) {
-    byRaw.set(toRaw(member), member);
+  for (let step = members.next(); !step.done; step = members.next()) {
+    byRaw.set(toRaw(step.value), step.value);
   }
   return byRaw;
 }
 function makeSetOperation(name, target) {
   return (other) => {
-    onReadTargetKey(target, KEYCHANGES);
-    const mine = membersByRaw(target);
+    (/* @__PURE__ */ new Set()).isSubsetOf(other);
     const theirs = membersByRaw(other.keys());
-    const notIn = (a, b) => [...a].filter(([raw]) => !b.has(raw)).map(([, member]) => member);
-    switch (name) {
-      case "union":
-        return /* @__PURE__ */ new Set([...target, ...notIn(theirs, mine)]);
-      case "intersection":
-        return new Set([...mine].filter(([raw]) => theirs.has(raw)).map(([, member]) => member));
-      case "difference":
-        return new Set(notIn(mine, theirs));
-      case "symmetricDifference":
-        return /* @__PURE__ */ new Set([...notIn(mine, theirs), ...notIn(theirs, mine)]);
-      case "isSubsetOf":
-        return notIn(mine, theirs).length === 0;
-      case "isSupersetOf":
-        return notIn(theirs, mine).length === 0;
-      case "isDisjointFrom":
-        return [...mine.keys()].every((raw) => !theirs.has(raw));
+    onReadTargetKey(target, KEYCHANGES);
+    const mine = membersByRaw(target.values());
+    const result = new Set(mine.keys())[name](new Set(theirs.keys()));
+    if (typeof result === "boolean") {
+      return result;
     }
+    for (const [raw, member] of theirs) {
+      if (!mine.has(raw)) {
+        mine.set(raw, member);
+      }
+    }
+    return new Set([...mine].filter(([raw]) => result.has(raw)).map(([, member]) => member));
   };
 }
-function delegateAndNotify(setterName, getterName, target, shallow) {
+function delegateAndNotify(setterName, target, shallow) {
+  const readsValue = setterName === "set" || setterName === "delete" && !(target instanceof Set);
   return (key, value) => {
     key = toRaw(key);
     const hadKey = target.has(key);
-    const originalValue = target[getterName](key);
+    const before = readsValue && hadKey ? target.get(key) : void 0;
     const ret = target[setterName](key, shallow ? value : toRaw(value));
-    const hasKey = target.has(key);
+    const hasKey = setterName !== "delete";
     if (hadKey !== hasKey) {
       onWriteKeyPresence(target, key);
     }
-    if (!Object.is(originalValue, target[getterName](key))) {
+    const after = readsValue && hasKey ? target.get(key) : void 0;
+    if (readsValue ? !Object.is(before, after) : hadKey !== hasKey) {
       onWriteTargetKey(target, key);
     }
     if (!hasKey) {
@@ -1397,29 +1639,35 @@ function delegateAndNotify(setterName, getterName, target, shallow) {
     return ret;
   };
 }
+function hasKeyAtoms(target) {
+  return allAtoms.some((atoms) => atoms.keys.has(target) || atoms.objectKeys.has(target));
+}
 function makeClearNotifier(target) {
   return () => {
-    const allKeys = [...target.keys()];
+    if (target.size === 0) {
+      return;
+    }
+    const keys = hasKeyAtoms(target) ? [...target.keys()] : [];
     target.clear();
     onWriteTargetKey(target, KEYCHANGES);
-    for (const key of allKeys) {
+    for (const key of keys) {
       onWriteTargetKey(target, key, presenceAtoms);
       onWriteTargetKey(target, key);
       releaseKey(target, key);
     }
   };
 }
-var setMethods = [
-  ["has", (target, shallow) => makeKeyObserver("has", target, shallow)],
-  ["add", (target, shallow) => delegateAndNotify("add", "has", target, shallow)],
-  ["delete", (target, shallow) => delegateAndNotify("delete", "has", target, shallow)],
-  ["keys", (target, shallow) => makeIteratorObserver("keys", target, shallow)],
-  ["values", (target, shallow) => makeIteratorObserver("values", target, shallow)],
-  ["entries", (target, shallow) => makeIteratorObserver("entries", target, shallow)],
-  [Symbol.iterator, (target, shallow) => makeIteratorObserver(Symbol.iterator, target, shallow)],
-  ["forEach", (target, shallow) => makeForEachObserver(target, shallow)],
-  ["clear", (target) => makeClearNotifier(target)]
+var setLikeMethods = [
+  "has",
+  "delete",
+  "clear",
+  "forEach",
+  "keys",
+  "values",
+  "entries",
+  Symbol.iterator
 ];
+var weakMapMethods = /* @__PURE__ */ new Set(["has", "get", "set", "delete"]);
 var setOperations = [
   "difference",
   "intersection",
@@ -1428,43 +1676,43 @@ var setOperations = [
   "isSupersetOf",
   "symmetricDifference",
   "union"
-].filter((name) => name in Set.prototype).map((name) => [name, (target) => makeSetOperation(name, target)]);
-var weakMapMethods = [
-  ["has", (target, shallow) => makeKeyObserver("has", target, shallow)],
-  ["get", (target, shallow) => makeKeyObserver("get", target, shallow)],
-  ["set", (target, shallow) => delegateAndNotify("set", "get", target, shallow)],
-  ["delete", (target, shallow) => delegateAndNotify("delete", "has", target, shallow)]
-];
-var methodFactories = {
-  Set: new Map([...setMethods, ...setOperations]),
-  Map: new Map([...setMethods, ...weakMapMethods]),
-  WeakMap: new Map(weakMapMethods)
-};
-function collectionsProxyHandler(target, targetRawType, shallow) {
-  const factories = methodFactories[targetRawType];
-  const hasSize = targetRawType !== "WeakMap";
-  const methods = /* @__PURE__ */ new Map();
-  return Object.assign(Object.create(shallow ? shallowHandler : deepHandler), {
-    // FIXME: probably broken when part of prototype chain since we ignore the receiver
-    get(target2, key) {
-      const factory = factories.get(key);
-      if (factory) {
-        let method = methods.get(key);
-        if (!method) {
-          method = factory(target2, shallow);
-          methods.set(key, method);
-        }
-        return method;
-      }
-      if (key === "size" && hasSize) {
-        onReadTargetKey(target2, KEYCHANGES);
-        return target2.size;
-      }
-      onReadTargetKey(target2, key);
-      return possiblyReactive(target2[key], shallow);
-    }
-  });
+].filter((name) => name in Set.prototype);
+var mapMethods = /* @__PURE__ */ new Set([...setLikeMethods, ...weakMapMethods]);
+var setMethods = /* @__PURE__ */ new Set([...setLikeMethods, "add", ...setOperations]);
+function collectionMethods(target) {
+  return target instanceof Map ? mapMethods : target instanceof Set ? setMethods : target instanceof WeakMap ? weakMapMethods : null;
 }
+var CollectionHandler = class extends BasicHandler {
+  methodKeys;
+  hasSize;
+  methods = void 0;
+  properties = void 0;
+  constructor(methodKeys, shallow) {
+    super(shallow);
+    this.methodKeys = methodKeys;
+    this.hasSize = methodKeys !== weakMapMethods;
+  }
+  get(target, key, receiver) {
+    if (this.methodKeys.has(key)) {
+      const methods = this.methods ??= /* @__PURE__ */ new Map();
+      let method = methods.get(key);
+      if (!method) {
+        methods.set(key, method = makeMethod(key, target, this.shallow));
+      }
+      return method;
+    }
+    if (key === "size" && this.hasSize) {
+      onReadTargetKey(target, KEYCHANGES);
+      return target.size;
+    }
+    return super.get(target, key, receiver);
+  }
+  host(target) {
+    return this.properties ??= propertyHost(target);
+  }
+};
+
+// ../owl-core/src/signal.ts
 function buildSignal(value, toRead, equals) {
   const atom = createAtom(value, "signal");
   const equalsFn = toEqualsFn(equals);
@@ -1521,6 +1769,8 @@ signal.Array = signalArray;
 signal.Map = signalMap;
 signal.Object = signalObject;
 signal.Set = signalSet;
+
+// ../owl-core/src/computed.ts
 function readonlySetter() {
   throw new OwlError(
     "Cannot write to a read-only computed value. Pass a `set` option to make it writable."
@@ -1532,6 +1782,7 @@ function computed(getter, options = {}) {
   let failure = null;
   const computation = createComputation(() => {
     let newValue;
+    let newFailure = null;
     try {
       newValue = getter();
       if (hasValue && !failure && equalsFn(computation.value, newValue)) {
@@ -1544,23 +1795,21 @@ function computed(getter, options = {}) {
       if (debug.computed) {
         debugLog("computed", `${computation.name} failed, the error is its value`, error);
       }
-      if (hasValue) {
-        onWriteAtom(computation);
-      }
-      hasValue = true;
-      failure = { error };
-      return void 0;
+      newFailure = { error };
+      newValue = void 0;
     }
-    if (hasValue) {
+    const notify = hasValue;
+    hasValue = true;
+    failure = newFailure;
+    computation.value = newValue;
+    if (notify) {
       onWriteAtom(computation);
     }
-    hasValue = true;
-    failure = null;
     return newValue;
   }, true);
   computation.name = options.name || debug.computed && getter.name || "computed";
   function readComputed() {
-    if (computation.state !== 0) {
+    if (computation.state !== 0 /* EXECUTED */) {
       updateComputation(computation);
     }
     onReadAtom(computation);
@@ -1575,37 +1824,53 @@ function computed(getter, options = {}) {
     const scope = getScope();
     if (scope) {
       scope.computations.push(computation);
-      computationScopes.set(computation, scope);
     }
   }
   return readComputed;
 }
+
+// ../owl-core/src/selector.ts
 function selector(source, options = {}) {
   const atoms = /* @__PURE__ */ new Map();
   let swept = 0;
+  let changes = 0;
   let current;
   let started = false;
+  let failure = null;
   let disposed = false;
   const computation = createComputation(
     () => {
-      const next = source();
+      const previous = current;
+      const answered = started && !failure;
+      try {
+        current = source();
+        failure = null;
+      } catch (error) {
+        if (debug.computed) {
+          debugLog(
+            "computed",
+            `${computation.name}: its source failed, every key rethrows it`,
+            error
+          );
+        }
+        failure = { error };
+      }
       if (!started) {
         started = true;
-        current = next;
-        return;
+      } else if (answered !== !failure) {
+        notifyAll();
+      } else if (!failure && !Object.is(previous, current)) {
+        notifyKeys(previous, current);
+        if (++changes >= atoms.size) {
+          sweep();
+        }
       }
-      const previous = current;
-      if (Object.is(previous, next)) {
-        return;
+      if (atoms.size === 0) {
+        release2();
       }
-      current = next;
-      untrack(() => {
-        notify(previous);
-        notify(next);
-      });
     },
     false,
-    1,
+    1 /* STALE */,
     true,
     options.name || debug.computed && source.name || "selector"
   );
@@ -1619,6 +1884,17 @@ function selector(source, options = {}) {
       atoms.delete(key);
     }
   }
+  function notifyKeys(previous, next) {
+    untrack(
+      () => batch(() => {
+        notify(previous);
+        notify(next);
+      })
+    );
+  }
+  function notifyAll() {
+    untrack(() => batch(() => atoms.forEach((_, key) => notify(key))));
+  }
   function sweep() {
     const before = atoms.size;
     atoms.forEach((atom, key) => {
@@ -1627,6 +1903,7 @@ function selector(source, options = {}) {
       }
     });
     swept = atoms.size;
+    changes = 0;
     if (debug.computed) {
       debugLog(
         "computed",
@@ -1634,12 +1911,30 @@ function selector(source, options = {}) {
       );
     }
   }
+  function release2() {
+    if (debug.computed) {
+      debugLog("computed", `${computation.name}: no key is read, stops following its source`);
+    }
+    started = false;
+    failure = null;
+    const releaseFailure = computation.owned !== null ? releaseOwned(computation, "stops following its source") : null;
+    removeSources(computation);
+    if (releaseFailure) {
+      throw releaseFailure.error;
+    }
+  }
+  function update() {
+    if (computation.running) {
+      return;
+    }
+    if (!started) {
+      computation.state = 1 /* STALE */;
+    }
+    updateComputation(computation);
+  }
   function isSelected(key) {
     if (disposed) {
       return Object.is(current, key);
-    }
-    if (computation.state !== 0) {
-      updateComputation(computation);
     }
     if (isObserving()) {
       let atom = atoms.get(key);
@@ -1651,6 +1946,13 @@ function selector(source, options = {}) {
         atoms.set(key, atom);
       }
       onReadAtom(atom);
+    } else if (!started) {
+      current = source();
+      return Object.is(current, key);
+    }
+    update();
+    if (failure) {
+      throw failure.error;
     }
     return Object.is(current, key);
   }
@@ -1663,6 +1965,8 @@ function selector(source, options = {}) {
   }
   return isSelected;
 }
+
+// ../owl-core/src/effect.ts
 function effect(fn, options) {
   return createEffect(fn, false, options);
 }
@@ -1681,40 +1985,45 @@ function createEffect(fn, immediate, options) {
           failure = { error };
         }
       }
-      const result = fn();
       if (disposed) {
-        computation.value = result;
+        if (debug.effect) {
+          debugLog("effect", `${computation.name} disposed by its own cleanup, not run again`);
+        }
+        if (failure) {
+          throw failure.error;
+        }
+        return void 0;
+      }
+      const result = fn();
+      const cleanup = typeof result === "function" ? result : void 0;
+      if (disposed) {
+        computation.value = cleanup;
         removeSources(computation);
         releaseUntracked(computation);
         return void 0;
       }
       if (failure) {
-        computation.value = result;
+        computation.value = cleanup;
         throw failure.error;
       }
-      return result;
+      return cleanup;
     },
     false,
-    1,
+    1 /* STALE */,
     immediate,
     // fn.name costs a measurable share of an effect's creation: read only
     // while debugging
     options?.name || debug.effect && fn.name || (immediate ? "immediateEffect" : "effect")
   );
-  const parent = getCurrentComputation();
-  if (parent && !parent.isDerived) {
-    (parent.owned ??= /* @__PURE__ */ new Set()).add(cleanupEffect);
-    if (parent.isEffect) {
-      computation.owner = parent;
-    }
-  } else if (parent) {
-    computationScopes.get(parent)?.onDestroy(cleanupEffect);
+  const owner = options?.detached ? void 0 : adopt(cleanupEffect);
+  if (owner !== void 0 && !owner.tracksElsewhere) {
+    computation.owner = owner;
   }
   computation.isEffect = true;
   if (debug.effect) {
     debugLog(
       "effect",
-      `create ${computation.name}, owned by ${parent && !parent.isDerived ? parent.name : "nothing"}`
+      `create ${computation.name}, owned by ${owner ? owner.name || "a computation" : "nothing"}`
     );
   }
   function cleanupEffect() {
@@ -1722,10 +2031,11 @@ function createEffect(fn, immediate, options) {
       debugLog("effect", `dispose ${computation.name}`);
     }
     disposed = true;
-    if (parent !== void 0 && parent.owned !== null) {
-      parent.owned.delete(cleanupEffect);
+    if (owner !== void 0) {
+      owner.owned?.delete(cleanupEffect);
+      computation.owner = null;
     }
-    computation.state = 0;
+    computation.state = 0 /* EXECUTED */;
     removeSources(computation);
     if (computation.value || computation.owned) {
       releaseUntracked(computation);
@@ -1739,14 +2049,15 @@ function createEffect(fn, immediate, options) {
   }
   return cleanupEffect;
 }
-function releaseUntracked(effect2) {
-  const previousComputation = getCurrentComputation();
-  setComputation(void 0);
-  try {
-    release(effect2);
-  } finally {
-    setComputation(previousComputation);
+function adopt(dispose) {
+  const owner = getOwner();
+  if (owner !== void 0) {
+    (owner.owned ??= /* @__PURE__ */ new Set()).add(dispose);
   }
+  return owner;
+}
+function releaseUntracked(effect2) {
+  runUnowned(release, effect2);
 }
 function release(effect2) {
   let failure = null;
@@ -1767,10 +2078,12 @@ function release(effect2) {
 function runCleanup(effect2) {
   const cleanupFn = effect2.value;
   effect2.value = void 0;
-  if (typeof cleanupFn === "function") {
+  if (cleanupFn) {
     cleanupFn();
   }
 }
+
+// ../owl-core/src/async_computed.ts
 function asyncComputed(fetcher, options = {}) {
   const value = signal(options.initial, { equals: options.equals });
   const loading = signal(false);
@@ -1796,7 +2109,9 @@ function asyncComputed(fetcher, options = {}) {
     }
     endRun();
   }
+  let runner;
   const stopEffect = effect(() => {
+    runner ??= getCurrentComputation();
     refreshTick();
     const myRunId = ++runId;
     const controller = new AbortController();
@@ -1829,12 +2144,15 @@ function asyncComputed(fetcher, options = {}) {
     return () => controller.abort();
   });
   function dispose() {
+    if (debug.effect) {
+      debugLog("effect", "asyncComputed: dispose");
+    }
     runId++;
     stopEffect();
-    inFlight = false;
-    pending?.resolve();
-    pending = null;
+    owner?.owned?.delete(dispose);
+    endRun();
   }
+  const owner = adopt(dispose);
   scope?.onDestroy(dispose);
   const read = (() => value());
   read.loading = () => loading();
@@ -1842,12 +2160,24 @@ function asyncComputed(fetcher, options = {}) {
   read.refresh = () => refreshTick.set(untrack(refreshTick) + 1);
   read.dispose = dispose;
   read.currentPromise = () => {
-    if (!inFlight) {
+    const queued = runner.state !== 0 /* EXECUTED */;
+    if (!inFlight && !queued) {
       return Promise.resolve();
     }
     if (!pending) {
       let resolve;
       pending = { promise: new Promise((res) => resolve = res), resolve };
+      if (!inFlight) {
+        Promise.resolve().then(() => {
+          if (!inFlight) {
+            if (debug.effect) {
+              debugLog("effect", "asyncComputed: the queued re-run fetched nothing, settled");
+            }
+            pending?.resolve();
+            pending = null;
+          }
+        });
+      }
     }
     return pending.promise;
   };
@@ -1856,6 +2186,8 @@ function asyncComputed(fetcher, options = {}) {
 function toError(e) {
   return e instanceof Error || Object.prototype.toString.call(e) === "[object Error]" ? e : new Error(String(e), { cause: e });
 }
+
+// ../owl-core/src/validation.ts
 var PRINT_BUDGET = 1e3;
 function makeSafeReplacer() {
   const ancestors = [];
@@ -1864,6 +2196,9 @@ function makeSafeReplacer() {
   return function(_key, value) {
     if (typeof value === "function") {
       return value.name || "[Function]";
+    }
+    if (typeof value === "bigint") {
+      return `${value}n`;
     }
     if (value && typeof value === "object") {
       const ctor = value.constructor;
@@ -1894,7 +2229,21 @@ function assertType(value, validation, errorMessage = "Value does not match the 
 ${issueStrings}`);
   }
 }
-function createContext(issues, value, path, parent, depthOffset = 1) {
+var checkedTypes = /* @__PURE__ */ new WeakMap();
+function typeError(type) {
+  if (typeof type !== "function") {
+    return `${type === null ? "null" : typeof type} is not a type`;
+  }
+  let error = checkedTypes.get(type);
+  if (error === void 0) {
+    const source = Function.prototype.toString.call(type);
+    const isConstructor = source.startsWith("class") || Object.hasOwn(type, "prototype") && /\{\s*\[native code\]\s*\}$/.test(source);
+    error = isConstructor ? `${type.name || "an anonymous class"} is a constructor, not a type (use t.string(), t.instanceOf(...), ...)` : null;
+    checkedTypes.set(type, error);
+  }
+  return error;
+}
+function createContext(issues, value, path, parent) {
   return {
     issueDepth: 0,
     path,
@@ -1906,18 +2255,23 @@ function createContext(issues, value, path, parent, depthOffset = 1) {
         ...issue
       });
     },
-    mergeIssues(newIssues) {
+    mergeIssues(newIssues, depth = 0) {
       issues.push(...newIssues);
+      this.issueDepth = Math.max(this.issueDepth, depth);
     },
     validate(type) {
+      const error = typeError(type);
+      if (error) {
+        throw new OwlError(`Invalid schema at "${this.path.join(" > ")}": ${error}`);
+      }
       const before = issues.length;
       type(this);
       if (issues.length > before && parent) {
-        parent.issueDepth = Math.max(parent.issueDepth, this.issueDepth + depthOffset);
+        parent.issueDepth = Math.max(parent.issueDepth, this.issueDepth + 1);
       }
     },
     withIssues(issues2) {
-      return createContext(issues2, this.value, this.path, this, 0);
+      return createContext(issues2, this.value, this.path);
     },
     withKey(key) {
       return createContext(issues, this.value[key], this.path.concat(key), this);
@@ -1929,6 +2283,8 @@ function validateType(value, validation) {
   validation(createContext(issues, value, []));
   return issues;
 }
+
+// ../owl-core/src/types.ts
 var defaultSymbol = /* @__PURE__ */ Symbol("default");
 var innerTypeSymbol = /* @__PURE__ */ Symbol("innerType");
 var shapeSymbol = /* @__PURE__ */ Symbol("shape");
@@ -2071,11 +2427,16 @@ function constructorType(constructor) {
   });
 }
 function customValidator(type, validator, errorMessage = "value does not match custom validation") {
+  const isOptional = isOptionalType(type);
   const validate = makeType(function validateCustom(context) {
+    if (isOptional && context.value === void 0) {
+      return;
+    }
     const typeIssues = [];
-    context.withIssues(typeIssues).validate(type);
+    const typeContext = context.withIssues(typeIssues);
+    typeContext.validate(type);
     if (typeIssues.length) {
-      context.mergeIssues(typeIssues);
+      context.mergeIssues(typeIssues, typeContext.issueDepth);
       return;
     }
     if (!validator(context.value)) {
@@ -2083,6 +2444,13 @@ function customValidator(type, validator, errorMessage = "value does not match c
     }
   });
   validate[innerTypeSymbol] = type;
+  if (isOptional) {
+    validate[optionalSymbol] = true;
+    const factory = getDefault(type);
+    if (factory) {
+      validate[defaultSymbol] = factory;
+    }
+  }
   return validate;
 }
 function functionType(parameters = [], result = void 0) {
@@ -2099,16 +2467,16 @@ function instanceType(constructor) {
     }
   });
 }
-function intersection(types22) {
+function intersection(types3) {
   const validate = makeType(function validateIntersection(context) {
-    for (const type of types22) {
+    for (const type of types3) {
       context.validate(type);
     }
   });
-  validate[intersectionSymbol] = types22;
+  validate[intersectionSymbol] = types3;
   validate.toShape = () => {
     const shape = {};
-    for (const member of types22) {
+    for (const member of types3) {
       const memberShape = typeof member.toShape === "function" ? member.toShape() : void 0;
       if (memberShape && !Array.isArray(memberShape)) {
         Object.assign(shape, memberShape);
@@ -2130,64 +2498,50 @@ function literalType(literal) {
 function literalSelection(literals) {
   return union(literals.map(literalType));
 }
-function validateObject(context, schema, isStrict) {
-  if (typeof context.value !== "object" || Array.isArray(context.value) || context.value === null) {
-    context.addIssue({ message: "value is not an object" });
-    return;
-  }
-  if (!schema) {
-    return;
-  }
-  const isShape = !Array.isArray(schema);
-  let shape;
-  let keys;
-  if (isShape) {
-    keys = Object.keys(schema);
-    shape = schema;
-  } else {
-    keys = schema;
-    shape = {};
+function objectValidator(schema, isStrict) {
+  const isShape = schema && !Array.isArray(schema);
+  const keys = !schema ? [] : isShape ? Object.keys(schema) : schema;
+  const known = new Set(keys);
+  return function validateObject(context) {
+    const value = context.value;
+    if (typeof value !== "object" || Array.isArray(value) || value === null) {
+      context.addIssue({ message: "value is not an object" });
+      return;
+    }
+    if (!schema) {
+      return;
+    }
+    const missingKeys = [];
     for (const key of keys) {
-      shape[key] = null;
-    }
-  }
-  const missingKeys = [];
-  for (const key of keys) {
-    if (context.value[key] === void 0) {
-      if (!isOptionalType(shape[key])) {
-        missingKeys.push(key);
+      if (value[key] === void 0) {
+        if (!isShape || !isOptionalType(schema[key])) {
+          missingKeys.push(key);
+        }
+        continue;
       }
-      continue;
-    }
-    if (isShape) {
-      context.withKey(key).validate(shape[key]);
-    }
-  }
-  if (missingKeys.length) {
-    context.addIssue({
-      message: "object value has missing keys",
-      missingKeys
-    });
-  }
-  if (isStrict) {
-    const unknownKeys = [];
-    for (const key in context.value) {
-      if (!keys.includes(key)) {
-        unknownKeys.push(key);
+      if (isShape) {
+        context.withKey(key).validate(schema[key]);
       }
     }
-    if (unknownKeys.length) {
+    if (missingKeys.length) {
       context.addIssue({
-        message: "object value has unknown keys",
-        unknownKeys
+        message: "object value has missing keys",
+        missingKeys
       });
     }
-  }
+    if (isStrict) {
+      const unknownKeys = Object.keys(value).filter((key) => !known.has(key));
+      if (unknownKeys.length) {
+        context.addIssue({
+          message: "object value has unknown keys",
+          unknownKeys
+        });
+      }
+    }
+  };
 }
 function objectType(schema = {}) {
-  const validate = makeType(function validateLooseObject(context) {
-    validateObject(context, schema, false);
-  });
+  const validate = makeType(objectValidator(schema, false));
   if (!Array.isArray(schema)) {
     validate[shapeSymbol] = schema;
   }
@@ -2195,9 +2549,7 @@ function objectType(schema = {}) {
   return validate;
 }
 function strictObjectType(schema) {
-  const validate = makeType(function validateStrictObject(context) {
-    validateObject(context, schema, true);
-  });
+  const validate = makeType(objectValidator(schema, true));
   if (!Array.isArray(schema)) {
     validate[shapeSymbol] = schema;
   }
@@ -2220,34 +2572,34 @@ function recordType(valueType) {
     if (!valueType) {
       return;
     }
-    for (const key in context.value) {
+    for (const key of Object.keys(context.value)) {
       context.withKey(key).validate(valueType);
     }
   });
 }
-function tuple(types22) {
+function tuple(types3) {
   const validate = makeType(function validateTuple(context) {
     if (!Array.isArray(context.value)) {
       context.addIssue({ message: "value is not an array" });
       return;
     }
-    if (context.value.length !== types22.length) {
+    if (context.value.length !== types3.length) {
       context.addIssue({ message: "tuple value does not have the correct length" });
       return;
     }
-    for (let index = 0; index < types22.length; index++) {
-      context.withKey(index).validate(types22[index]);
+    for (let index = 0; index < types3.length; index++) {
+      context.withKey(index).validate(types3[index]);
     }
   });
-  validate[shapeSymbol] = types22;
+  validate[shapeSymbol] = types3;
   return validate;
 }
-function union(types22) {
+function union(types3) {
   return makeType(function validateUnion(context) {
     const subIssues = [];
     let deepestIssues = null;
     let deepest = 0;
-    for (const type of types22) {
+    for (const type of types3) {
       const memberIssues = [];
       const subContext = context.withIssues(memberIssues);
       subContext.validate(type);
@@ -2261,7 +2613,7 @@ function union(types22) {
       subIssues.push(...memberIssues);
     }
     if (deepestIssues) {
-      context.mergeIssues(deepestIssues);
+      context.mergeIssues(deepestIssues, deepest);
       return;
     }
     context.addIssue({
@@ -2314,11 +2666,17 @@ var types = {
   string: stringType,
   tuple
 };
+
+// ../owl-core/src/registry.ts
 var Registry = class {
   _map = signal.Object(/* @__PURE__ */ Object.create(null));
   _order = 0;
   _name;
   _validation;
+  // the entry a use() overwrote, put back when that use() ends, and the use()
+  // entries that ended: a restore skips them
+  _overwritten = /* @__PURE__ */ new WeakMap();
+  _ended = /* @__PURE__ */ new WeakSet();
   constructor(options = {}) {
     this._name = options.name || "registry";
     this._validation = options.validation;
@@ -2385,11 +2743,28 @@ var Registry = class {
   }
   use(key, value, options = {}) {
     const scope = useScope();
+    const previous = untrack(() => this._map()[key]);
     const entry = this._add(key, value, options);
+    if (previous) {
+      this._overwritten.set(entry, previous);
+    }
     scope.onDestroy(() => {
-      if (untrack(() => this._map()[key]) === entry) {
-        this.delete(key);
-      }
+      this._ended.add(entry);
+      untrack(() => {
+        const map = this._map();
+        if (map[key] !== entry) {
+          return;
+        }
+        let restored = this._overwritten.get(entry);
+        while (restored && this._ended.has(restored)) {
+          restored = this._overwritten.get(restored);
+        }
+        if (restored) {
+          map[key] = restored;
+        } else {
+          delete map[key];
+        }
+      });
     });
     return this;
   }
@@ -2400,6 +2775,8 @@ var Registry = class {
     return this.use(item.id, item, options);
   }
 };
+
+// ../owl-core/src/resource.ts
 var Resource = class {
   _items = signal.Array([]);
   _name;
@@ -2454,6 +2831,8 @@ var Resource = class {
     return this;
   }
 };
+
+// ../owl-core/src/event_modifiers.ts
 var EventModifier = {
   PREVENT_ANY: 1,
   STOP_ANY: 2,
@@ -2461,13 +2840,34 @@ var EventModifier = {
   PREVENT: 8,
   STOP: 16
 };
-var Plugin = class {
-  static _shadowId;
-  static get id() {
-    return this._shadowId ?? this.name;
+var MODIFIERS = /* @__PURE__ */ new Set(["stop", "capture", "prevent", "self", "synthetic", "passive"]);
+function eventModifierMask(key) {
+  const modifiers = key.split(".").slice(1);
+  const selfIndex = modifiers.indexOf("self");
+  let mask = 0;
+  for (let i = 0; i < modifiers.length; i++) {
+    const m = modifiers[i];
+    if (!MODIFIERS.has(m)) {
+      throw new OwlError(`Unknown event modifier: '${m}'`);
+    }
+    const beforeSelf = i < selfIndex;
+    if (m === "self") {
+      mask |= EventModifier.SELF;
+    } else if (m === "prevent") {
+      mask |= beforeSelf ? EventModifier.PREVENT_ANY : EventModifier.PREVENT;
+    } else if (m === "stop") {
+      mask |= beforeSelf ? EventModifier.STOP_ANY : EventModifier.STOP;
+    }
   }
-  static set id(shadowId) {
-    this._shadowId = shadowId;
+  return mask;
+}
+
+// ../owl-core/src/plugin_manager.ts
+var Plugin = class {
+  // A plugin is known by its class name, unless it declares `static id =
+  // "..."` (an own property, which a subclass inherits as any static).
+  static get id() {
+    return this.name;
   }
   // Plugins passed to `startPlugins` are started in batches of equal sequence,
   // ascending (lower first), like Resource/Registry. Each batch's onWillStart
@@ -2497,11 +2897,8 @@ var PluginManager = class extends Scope {
   // constructors of the batches still waiting for an earlier batch's
   // willStart, by id, to tell a consumer why the plugin is not there yet
   pending = /* @__PURE__ */ new Map();
-  // plugins whose constructor is running: a plugin is registered only once it
-  // is built, so asking for one of them again is a dependency cycle
-  constructing = /* @__PURE__ */ new Set();
-  // plugins being started (constructor or setup), in dependency order: the
-  // path a cycle error reports
+  // plugins being started (constructor or setup), in dependency order: asking
+  // for one of them again is a dependency cycle, this the path it reports
   startingPath = [];
   // own plugin ids in start order, so a failed setup can unregister what it started
   startedIds = [];
@@ -2540,11 +2937,7 @@ var PluginManager = class extends Scope {
       }
       return null;
     }
-    if (this.constructing.has(pluginConstructor)) {
-      const path = this.startingPath.slice(this.startingPath.indexOf(pluginConstructor));
-      const ids = [...path, pluginConstructor].map((ctor) => ctor.id);
-      throw new OwlError(`Circular plugin dependency: ${ids.join(" -> ")}`);
-    }
+    this.assertNotStarting(pluginConstructor);
     const mark = this.mark();
     const startedMark = this.startedIds.length;
     const undo = () => {
@@ -2564,7 +2957,6 @@ var PluginManager = class extends Scope {
       );
     }
     let plugin2;
-    this.constructing.add(pluginConstructor);
     this.startingPath.push(pluginConstructor);
     try {
       try {
@@ -2572,8 +2964,6 @@ var PluginManager = class extends Scope {
       } catch (e) {
         undo();
         throw e;
-      } finally {
-        this.constructing.delete(pluginConstructor);
       }
       this.plugins[id] = plugin2;
       this.startedIds.push(id);
@@ -2588,6 +2978,22 @@ var PluginManager = class extends Scope {
     }
     this.pending.delete(id);
     return plugin2;
+  }
+  /**
+   * Throws when the plugin of `pluginConstructor` is being started (its
+   * constructor or its setup is running): it asked, through other plugins,
+   * for itself, and would get itself half started.
+   */
+  assertNotStarting(pluginConstructor) {
+    const index = this.startingPath.indexOf(pluginConstructor);
+    if (index !== -1) {
+      const path = [...this.startingPath.slice(index), pluginConstructor];
+      const ids = path.map((ctor) => ctor.id).join(" -> ");
+      if (debug.plugin) {
+        debugLog("plugin", `circular dependency ${ids}`);
+      }
+      throw new OwlError(`Circular plugin dependency: ${ids}`);
+    }
   }
   /**
    * Whether the nearest manager, up the parent chain, that provides `id` has
@@ -2610,11 +3016,11 @@ var PluginManager = class extends Scope {
   collect(fn) {
     const collecting = this.collectingWillStart;
     this.collectingWillStart = true;
-    scopeStack.push(this);
+    scopeStack2.push(this);
     try {
       return untrack(fn);
     } finally {
-      scopeStack.pop();
+      scopeStack2.pop();
       this.collectingWillStart = collecting;
     }
   }
@@ -2668,12 +3074,27 @@ var PluginManager = class extends Scope {
       });
     };
     let chain = this.hasPendingReady ? this.ready : null;
-    for (const batch2 of batches) {
-      if (chain) {
-        chain = chain.then(() => startBatch(batch2));
-      } else {
-        chain = startBatch(batch2);
+    try {
+      for (const batch2 of batches) {
+        if (chain) {
+          chain = chain.then(() => startBatch(batch2));
+        } else {
+          chain = startBatch(batch2);
+        }
       }
+    } catch (e) {
+      const dropped = fresh.filter((ctor) => this.pending.get(ctor.id) === ctor);
+      for (const ctor of dropped) {
+        this.pending.delete(ctor.id);
+      }
+      if (debug.plugin && dropped.length) {
+        debugLog(
+          "plugin",
+          "start failed, later batches dropped",
+          dropped.map((ctor) => ctor.id)
+        );
+      }
+      throw e;
     }
     if (!chain) {
       if (this.status < STATUS.MOUNTED) {
@@ -2721,6 +3142,8 @@ function startPlugins(manager, plugins) {
     manager.onDestroy(effect(() => manager.startPlugins(plugins.items())));
   }
 }
+
+// ../owl-core/src/lifecycle_hooks.ts
 function onWillStart(fn) {
   const scope = useScope();
   if (!scope.collectingWillStart) {
@@ -2732,6 +3155,8 @@ function onWillDestroy(fn) {
   const scope = useScope();
   scope.onDestroy(scope.decorate(fn, "onWillDestroy"));
 }
+
+// ../owl-core/src/utils.ts
 var EventBus = class extends EventTarget {
   trigger(name, payload) {
     this.dispatchEvent(new CustomEvent(name, { detail: payload }));
@@ -2808,6 +3233,8 @@ function markup(valueOrStrings, ...placeholders) {
   acc += strings[i];
   return new Markup(acc);
 }
+
+// ../owl-core/src/hooks.ts
 function useEffect(fn) {
   onWillDestroy(effect(fn));
 }
@@ -2859,6 +3286,8 @@ function makeListener(handler) {
 function useApp() {
   return useScope().app;
 }
+
+// ../owl-core/src/plugin_hooks.ts
 function usePlugin(pluginType) {
   const scope = useScope();
   const manager = scope.pluginManager;
@@ -2871,6 +3300,9 @@ function usePlugin(pluginType) {
   const plugin2 = manager.getPluginById(pluginType.id) ?? (isPlugin ? manager.startPlugin(pluginType) : null);
   if (!plugin2) {
     throw new OwlError(`Unknown plugin "${pluginType.id}"`);
+  }
+  if (isPlugin) {
+    manager.assertNotStarting(plugin2.constructor);
   }
   const scoped = plugin2.constructor.scoped;
   return scoped ? scoped(plugin2, scope) : plugin2;
@@ -2904,6 +3336,7 @@ function status(entity) {
 // ../owl-runtime/src/rendering/error_handling.ts
 var fibersInError = /* @__PURE__ */ new WeakMap();
 var nodeErrorHandlers = /* @__PURE__ */ new WeakMap();
+var handledBy = null;
 function invokeErrorHandlers(node, error, finalize) {
   while (node) {
     const handlers = nodeErrorHandlers.get(node);
@@ -2911,6 +3344,7 @@ function invokeErrorHandlers(node, error, finalize) {
       for (let i = handlers.length - 1; i >= 0; i--) {
         try {
           handlers[i](error, finalize);
+          handledBy ||= node;
           return { handled: true, error };
         } catch (e) {
           error = e;
@@ -2928,8 +3362,7 @@ function forwardErrorToParent(boundary) {
     }
     const result = invokeErrorHandlers(boundary, error, finalize);
     if (!result.handled) {
-      finalize();
-      boundary.app._handleError(result.error);
+      throw result.error;
     }
   };
 }
@@ -2944,7 +3377,9 @@ function handleError(params) {
   if (fiber) {
     let current = fiber;
     do {
-      current.node.fiber = current;
+      if (current.node.fiber === null) {
+        current.node.fiber = current;
+      }
       fibersInError.set(current, error);
       current = current.parent;
     } while (current);
@@ -2958,11 +3393,12 @@ function handleError(params) {
     } catch {
     }
   };
+  handledBy = null;
   const result = invokeErrorHandlers(node, error, finalize);
   if (debug.error) {
     debugLog(
       "error",
-      result.handled ? `${node.componentName}: error handled by an ancestor's onError` : `${node.componentName}: error not handled, the app is destroyed`,
+      result.handled && !app.destroyed ? `${node.componentName}: error handled by ${handledBy === node ? "its own" : `${handledBy.componentName}'s`} onError` : `${node.componentName}: error not handled, the app is destroyed`,
       error
     );
   }
@@ -2974,12 +3410,12 @@ function handleError(params) {
     fiber.root.node.app.scheduler.requestFrame();
   }
 }
-function handleHookRejection(node, error) {
-  if (node.status > STATUS.MOUNTED) {
+function handleHookRejection(node, fiber, error) {
+  if (node.fiber !== fiber) {
     if (debug.error) {
       debugLog(
         "error",
-        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} after destroy, dropped`,
+        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} ${node.status === STATUS.DESTROYED ? "after destroy" : "of a superseded render"}, dropped`,
         error
       );
     }
@@ -2991,16 +3427,44 @@ function handleHookRejection(node, error) {
 // ../owl-runtime/src/blockdom/config.ts
 var config2 = {
   // this is the main event handler. Every event handler registered with blockdom
-  // will go through this function, giving it the data registered in the block
-  // and the event
-  mainEventHandler: (data, ev, currentTarget) => {
-    if (typeof data === "function") {
-      data(ev);
-    } else if (Array.isArray(data)) {
-      data[0](data[1], ev);
+  // goes through this function, given the handler's code and modifiers (static,
+  // given to the block when it is built), the context the latest render gave it,
+  // the event, the element listening and, for a handler with one, the extra
+  // argument the latest render gave it
+  mainEventHandler: (fn, mods, ctx, ev, currentTarget, arg) => {
+    if (fn) {
+      if (arg === void 0) {
+        fn(ctx, ev);
+      } else {
+        fn(ctx, ev, arg);
+      }
     }
   }
 };
+
+// ../owl-runtime/src/blockdom/dom.ts
+var nodeCloneNode;
+var nodeInsertBefore;
+var nodeAppendChild;
+var nodeRemoveChild;
+var characterDataRemove;
+var nodeSetTextContent;
+var characterDataSetData;
+var nodeGetFirstChild;
+var nodeGetNextSibling;
+if (typeof Node !== "undefined") {
+  const nodeProto = Node.prototype;
+  const getDescriptor = (o, p) => Object.getOwnPropertyDescriptor(o, p);
+  nodeCloneNode = nodeProto.cloneNode;
+  nodeInsertBefore = nodeProto.insertBefore;
+  nodeAppendChild = nodeProto.appendChild;
+  nodeRemoveChild = nodeProto.removeChild;
+  characterDataRemove = CharacterData.prototype.remove;
+  nodeSetTextContent = getDescriptor(nodeProto, "textContent").set;
+  characterDataSetData = getDescriptor(CharacterData.prototype, "data").set;
+  nodeGetFirstChild = getDescriptor(nodeProto, "firstChild").get;
+  nodeGetNextSibling = getDescriptor(nodeProto, "nextSibling").get;
+}
 
 // ../owl-runtime/src/blockdom/toggler.ts
 var txt = globalThis.document?.createTextNode("");
@@ -3032,13 +3496,13 @@ var VToggler = class {
     } else {
       const firstNode = child1.firstNode();
       const parent = firstNode.parentNode;
-      parent.insertBefore(txt, firstNode);
+      nodeInsertBefore.call(parent, txt, firstNode);
       if (withBeforeRemove) {
         child1.beforeRemove();
       }
       child1.remove();
       child2.mount(parent, txt);
-      parent.removeChild(txt);
+      nodeRemoveChild.call(parent, txt);
       this.child = child2;
       this.kind = other.kind;
     }
@@ -3095,7 +3559,18 @@ function createAttrUpdater(attr) {
 }
 var NO_ATTRS = Object.freeze({});
 function toAttrs(attrs) {
-  return !attrs ? NO_ATTRS : isArray(attrs) ? { [attrs[0]]: attrs[1] } : attrs;
+  if (!attrs) {
+    return NO_ATTRS;
+  }
+  if (isArray(attrs)) {
+    return { [attrs[0]]: attrs[1] };
+  }
+  if (typeof attrs !== "object") {
+    throw new OwlError(
+      `Invalid t-att value '${String(attrs)}': expected an object or a [name, value] pair`
+    );
+  }
+  return attrs;
 }
 function makeAttrsUpdaters(updateClassFn, updateStyleFn) {
   function updateAttr(el, name, val, oldVal) {
@@ -3346,7 +3821,7 @@ function patchStyle(el, oldVal, val) {
       changed = true;
     }
   }
-  if (!style.cssText) {
+  if (!style.length) {
     removeAttribute.call(el, "style");
   }
 }
@@ -3379,18 +3854,28 @@ function makeSharedStyleUpdaters(staticStyle) {
 }
 
 // ../owl-runtime/src/blockdom/events.ts
-function createEventHandler(rawEvent) {
+function createEventHandler(rawEvent, slot) {
   const eventName = rawEvent.split(".")[0];
   const capture = rawEvent.includes(".capture");
   const passive = rawEvent.includes(".passive");
+  const mods = eventModifierMask(rawEvent);
   if (rawEvent.includes(".synthetic")) {
-    return createSyntheticHandler(eventName, capture, passive);
+    return createSyntheticHandler(eventName, capture, passive, slot, mods);
   } else {
-    return createElementHandler(eventName, capture, passive);
+    return createElementHandler(eventName, capture, passive, slot, mods);
+  }
+}
+function dispatchTo(owner, slot, mods, ev, currentTarget) {
+  const data = owner.data;
+  const fn = owner.handlers[slot.fn];
+  if (slot.arg < 0) {
+    config2.mainEventHandler(fn, mods, data[slot.ctx], ev, currentTarget);
+  } else {
+    config2.mainEventHandler(fn, mods, data[slot.ctx], ev, currentTarget, data[slot.arg]);
   }
 }
 var nextNativeEventId = 1;
-function createElementHandler(evName, capture = false, passive = false) {
+function createElementHandler(evName, capture, passive, slot, mods) {
   let eventKey = `__event__${evName}_${nextNativeEventId++}`;
   if (capture) {
     eventKey = `${eventKey}_capture`;
@@ -3398,26 +3883,21 @@ function createElementHandler(evName, capture = false, passive = false) {
   function listener(ev) {
     const currentTarget = ev.currentTarget;
     if (!currentTarget || !currentTarget.isConnected) return;
-    const data = currentTarget[eventKey];
-    if (!data) return;
-    config2.mainEventHandler(data, ev, currentTarget);
+    dispatchTo(currentTarget[eventKey], slot, mods, ev, currentTarget);
   }
   const options = passive ? { capture, passive } : capture;
-  function setup(data) {
-    this[eventKey] = data;
+  function setup(owner) {
+    this[eventKey] = owner;
     this.addEventListener(evName, listener, options);
   }
   function remove2() {
     delete this[eventKey];
     this.removeEventListener(evName, listener, options);
   }
-  function update(data) {
-    this[eventKey] = data;
-  }
-  return { setup, update, remove: remove2 };
+  return { setup, remove: remove2 };
 }
 var nextSyntheticEventId = 1;
-function createSyntheticHandler(evName, capture = false, passive = false) {
+function createSyntheticHandler(evName, capture, passive, slot, mods) {
   let eventKey = `__event__synthetic_${evName}`;
   if (capture) {
     eventKey = `${eventKey}_capture`;
@@ -3427,17 +3907,27 @@ function createSyntheticHandler(evName, capture = false, passive = false) {
   }
   setupSyntheticEvent(evName, eventKey, capture, passive);
   const currentId = nextSyntheticEventId++;
-  function setup(data) {
-    const _data = this[eventKey] || {};
-    _data[currentId] = data;
-    this[eventKey] = _data;
+  const ownerKey = `__event__synthetic_owner_${currentId}`;
+  const handler = { slot, mods, ownerKey };
+  function setup(owner) {
+    const handlers = this[eventKey] || {};
+    handlers[currentId] = handler;
+    this[eventKey] = handlers;
+    this[ownerKey] = owner;
   }
   function remove2() {
     delete this[eventKey]?.[currentId];
+    delete this[ownerKey];
   }
-  return { setup, update: setup, remove: remove2 };
+  return { setup, remove: remove2 };
 }
-function nativeToSyntheticEvent(eventKey, capture, event) {
+function nativeToSyntheticEvent(eventKey, capture, replayed, event) {
+  if (replayed) {
+    if (replayed.has(event)) {
+      return;
+    }
+    replayed.add(event);
+  }
   const path = event.composedPath();
   const last = path.length - 1;
   let stoppedImmediately = false;
@@ -3455,7 +3945,8 @@ function nativeToSyntheticEvent(eventKey, capture, event) {
         continue;
       }
       for (const id in handlers) {
-        config2.mainEventHandler(handlers[id], event, node);
+        const { slot, mods, ownerKey } = handlers[id];
+        dispatchTo(node[ownerKey], slot, mods, event, node);
         if (stoppedImmediately) {
           return;
         }
@@ -3473,136 +3964,46 @@ function nativeToSyntheticEvent(eventKey, capture, event) {
   }
 }
 var SYNTHETIC_LISTENER = /* @__PURE__ */ Symbol.for("owl.syntheticListener");
-var CONFIGURED_SYNTHETIC_EVENTS = {};
+var syntheticEvents = /* @__PURE__ */ new Map();
+var syntheticRoots = /* @__PURE__ */ new WeakSet();
+var syntheticRootRefs = [];
+function listenOn(root, event) {
+  if (root !== document) {
+    event.replayed ||= /* @__PURE__ */ new WeakSet();
+  }
+  root.addEventListener(event.evName, event.listener, event.options);
+}
 function setupSyntheticEvent(evName, eventKey, capture = false, passive = false) {
-  if (CONFIGURED_SYNTHETIC_EVENTS[eventKey]) {
+  if (syntheticEvents.has(eventKey)) {
     return;
   }
-  const listener = (event) => nativeToSyntheticEvent(eventKey, capture, event);
+  const listener = (event) => nativeToSyntheticEvent(eventKey, capture, syntheticEvent.replayed, event);
   listener[SYNTHETIC_LISTENER] = true;
-  document.addEventListener(evName, listener, { capture, passive });
-  CONFIGURED_SYNTHETIC_EVENTS[eventKey] = true;
-}
-
-// ../owl-runtime/src/blockdom/event_catcher.ts
-var catchersByParent = /* @__PURE__ */ new WeakMap();
-function releaseCatchers(parent) {
-  const catchers = catchersByParent.get(parent);
-  if (catchers) {
-    catchersByParent.delete(parent);
-    for (const catcher of catchers) {
-      catcher.releaseHandlers();
-    }
-  }
-}
-function createCatcher(eventsSpec) {
-  const n = Object.keys(eventsSpec).length;
-  class VCatcher {
-    child;
-    handlerData;
-    handlerFns = [];
-    parentEl;
-    afterNode = null;
-    constructor(child, handlers) {
-      this.child = child;
-      this.handlerData = handlers;
-    }
-    mount(parent, afterNode) {
-      this.parentEl = parent;
-      this.child.mount(parent, afterNode);
-      this.afterNode = document.createTextNode("");
-      parent.insertBefore(this.afterNode, afterNode);
-      for (let name in eventsSpec) {
-        const index = eventsSpec[name];
-        const handler = createEventHandler(name);
-        this.handlerFns[index] = handler;
-        handler.setup.call(parent, [this.makeDispatcher(index), null]);
-      }
-      let catchers = catchersByParent.get(parent);
-      if (!catchers) {
-        catchersByParent.set(parent, catchers = /* @__PURE__ */ new Set());
-      }
-      catchers.add(this);
-    }
-    releaseHandlers() {
-      for (let i = 0; i < n; i++) {
-        this.handlerFns[i].remove.call(this.parentEl);
-      }
-    }
-    // Registered once per event, it reads the latest handler data at dispatch,
-    // and applies its modifiers only to an event from inside the child: the
-    // listener sits on the parent, which the child shares with its siblings.
-    makeDispatcher(index) {
-      return (_, ev) => {
-        const target = ev.target;
-        const afterNode = this.afterNode;
-        let currentNode = this.child.firstNode();
-        while (currentNode && currentNode !== afterNode) {
-          if (currentNode.contains(target)) {
-            config2.mainEventHandler(this.handlerData[index], ev, this.parentEl);
-            return;
-          }
-          currentNode = currentNode.nextSibling;
-        }
-      };
-    }
-    moveBeforeDOMNode(node) {
-      this.child.moveBeforeDOMNode(node);
-      this.parentEl.insertBefore(this.afterNode, node);
-    }
-    moveBeforeVNode(other, afterNode) {
-      if (other) {
-        afterNode = other.firstNode() || afterNode;
-      }
-      this.child.moveBeforeVNode(other ? other.child : null, afterNode);
-      this.parentEl.insertBefore(this.afterNode, afterNode);
-    }
-    patch(other, withBeforeRemove) {
-      if (this === other) {
-        return;
-      }
-      this.handlerData = other.handlerData;
-      this.child.patch(other.child, withBeforeRemove);
-    }
-    beforeRemove() {
-      this.child.beforeRemove();
-    }
-    remove() {
-      this.releaseHandlers();
-      catchersByParent.get(this.parentEl)?.delete(this);
-      this.child.remove();
-      this.afterNode.remove();
-    }
-    firstNode() {
-      return this.child.firstNode();
-    }
-    toString() {
-      return this.child.toString();
-    }
-  }
-  return function(child, handlers) {
-    return new VCatcher(child, handlers);
+  const syntheticEvent = {
+    evName,
+    options: { capture, passive },
+    listener,
+    replayed: null
   };
+  syntheticEvents.set(eventKey, syntheticEvent);
+  listenOn(document, syntheticEvent);
+  for (const ref2 of syntheticRootRefs) {
+    const root = ref2.deref();
+    if (root) {
+      listenOn(root, syntheticEvent);
+    }
+  }
 }
-
-// ../owl-runtime/src/blockdom/dom.ts
-var nodeInsertBefore;
-var nodeAppendChild;
-var nodeRemoveChild;
-var nodeSetTextContent;
-var characterDataSetData;
-var nodeGetFirstChild;
-var nodeGetNextSibling;
-if (typeof Node !== "undefined") {
-  const nodeProto = Node.prototype;
-  const getDescriptor = (o, p) => Object.getOwnPropertyDescriptor(o, p);
-  nodeInsertBefore = nodeProto.insertBefore;
-  nodeAppendChild = nodeProto.appendChild;
-  nodeRemoveChild = nodeProto.removeChild;
-  nodeSetTextContent = getDescriptor(nodeProto, "textContent").set;
-  characterDataSetData = getDescriptor(CharacterData.prototype, "data").set;
-  nodeGetFirstChild = getDescriptor(nodeProto, "firstChild").get;
-  nodeGetNextSibling = getDescriptor(nodeProto, "nextSibling").get;
+function addSyntheticRoot(target) {
+  const root = target.getRootNode();
+  if (root === document || syntheticRoots.has(root) || !(root instanceof ShadowRoot || root.nodeType === Node.DOCUMENT_NODE)) {
+    return;
+  }
+  syntheticRoots.add(root);
+  syntheticRootRefs.push(new WeakRef(root));
+  for (const syntheticEvent of syntheticEvents.values()) {
+    listenOn(root, syntheticEvent);
+  }
 }
 
 // ../owl-runtime/src/blockdom/multi.ts
@@ -3610,7 +4011,6 @@ var VMulti = class {
   children;
   anchors;
   parentEl;
-  isOnlyChild;
   constructor(children) {
     this.children = children;
   }
@@ -3705,20 +4105,14 @@ var VMulti = class {
     }
   }
   remove() {
-    const parentEl = this.parentEl;
-    if (this.isOnlyChild) {
-      nodeSetTextContent.call(parentEl, "");
-      releaseCatchers(parentEl);
-    } else {
-      const children = this.children;
-      const anchors = this.anchors;
-      for (let i = 0, l = children.length; i < l; i++) {
-        const child = children[i];
-        if (child) {
-          child.remove();
-        } else {
-          nodeRemoveChild.call(parentEl, anchors[i]);
-        }
+    const children = this.children;
+    const anchors = this.anchors;
+    for (let i = 0, l = children.length; i < l; i++) {
+      const child = children[i];
+      if (child) {
+        child.remove();
+      } else {
+        characterDataRemove.call(anchors[i]);
       }
     }
   }
@@ -3757,7 +4151,7 @@ var VText = class {
   beforeRemove() {
   }
   remove() {
-    nodeRemoveChild.call(this.parentEl, this.el);
+    characterDataRemove.call(this.el);
   }
   firstNode() {
     return this.el;
@@ -3769,8 +4163,10 @@ var VText = class {
       this.text = text2;
     }
   }
+  // its text, not markup: what an attribute or an interpolation of a t-set
+  // body needs (t-att-title="label"), and what text(vtext) renders
   toString() {
-    return this.text;
+    return "" + toText(this.text);
   }
 };
 function text(str) {
@@ -3781,6 +4177,8 @@ function toText(value) {
     case "string":
       return value;
     case "number":
+    case "bigint":
+    case "symbol":
       return String(value);
     case "boolean":
       return value ? "true" : "false";
@@ -3796,22 +4194,64 @@ var XMLNS_URI = "http://www.w3.org/2000/xmlns/";
 var stringifying = 0;
 function makePropSetter(name) {
   return function setProp(value) {
-    this[name] = value === 0 ? 0 : value ? value.valueOf() : "";
+    const prop = value === 0 ? 0 : value ? value.valueOf() : "";
+    if (name === "value" || this[name] !== prop) {
+      this[name] = prop;
+    }
   };
 }
-var cache = {};
-function createBlock(str) {
-  if (str in cache) {
-    return cache[str];
+function makeSyncedPropSetter(name) {
+  if (name === "value") {
+    return function setValue(value) {
+      this.value = value === 0 ? 0 : value || "";
+    };
   }
+  return function setFlag(value) {
+    const flag = !!value;
+    if (this[name] !== flag) {
+      this[name] = flag;
+    } else if (debug.template) {
+      debugLog("template", `${name} of <${this.localName}>: not written, it is already ${flag}`);
+    }
+  };
+}
+var cache = /* @__PURE__ */ Object.create(null);
+var NO_HANDLERS = [];
+function createBlock(str, handlers = NO_HANDLERS) {
+  const parsed = cache[str] || (cache[str] = parseBlock(str));
+  if (handlers.length !== parsed.handlerN) {
+    throw new OwlError(
+      `Invalid block "${str}": ${parsed.handlerN} handlers, ${handlers.length} given`
+    );
+  }
+  if (!handlers.length) {
+    return parsed.block || (parsed.block = makeBlockType(parsed, NO_HANDLERS));
+  }
+  for (const fn of handlers) {
+    if (fn !== null && typeof fn !== "function") {
+      throw new OwlError(`Invalid handler (expected a function, received: '${fn}')`);
+    }
+  }
+  return makeBlockType(parsed, handlers);
+}
+function makeBlockType({ Block, hasChildren }, handlers) {
+  return hasChildren ? (data, children = []) => new Block(data, handlers, children) : (data) => new Block(data, handlers);
+}
+function parseBlock(str) {
   const doc = new DOMParser().parseFromString(`<t>${str}</t>`, "text/xml");
+  const error = doc.getElementsByTagName("parsererror")[0];
+  if (error) {
+    throw new OwlError(`Invalid block "${str}": ${error.textContent}`);
+  }
   const node = doc.firstChild.firstChild;
   const tree = buildTree(node);
   const context = buildContext(tree);
-  const template = tree.el;
-  const Block = buildBlock(template, context);
-  cache[str] = Block;
-  return Block;
+  return {
+    Block: buildBlock(tree.el, context),
+    hasChildren: context.children.length > 0,
+    handlerN: context.handlers.length,
+    block: null
+  };
 }
 function buildTree(node, parent = null, domParentTree = null) {
   switch (node.nodeType) {
@@ -3846,7 +4286,13 @@ function buildTree(node, parent = null, domParentTree = null) {
         for (let i = 0; i < attrs.length; i++) {
           const attrName = attrs[i].name;
           const attrValue = attrs[i].value;
-          if (attrName.startsWith("block-handler-")) {
+          if (attrName.startsWith("block-handler-arg-")) {
+            info.push({
+              type: "handlerArg",
+              idx: parseInt(attrName.slice(18), 10),
+              handler: parseInt(attrValue, 10)
+            });
+          } else if (attrName.startsWith("block-handler-")) {
             const idx = parseInt(attrName.slice(14), 10);
             info.push({
               type: "handler",
@@ -3866,6 +4312,14 @@ function buildTree(node, parent = null, domParentTree = null) {
               type: "property",
               idx,
               name: attrValue
+            });
+          } else if (attrName.startsWith("block-sync-property-")) {
+            const idx = parseInt(attrName.slice(20), 10);
+            info.push({
+              type: "property",
+              idx,
+              name: attrValue,
+              sync: true
             });
           } else if (attrName === "block-attributes") {
             info.push({
@@ -3921,7 +4375,7 @@ function buildTree(node, parent = null, domParentTree = null) {
         if (node.childNodes.length === 1 && childNode.nodeType === Node.ELEMENT_NODE && childNode.tagName.startsWith("block-child-")) {
           const tagName2 = childNode.tagName;
           const index = parseInt(tagName2.slice(12), 10);
-          info.push({ idx: index, type: "child", isOnlyChild: true });
+          info.push({ idx: index, type: "child", withoutAnchor: true });
         } else {
           tree.firstChild = buildTree(node.firstChild, tree, tree);
           el.appendChild(tree.firstChild.el);
@@ -3951,7 +4405,7 @@ function buildTree(node, parent = null, domParentTree = null) {
       };
     }
   }
-  throw new OwlError("boom");
+  throw new OwlError(`Invalid block: unsupported ${node.nodeName} node`);
 }
 function addRef(tree) {
   tree.isRef = true;
@@ -3969,8 +4423,18 @@ function parentTree(tree) {
 }
 function buildContext(tree, ctx, fromIdx) {
   if (!ctx) {
-    ctx = { collectors: [], locations: [], children: [], cbRefs: [], refN: tree.refN };
-    fromIdx = 0;
+    ctx = {
+      collectors: [],
+      locations: [],
+      children: [],
+      cbRefs: [],
+      refN: tree.refN,
+      handlers: [],
+      handlerArgs: {}
+    };
+    buildContext(tree, ctx, 0);
+    ctx.locations.sort((a, b) => a.idx - b.idx);
+    return ctx;
   }
   if (tree.refN) {
     const initialIdx = fromIdx;
@@ -4009,11 +4473,8 @@ function updateCtx(ctx, tree) {
         });
         break;
       case "child":
-        if (info.isOnlyChild) {
-          ctx.children[info.idx] = {
-            parentRefIdx: info.refIdx,
-            isOnlyChild: true
-          };
+        if (info.withoutAnchor) {
+          ctx.children[info.idx] = { parentRefIdx: info.refIdx };
         } else {
           ctx.children[info.idx] = {
             parentRefIdx: parentTree(tree).refIdx,
@@ -4023,12 +4484,14 @@ function updateCtx(ctx, tree) {
         break;
       case "property": {
         const refIdx = info.refIdx;
-        const setProp = makePropSetter(info.name);
+        const setProp = info.sync ? makeSyncedPropSetter(info.name) : makePropSetter(info.name);
         ctx.locations.push({
           idx: info.idx,
           refIdx,
           setData: setProp,
-          updateData: setProp
+          updateData: setProp,
+          late: info.name === "value",
+          sync: info.sync
         });
         break;
       }
@@ -4069,13 +4532,25 @@ function updateCtx(ctx, tree) {
         });
         break;
       }
+      // a handler and its argument read their data at dispatch: their
+      // locations do nothing
       case "handler": {
-        const { setup, update } = createEventHandler(info.event);
+        ctx.handlers.push({ idx: info.idx, refIdx: info.refIdx, event: info.event });
         ctx.locations.push({
           idx: info.idx,
           refIdx: info.refIdx,
-          setData: setup,
-          updateData: update
+          setData: NO_OP,
+          updateData: NO_OP
+        });
+        break;
+      }
+      case "handlerArg": {
+        ctx.handlerArgs[info.handler] = info.idx;
+        ctx.locations.push({
+          idx: info.idx,
+          refIdx: info.refIdx,
+          setData: NO_OP,
+          updateData: NO_OP
         });
         break;
       }
@@ -4097,36 +4572,43 @@ function buildBlock(template, ctx) {
   if (ctx.children.length) {
     B = class extends B {
       children;
-      constructor(data, children) {
-        super(data);
+      constructor(data, handlers, children) {
+        super(data, handlers);
         this.children = children;
       }
     };
     B.prototype.beforeRemove = VMulti.prototype.beforeRemove;
-    return (data, children = []) => new B(data, children);
   }
-  return (data) => new B(data);
+  return B;
 }
 function createBlockClass(template, ctx) {
   const { refN, collectors, children, locations, cbRefs } = ctx;
-  locations.sort((a, b) => a.idx - b.idx);
   const locN = locations.length;
   const childN = children.length;
   const isDynamic = refN > 0;
   const locRefIdxs = locations.map((l) => l.refIdx);
   const locSetters = locations.map((l) => l.setData);
   const locUpdaters = locations.map((l) => l.updateData);
+  ctx.handlers.sort((a, b) => a.idx - b.idx);
+  const handlerN = ctx.handlers.length;
+  const handlerRefIdxs = ctx.handlers.map((h) => h.refIdx);
+  const handlerSetups = ctx.handlers.map(
+    (h, n) => createEventHandler(h.event, { fn: n, ctx: h.idx, arg: ctx.handlerArgs[h.idx] ?? -1 }).setup
+  );
+  const locSync = locations.map((l) => !!l.sync);
+  const lateLocs = [];
+  const earlyLocs = [];
+  locations.forEach((l, i) => (l.late ? lateLocs : earlyLocs).push(i));
+  const lateN = lateLocs.length;
+  const indexed = lateN > 0 || locSync.includes(true);
   const GETTERS = [nodeGetNextSibling, nodeGetFirstChild];
   const colN = collectors.length;
   const colPacked = collectors.map(
     (c) => c.idx & 32767 | (c.prevIdx & 32767) << 15 | (c.isFirstChild ? 1 : 0) << 30
   );
   const childInfos = children.map(
-    (c) => c.parentRefIdx & 32767 | (c.isOnlyChild ? 1 : 0) << 15 | ((c.afterRefIdx ?? 0) & 32767) << 16
+    (c) => c.parentRefIdx & 32767 | ((c.afterRefIdx ?? 0) & 32767) << 16
   );
-  const nodeProto = Node.prototype;
-  const nodeCloneNode = nodeProto.cloneNode;
-  const nodeInsertBefore2 = nodeProto.insertBefore;
   const elementRemove = Element.prototype.remove;
   class Block {
     el;
@@ -4134,8 +4616,11 @@ function createBlockClass(template, ctx) {
     data;
     children;
     refs;
-    constructor(data) {
+    constructor(data, handlers) {
       this.data = data;
+      if (handlerN) {
+        this.handlers = handlers;
+      }
     }
     beforeRemove() {
     }
@@ -4146,10 +4631,10 @@ function createBlockClass(template, ctx) {
       return this.el;
     }
     moveBeforeDOMNode(node) {
-      nodeInsertBefore2.call(this.parentEl, this.el, node);
+      nodeInsertBefore.call(this.parentEl, this.el, node);
     }
     moveBeforeVNode(other, afterNode) {
-      nodeInsertBefore2.call(this.parentEl, this.el, other ? other.el : afterNode);
+      nodeInsertBefore.call(this.parentEl, this.el, other ? other.el : afterNode);
     }
     toString() {
       const div = document.createElement("div");
@@ -4163,7 +4648,7 @@ function createBlockClass(template, ctx) {
     }
     mount(parent, afterNode) {
       const el = nodeCloneNode.call(template, true);
-      nodeInsertBefore2.call(parent, el, afterNode);
+      nodeInsertBefore.call(parent, el, afterNode);
       this.el = el;
       this.parentEl = parent;
     }
@@ -4180,11 +4665,18 @@ function createBlockClass(template, ctx) {
         const packed = colPacked[i];
         refs[packed & 32767] = GETTERS[packed >> 30 & 1].call(refs[packed >> 15 & 32767]);
       }
-      if (locN) {
-        const data = this.data;
+      const data = this.data;
+      if (lateN) {
+        for (const i of earlyLocs) {
+          locSetters[i].call(refs[locRefIdxs[i]], data[i]);
+        }
+      } else {
         for (let i = 0; i < locN; i++) {
           locSetters[i].call(refs[locRefIdxs[i]], data[i]);
         }
+      }
+      for (let i = 0; i < handlerN; i++) {
+        handlerSetups[i].call(refs[handlerRefIdxs[i]], this);
       }
       if (childN) {
         const children2 = this.children;
@@ -4194,19 +4686,21 @@ function createBlockClass(template, ctx) {
             const info = childInfos[i];
             const afterRefIdx = info >> 16 & 32767;
             const afterNode2 = afterRefIdx ? refs[afterRefIdx] : null;
-            child.isOnlyChild = !!(info & 1 << 15);
             child.mount(refs[info & 32767], afterNode2);
           }
         }
       }
-      nodeInsertBefore2.call(parent, el, afterNode);
+      for (const i of lateLocs) {
+        locSetters[i].call(refs[locRefIdxs[i]], data[i]);
+      }
+      nodeInsertBefore.call(parent, el, afterNode);
       this.el = el;
       this.parentEl = parent;
       if (cbRefs.length && !stringifying) {
-        const data = this.data;
+        const data2 = this.data;
         const refs2 = this.refs;
         for (let cbRef of cbRefs) {
-          const fn = data[cbRef];
+          const fn = data2[cbRef];
           fn(refs2[locRefIdxs[cbRef]], null);
         }
       }
@@ -4216,9 +4710,17 @@ function createBlockClass(template, ctx) {
         return;
       }
       const refs = this.refs;
-      if (locN) {
-        const data1 = this.data;
-        const data2 = other.data;
+      const data1 = this.data;
+      const data2 = other.data;
+      if (indexed) {
+        for (const i of earlyLocs) {
+          const val1 = data1[i];
+          const val2 = data2[i];
+          if (val1 !== val2 || locSync[i]) {
+            locUpdaters[i].call(refs[locRefIdxs[i]], val2, val1);
+          }
+        }
+      } else {
         for (let i = 0; i < locN; i++) {
           const val1 = data1[i];
           const val2 = data2[i];
@@ -4226,7 +4728,10 @@ function createBlockClass(template, ctx) {
             locUpdaters[i].call(refs[locRefIdxs[i]], val2, val1);
           }
         }
-        this.data = data2;
+      }
+      this.data = data2;
+      if (handlerN) {
+        this.handlers = other.handlers;
       }
       if (childN) {
         let children1 = this.children;
@@ -4248,10 +4753,16 @@ function createBlockClass(template, ctx) {
             const info = childInfos[i];
             const afterRefIdx = info >> 16 & 32767;
             const afterNode = afterRefIdx ? refs[afterRefIdx] : null;
-            child2.isOnlyChild = !!(info & 1 << 15);
             child2.mount(refs[info & 32767], afterNode);
             children1[i] = child2;
           }
+        }
+      }
+      for (const i of lateLocs) {
+        const val1 = data1[i];
+        const val2 = data2[i];
+        if (val1 !== val2 || locSync[i]) {
+          locUpdaters[i].call(refs[locRefIdxs[i]], val2, val1);
         }
       }
     };
@@ -4282,7 +4793,6 @@ var VList = class {
   children;
   anchor;
   parentEl;
-  isOnlyChild;
   constructor(children) {
     this.children = children;
   }
@@ -4338,19 +4848,7 @@ var VList = class {
       firstNode: cFirstNode
     } = proto;
     const _anchor = this.anchor;
-    const isOnlyChild = this.isOnlyChild;
     const parent = this.parentEl;
-    if (ch2.length === 0 && isOnlyChild) {
-      if (withBeforeRemove) {
-        for (let i = 0, l = ch1.length; i < l; i++) {
-          beforeRemove.call(ch1[i]);
-        }
-      }
-      nodeSetTextContent.call(parent, "");
-      releaseCatchers(parent);
-      nodeAppendChild.call(parent, _anchor);
-      return;
-    }
     let startIdx1 = 0;
     let startIdx2 = 0;
     let startVn1 = ch1[0];
@@ -4415,6 +4913,9 @@ var VList = class {
         cPatch.call(elmToMove, startVn2, withBeforeRemove);
         ch2[startIdx2] = elmToMove;
         ch1[idxInOld] = null;
+        if (elmToMove === startVn1) {
+          startVn1 = ch1[++startIdx1];
+        }
       }
       startVn2 = ch2[++startIdx2];
     }
@@ -4425,6 +4926,8 @@ var VList = class {
         for (let i = startIdx2; i <= endIdx2; i++) {
           cMount.call(ch2[i], parent, anchor);
         }
+      } else if (ch2.length === 0) {
+        removeItems(ch1, _anchor, false, withBeforeRemove);
       } else {
         for (let i = startIdx1; i <= endIdx1; i++) {
           let ch = ch1[i];
@@ -4449,20 +4952,11 @@ var VList = class {
     }
   }
   remove() {
-    const { parentEl, anchor } = this;
-    if (this.isOnlyChild) {
-      nodeSetTextContent.call(parentEl, "");
-      releaseCatchers(parentEl);
+    const children = this.children;
+    if (children.length) {
+      removeItems(children, this.anchor, true, false);
     } else {
-      const children = this.children;
-      const l = children.length;
-      if (l) {
-        const remove2 = children[0].remove;
-        for (let i = 0; i < l; i++) {
-          remove2.call(children[i]);
-        }
-      }
-      nodeRemoveChild.call(parentEl, anchor);
+      characterDataRemove.call(this.anchor);
     }
   }
   firstNode() {
@@ -4475,6 +4969,54 @@ var VList = class {
 };
 function list(children) {
   return new VList(children);
+}
+function removeItems(items, anchor, withAnchor, withBeforeRemove) {
+  const l = items.length;
+  const { beforeRemove, remove: remove2 } = items[0];
+  const parent = anchor.parentNode;
+  let owned = l > 1 && ownsParent(items, parent, anchor);
+  if (owned && withBeforeRemove) {
+    for (let i = 0; i < l; i++) {
+      beforeRemove.call(items[i]);
+    }
+    withBeforeRemove = false;
+    owned = ownsParent(items, parent, anchor);
+  }
+  if (owned) {
+    if (debug.template) {
+      debugLog("template", "list items removed at once: their parent holds nothing else");
+    }
+    nodeSetTextContent.call(parent, "");
+    if (!withAnchor) {
+      nodeAppendChild.call(parent, anchor);
+    }
+  } else if (l > 1 && debug.template) {
+    debugLog(
+      "template",
+      "list items removed one by one: not one node each, or their parent holds other nodes"
+    );
+  }
+  for (let i = 0; i < l; i++) {
+    const item = items[i];
+    if (withBeforeRemove) {
+      beforeRemove.call(item);
+    }
+    remove2.call(item);
+  }
+  if (withAnchor && !owned) {
+    characterDataRemove.call(anchor);
+  }
+}
+function ownsParent(items, parent, anchor) {
+  const firstNode = items[0].firstNode;
+  let node = nodeGetFirstChild.call(parent);
+  for (let i = 0, l = items.length; i < l; i++) {
+    if (node !== firstNode.call(items[i]) || node === null) {
+      return false;
+    }
+    node = nodeGetNextSibling.call(node);
+  }
+  return node === anchor && nodeGetNextSibling.call(anchor) === null;
 }
 function createMapping(ch1, startIdx1, endIdx1) {
   const mapping = /* @__PURE__ */ new Map();
@@ -4543,9 +5085,8 @@ var VHtml = class {
   beforeRemove() {
   }
   remove() {
-    const parent = this.parentEl;
     for (let elem of this.content) {
-      nodeRemoveChild.call(parent, elem);
+      elem.remove();
     }
   }
   firstNode() {
@@ -4559,8 +5100,172 @@ function html(str) {
   return new VHtml(str);
 }
 
+// ../owl-runtime/src/blockdom/event_catcher.ts
+var listenersByParent = /* @__PURE__ */ new WeakMap();
+var byEnd = /* @__PURE__ */ new WeakMap();
+var updating = [];
+function listenerKey(key) {
+  const mods = key.split(".");
+  let id = mods[0];
+  for (const m of ["capture", "passive", "synthetic"]) {
+    if (mods.includes(m)) {
+      id += "." + m;
+    }
+  }
+  return id;
+}
+function dispatch(key, parent, ev) {
+  let node = ev.target;
+  while (node && node.parentNode !== parent) {
+    node = node.parentNode;
+  }
+  if (!node) {
+    return;
+  }
+  for (let catcher = ownerOf(node, node); catcher; catcher = catcher.outer) {
+    const handlers = catcher.groups.get(key);
+    if (handlers) {
+      for (const { fn, mods } of handlers) {
+        config2.mainEventHandler(fn, mods, catcher.ctx, ev, node);
+      }
+    }
+  }
+}
+function ownerOf(node, from) {
+  for (let n = from; n; n = n.nextSibling) {
+    let catcher = byEnd.get(n) || null;
+    if (catcher) {
+      while (catcher && !catcher.holds(node)) {
+        catcher = catcher.outer;
+      }
+      return catcher;
+    }
+  }
+  return null;
+}
+function listen(keys, parent) {
+  let listeners = listenersByParent.get(parent);
+  if (!listeners) {
+    listenersByParent.set(parent, listeners = /* @__PURE__ */ new Map());
+  }
+  for (const key of keys) {
+    const listener = listeners.get(key);
+    if (listener) {
+      listener.count++;
+      continue;
+    }
+    const handler = createEventHandler(key, { fn: 0, ctx: 0, arg: -1 });
+    handler.setup.call(parent, {
+      data: [parent],
+      handlers: [(p, ev) => dispatch(key, p, ev)]
+    });
+    listeners.set(key, { handler, count: 1 });
+  }
+}
+function unlisten(keys, parent) {
+  const listeners = listenersByParent.get(parent);
+  for (const key of keys) {
+    const listener = listeners.get(key);
+    if (--listener.count === 0) {
+      listener.handler.remove.call(parent);
+      listeners.delete(key);
+    }
+  }
+}
+function createCatcher(eventsSpec, fns) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const key in eventsSpec) {
+    const id = listenerKey(key);
+    let handlers = groups.get(id);
+    if (!handlers) {
+      groups.set(id, handlers = []);
+    }
+    handlers.push({ fn: fns[eventsSpec[key]], mods: eventModifierMask(key) });
+  }
+  const keys = [...groups.keys()];
+  class VCatcher {
+    child;
+    groups = groups;
+    ctx;
+    outer = null;
+    parentEl;
+    afterNode = null;
+    constructor(child, ctx) {
+      this.child = child;
+      this.ctx = ctx;
+    }
+    mount(parent, afterNode) {
+      this.parentEl = parent;
+      const end = this.afterNode = document.createTextNode("");
+      nodeInsertBefore.call(parent, end, afterNode);
+      byEnd.set(end, this);
+      for (let i = updating.length - 1; i >= 0; i--) {
+        if (updating[i].parent === parent) {
+          this.outer = updating[i].catcher;
+          break;
+        }
+      }
+      updating.push({ parent, catcher: this });
+      try {
+        this.child.mount(parent, end);
+      } finally {
+        updating.pop();
+      }
+      if (!this.outer) {
+        this.outer = ownerOf(this.child.firstNode(), end.nextSibling);
+      }
+      listen(keys, parent);
+    }
+    holds(node) {
+      const first = this.child.firstNode();
+      return !!first && (first === node || !!(first.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING));
+    }
+    moveBeforeDOMNode(node) {
+      this.child.moveBeforeDOMNode(node);
+      nodeInsertBefore.call(this.parentEl, this.afterNode, node);
+    }
+    moveBeforeVNode(other, afterNode) {
+      if (other) {
+        afterNode = other.firstNode() || afterNode;
+      }
+      this.child.moveBeforeVNode(other ? other.child : null, afterNode);
+      nodeInsertBefore.call(this.parentEl, this.afterNode, afterNode);
+    }
+    patch(other, withBeforeRemove) {
+      if (this === other) {
+        return;
+      }
+      this.ctx = other.ctx;
+      updating.push({ parent: this.parentEl, catcher: this });
+      try {
+        this.child.patch(other.child, withBeforeRemove);
+      } finally {
+        updating.pop();
+      }
+    }
+    beforeRemove() {
+      this.child.beforeRemove();
+    }
+    remove() {
+      unlisten(keys, this.parentEl);
+      this.child.remove();
+      this.afterNode.remove();
+    }
+    firstNode() {
+      return this.child.firstNode();
+    }
+    toString() {
+      return this.child.toString();
+    }
+  }
+  return function(child, ctx) {
+    return new VCatcher(child, ctx);
+  };
+}
+
 // ../owl-runtime/src/blockdom/index.ts
 function mount(vnode, fixture, afterNode = null) {
+  addSyntheticRoot(fixture);
   vnode.mount(fixture, afterNode);
 }
 function patch(vnode1, vnode2, withBeforeRemove = false) {
@@ -4589,7 +5294,7 @@ function memoHit(previous, key, deps, node) {
     throw new OwlError(`t-memo expects an array of dependencies, got ${typeof deps}`);
   }
   const entry = previous?.get(key);
-  if (entry === void 0) {
+  if (entry === void 0 || node.fiber.deep) {
     return void 0;
   }
   const previousDeps = entry.deps;
@@ -4691,6 +5396,19 @@ var Scheduler = class _Scheduler {
     _Scheduler.active.add(this);
   }
   /**
+   * Drops the pass of a component destroyed before its commit.
+   */
+  forget(fiber) {
+    if (this.tasks.delete(fiber)) {
+      if (debug.scheduler) {
+        debugLog("scheduler", `drop ${fiber.node.componentName}: destroyed`);
+      }
+      if (!this.tasks.size && !this.processing) {
+        _Scheduler.active.delete(this);
+      }
+    }
+  }
+  /**
    * Process all current tasks. This only applies to the fibers that are ready.
    * Other tasks are left unchanged.
    */
@@ -4706,7 +5424,7 @@ var Scheduler = class _Scheduler {
         );
       }
       for (let f of renders) {
-        if (f.root && f.node.status !== STATUS.DESTROYED && f.node.fiber === f) {
+        if (f.root && f.node.fiber === f) {
           f.render();
         }
       }
@@ -4723,6 +5441,13 @@ var Scheduler = class _Scheduler {
       return;
     }
     this.processing = true;
+    try {
+      this.runTasks();
+    } finally {
+      this.processing = false;
+    }
+  }
+  runTasks() {
     this.frame = 0;
     let failed = false;
     if (debug.scheduler) {
@@ -4748,13 +5473,6 @@ var Scheduler = class _Scheduler {
         failed = true;
         continue;
       }
-      if (fiber.node.status === STATUS.DESTROYED) {
-        if (debug.scheduler) {
-          debugLog("scheduler", `drop ${fiber.node.componentName}: destroyed`);
-        }
-        this.tasks.delete(fiber);
-        continue;
-      }
       if (debug.scheduler && fiber.counter !== 0) {
         debugLog(
           "scheduler",
@@ -4768,18 +5486,12 @@ var Scheduler = class _Scheduler {
         }
       }
     }
-    for (let task of this.tasks) {
-      if (task.node.status === STATUS.DESTROYED) {
-        this.tasks.delete(task);
-      }
-    }
     if (failed) {
       this.flush();
     }
     if (!this.tasks.size) {
       _Scheduler.active.delete(this);
     }
-    this.processing = false;
   }
 };
 
@@ -4792,54 +5504,25 @@ function makeChildFiber(node, parent) {
     cancelFibers(current.children);
     current.root = null;
   }
-  return new Fiber2(node, parent);
+  const fiber = new Fiber2(node, parent);
+  queueOwedMounted(fiber);
+  return fiber;
 }
 function makeRootFiber(node) {
-  let current = node.fiber;
+  const current = node.fiber;
   if (current) {
-    let root = current.root;
-    current.renderState += 2;
+    const root = current.root;
+    if (root === current || current.phase === 0 /* NEW */ || !fibersInError.has(root) || fibersInError.has(current)) {
+      return recycleFiber(node, current, root);
+    }
     if (debug.fiber) {
       debugLog(
         "fiber",
-        `re-render ${node.componentName} before its commit (recycle ${current.renderState >> 1})`
+        `render ${node.componentName} on its own: ${root.node.componentName}'s pass failed`
       );
     }
-    root.locked = true;
-    const rendered = current.phase === 0 /* NEW */ ? 0 : 1;
-    root.setCounter(root.counter + rendered - cancelFibers(current.children));
-    root.locked = false;
-    current.children = [];
-    current.childrenMap = null;
-    current.bdom = null;
-    current.phase = 0 /* NEW */;
-    if (root instanceof MountFiber && root.prepared) {
-      root.prepared = false;
-      root.renderState &= ~APPLIED_TO_DOM;
-    }
-    if (fibersInError.has(current)) {
-      fibersInError.delete(current);
-      let failedElsewhere = false;
-      const failed = root.failed;
-      if (failed) {
-        failed.delete(current);
-        for (const fiber2 of failed) {
-          if (fiber2.node.fiber === fiber2) {
-            failedElsewhere = true;
-            break;
-          }
-        }
-      }
-      if (!failedElsewhere) {
-        fibersInError.delete(root);
-        root.failed = null;
-      }
-      current.renderState &= ~APPLIED_TO_DOM;
-      if (current instanceof RootFiber2) {
-        current.mounted = current instanceof MountFiber ? [current] : [];
-      }
-    }
-    return current;
+    root.counter -= cancelFibers(current.children);
+    current.root = null;
   }
   const fiber = new RootFiber2(node, null);
   if (node.willPatch.length) {
@@ -4848,10 +5531,52 @@ function makeRootFiber(node) {
   if (node.patched.length) {
     fiber.patched.push(fiber);
   }
+  queueOwedMounted(fiber);
   return fiber;
 }
-function throwOnRender() {
-  throw new OwlError("Attempted to render cancelled fiber");
+function recycleFiber(node, current, root) {
+  current.renderState += 2;
+  if (debug.fiber) {
+    debugLog(
+      "fiber",
+      `re-render ${node.componentName} before its commit (recycle ${current.renderState >> 1})`
+    );
+  }
+  root.locked = true;
+  const rendered = current.phase === 0 /* NEW */ ? 0 : 1;
+  root.counter += rendered - cancelFibers(current.children);
+  root.locked = false;
+  current.children = [];
+  current.childrenMap = null;
+  current.bdom = null;
+  current.phase = 0 /* NEW */;
+  if (root instanceof MountFiber && root.prepared) {
+    root.prepared = false;
+    root.renderState &= ~APPLIED_TO_DOM;
+  }
+  if (fibersInError.has(current)) {
+    fibersInError.delete(current);
+    let failedElsewhere = false;
+    const failed = root.failed;
+    if (failed) {
+      failed.delete(current);
+      for (const fiber of failed) {
+        if (fiber.node.fiber === fiber) {
+          failedElsewhere = true;
+          break;
+        }
+      }
+    }
+    if (!failedElsewhere) {
+      fibersInError.delete(root);
+      root.failed = null;
+    }
+    current.renderState &= ~APPLIED_TO_DOM;
+    if (current instanceof RootFiber2) {
+      current.mounted = current instanceof MountFiber ? [current] : [];
+    }
+  }
+  return current;
 }
 var subRootHosts = /* @__PURE__ */ new WeakMap();
 function above(node) {
@@ -4861,9 +5586,8 @@ function cancelFibers(fibers) {
   let result = 0;
   for (let fiber of fibers) {
     let node = fiber.node;
-    fiber.render = throwOnRender;
     if (node.status === STATUS.NEW) {
-      node.cancel();
+      node._destroy();
     }
     node.fiber = null;
     if (fiber.phase !== 0 /* NEW */) {
@@ -4900,7 +5624,7 @@ var Fiber2 = class {
     if (parent) {
       this.deep = parent.deep;
       const root = parent.root;
-      root.setCounter(root.counter + 1);
+      root.counter++;
       this.root = root;
       parent.children.push(this);
     } else {
@@ -4944,7 +5668,7 @@ var Fiber2 = class {
         });
         return;
       }
-      node.signalComputation.state = ComputationState.EXECUTED;
+      node.signalComputation.state = 0 /* EXECUTED */;
       node.previousMemos = node.memos;
       node.memos = null;
       const outerCollection = memoSuspend();
@@ -5012,11 +5736,21 @@ var RootFiber2 = class extends Fiber2 {
         }
       }
       current = void 0;
+      if (node.status === STATUS.DESTROYED) {
+        if (debug.fiber) {
+          debugLog(
+            "fiber",
+            `drop ${node.componentName}'s commit: an onWillPatch hook destroyed it`
+          );
+        }
+        this.locked = false;
+        return;
+      }
       node._patch();
       this.locked = false;
     } catch (e) {
       for (let fiber of this.mounted) {
-        fiber.node.willUnmount = [];
+        oweMounted(fiber.node);
       }
       this.locked = false;
       handleError({ fiber: current || this, error: e });
@@ -5027,14 +5761,26 @@ var RootFiber2 = class extends Fiber2 {
       callCommitHooks(this.patched, "patched", failed);
     }
   }
-  setCounter(newValue) {
-    this.counter = newValue;
-    if (newValue === 0) {
-      this.node.app.scheduler.flush();
+};
+var owedMounted = /* @__PURE__ */ new WeakMap();
+function oweMounted(node) {
+  if (!owedMounted.has(node)) {
+    owedMounted.set(node, node.willUnmount);
+    node.willUnmount = [];
+  }
+}
+function queueOwedMounted(fiber) {
+  const node = fiber.node;
+  if (owedMounted.has(node)) {
+    const mounted = fiber.root.mounted;
+    const i = mounted.findIndex((f) => f.node === node);
+    if (i < 0) {
+      mounted.push(fiber);
+    } else {
+      mounted[i] = fiber;
     }
   }
-};
-var deferredWillUnmount = /* @__PURE__ */ new WeakMap();
+}
 function callCommitHooks(fibers, hook, failed = false) {
   const mounting = hook === "mounted";
   let skipped2 = failed ? [] : null;
@@ -5042,9 +5788,8 @@ function callCommitHooks(fibers, hook, failed = false) {
   while (current = fibers.pop()) {
     const node = current.node;
     if (skipped2 && (!(current.renderState & APPLIED_TO_DOM) || fibersInError.has(current))) {
-      if (mounting && node.willUnmount.length) {
-        deferredWillUnmount.set(node, node.willUnmount);
-        node.willUnmount = [];
+      if (mounting) {
+        oweMounted(node);
       }
       skipped2.push(current);
       continue;
@@ -5053,10 +5798,10 @@ function callCommitHooks(fibers, hook, failed = false) {
       continue;
     }
     if (mounting) {
-      const deferred = deferredWillUnmount.get(node);
-      if (deferred) {
-        deferredWillUnmount.delete(node);
-        node.willUnmount = deferred;
+      const held = owedMounted.get(node);
+      if (held) {
+        owedMounted.delete(node);
+        node.willUnmount = held;
       }
     }
     if (debug.lifecycle && node[hook].length) {
@@ -5213,7 +5958,7 @@ var ComponentNode = class extends Scope {
     this.signalComputation = createComputation(
       () => this.render(false),
       false,
-      ComputationState.EXECUTED,
+      0 /* EXECUTED */,
       false,
       // a string per component: built only while its name can be logged
       debug.reactivity || debug.effect ? `render ${C.name}` : ""
@@ -5228,7 +5973,7 @@ var ComponentNode = class extends Scope {
     this.props = props2;
     const previousComputation = getCurrentComputation();
     setComputation(void 0);
-    scopeStack.push(this);
+    scopeStack2.push(this);
     this.collectingWillStart = true;
     try {
       const component = new C(this);
@@ -5241,7 +5986,7 @@ var ComponentNode = class extends Scope {
       throw e;
     } finally {
       this.collectingWillStart = false;
-      scopeStack.pop();
+      scopeStack2.pop();
       setComputation(previousComputation);
     }
   }
@@ -5279,11 +6024,22 @@ var ComponentNode = class extends Scope {
     }
     return f.bind(component, scope);
   }
-  async initiateRender(fiber) {
+  /**
+   * Starts this node's first render, as `fiber`: once its onWillStart hooks
+   * have settled, if it has some.
+   */
+  start(fiber) {
     this.fiber = fiber;
     if (this.mounted.length) {
       fiber.root.mounted.push(fiber);
     }
+    if (this.willStart.length) {
+      this.awaitWillStart(fiber);
+    } else {
+      fiber.render();
+    }
+  }
+  async awaitWillStart(fiber) {
     const component = this.component;
     if (debug.lifecycle) {
       debugLog("lifecycle", `willStart ${this.componentName}: ${this.willStart.length} hook(s)`);
@@ -5291,13 +6047,13 @@ var ComponentNode = class extends Scope {
     try {
       await Promise.all(untrack(() => this.willStart.map((f) => f.call(component))));
     } catch (e) {
-      handleHookRejection(this, e);
+      handleHookRejection(this, fiber, e);
       return;
     }
     if (debug.lifecycle) {
       debugLog("lifecycle", `willStart ${this.componentName} settled`);
     }
-    if (this.status === STATUS.NEW && this.fiber === fiber) {
+    if (this.fiber === fiber) {
       fiber.render();
     }
   }
@@ -5333,10 +6089,6 @@ var ComponentNode = class extends Scope {
       fiber.render();
     }
   }
-  cancel() {
-    this.parent.childMap?.delete(this.parentKey);
-    this._destroy();
-  }
   destroy() {
     let shouldRemove = this.status === STATUS.MOUNTED;
     removalDepth++;
@@ -5351,7 +6103,15 @@ var ComponentNode = class extends Scope {
     }
   }
   _destroy() {
+    if (this.status === STATUS.DESTROYED) {
+      return;
+    }
     const component = this.component;
+    const fiber = this.fiber;
+    this.fiber = null;
+    if (fiber !== null && fiber.root === fiber) {
+      this.app.scheduler.forget(fiber);
+    }
     let failure = null;
     if (debug.lifecycle) {
       debugLog(
@@ -5376,6 +6136,15 @@ var ComponentNode = class extends Scope {
         child._destroy();
       } catch (error) {
         failure ||= { error };
+      }
+    }
+    for (const child of fiber?.childrenMap?.values() || []) {
+      if (child.status === STATUS.NEW) {
+        try {
+          child._destroy();
+        } catch (error) {
+          failure ||= { error };
+        }
       }
     }
     this.finalize((e) => {
@@ -5445,17 +6214,7 @@ var ComponentNode = class extends Scope {
       }
       this.fiber = null;
     } else {
-      this.childMap = this.fiber.childrenMap;
-      removalDepth++;
-      try {
-        this.bdom.patch(this.fiber.bdom, true);
-      } finally {
-        removalDepth--;
-      }
-      this.sweepRefs();
-      sweepRemovedRefs();
-      this.fiber.renderState |= APPLIED_TO_DOM;
-      this.fiber = null;
+      this._patch(true);
     }
   }
   // ---------------------------------------------------------------------------
@@ -5509,13 +6268,12 @@ var ComponentNode = class extends Scope {
       this._patch();
     }
   }
-  _patch() {
-    const hasChildren = !!this.childMap?.size;
+  _patch(withBeforeRemove = !!this.childMap?.size) {
     const fiber = this.fiber;
     this.childMap = fiber.childrenMap;
     removalDepth++;
     try {
-      this.bdom.patch(fiber.bdom, hasChildren);
+      this.bdom.patch(fiber.bdom, withBeforeRemove);
     } finally {
       removalDepth--;
     }
@@ -5587,8 +6345,8 @@ function validateTarget(target, { attached = true } = {}) {
         "Cannot mount a component: the target document is not attached to a window (defaultView is missing)"
       );
     }
-    const { HTMLElement: HTMLElement2, ShadowRoot } = document2.defaultView;
-    if (target instanceof HTMLElement2 || target instanceof ShadowRoot) {
+    const { HTMLElement: HTMLElement2, ShadowRoot: ShadowRoot2 } = document2.defaultView;
+    if (target instanceof HTMLElement2 || target instanceof ShadowRoot2) {
       if (attached && !isAttachedToDocument(target, document2)) {
         throw new OwlError("Cannot mount a component on a detached dom node");
       }
@@ -5613,22 +6371,26 @@ var ObjectCreate = Object.create;
 function withDefault(value, defaultValue) {
   return value === void 0 || value === null || value === false ? defaultValue : value;
 }
-function callSlot(ctx, parent, key, name, dynamic, extra, defaultContent) {
+function callSlot(ctx, parent, key, name, dynamic, extra, defaultContent, owner) {
   key = key + "__slot_" + name;
-  const slots = ctx.__owl__.props.slots || {};
-  const { __render, __ctx, __scope } = slots[name] || {};
-  const slotScope = ObjectCreate(__ctx || {});
-  if (__scope) {
-    slotScope[__scope] = extra;
+  const slots = ctx.__owl__.props.slots;
+  const slot = slots && slots[name];
+  let slotBDom = null;
+  if (slot && slot.__render) {
+    let slotCtx = slot.__ctx || {};
+    if (slot.__scope) {
+      slotCtx = ObjectCreate(slotCtx);
+      slotCtx[slot.__scope] = extra || {};
+    }
+    slotBDom = slot.__render.call(slot.__owner, slotCtx, parent, key);
   }
-  const slotBDom = __render ? __render(slotScope, parent, key) : null;
   if (defaultContent) {
     let child1 = void 0;
     let child2 = void 0;
     if (slotBDom) {
       child1 = dynamic ? toggler(name, slotBDom) : slotBDom;
     } else {
-      child2 = defaultContent(ctx, parent, key);
+      child2 = defaultContent.call(owner, ctx, parent, key);
     }
     return multi([child1, child2]);
   }
@@ -5644,6 +6406,18 @@ function keyOf(key) {
   if (typeof key === "object" && key !== null || typeof key === "function") {
     if (Array.isArray(key)) {
       return keyOf(String(key));
+    }
+    let id = objectKeys.get(key);
+    if (id === void 0) {
+      id = ID_MARK + ++nextObjectKey;
+      objectKeys.set(key, id);
+    }
+    return id;
+  }
+  if (typeof key === "symbol") {
+    const name = Symbol.keyFor(key);
+    if (name !== void 0) {
+      return ID_MARK + "for:" + name;
     }
     let id = objectKeys.get(key);
     if (id === void 0) {
@@ -5699,10 +6473,32 @@ var LazyValue = class {
   evaluate(siteKey = "") {
     return this.fn.call(this.component, this.ctx, this.node, this.key + siteKey);
   }
+  // what an attribute or an interpolation makes of a t-set body: its HTML. A
+  // component would be created for a string, never mounted, and kept alive
   toString() {
-    return this.evaluate().toString();
+    const bdom2 = this.evaluate();
+    if (holdsComponent(bdom2)) {
+      throw new OwlError(
+        "A t-set body holding a component cannot be stringified (used in an attribute or an interpolation): output it with t-out"
+      );
+    }
+    return bdom2.toString();
   }
 };
+function holdsComponent(bdom2) {
+  if (bdom2 instanceof ComponentNode) {
+    return true;
+  }
+  const children = bdom2.children;
+  if (children) {
+    for (const child of children) {
+      if (child && holdsComponent(child)) {
+        return true;
+      }
+    }
+  }
+  return bdom2.child ? holdsComponent(bdom2.child) : false;
+}
 function safeOutput(value, key = "", site = "", depth = 0, k1, k2, k3) {
   if (value === void 0 || value === null) {
     return toggler("undefined", text(""));
@@ -5730,12 +6526,6 @@ function safeOutput(value, key = "", site = "", depth = 0, k1, k2, k3) {
     block = text(value);
   }
   return toggler(safeKey, block);
-}
-function safeOutputOr(value, defaultContent, key, site, depth, k1, k2, k3) {
-  if (value === void 0 || value === null) {
-    return toggler("default", defaultContent());
-  }
-  return safeOutput(value, key, site, depth, k1, k2, k3);
 }
 function createRef(ref2, node) {
   if (!ref2) {
@@ -5772,8 +6562,17 @@ function makeRefCallback(ref2, node) {
         if (atom.value === prevEl) ref2.set(null);
       };
     } else {
-      add = ref2.set.bind(ref2);
-      remove2 = () => ref2.set(null);
+      let current = null;
+      add = (el) => {
+        current = el;
+        ref2.set(el);
+      };
+      remove2 = (prevEl) => {
+        if (current === prevEl) {
+          current = null;
+          ref2.set(null);
+        }
+      };
     }
   } else {
     throw new OwlError(
@@ -5844,50 +6643,74 @@ function updateChild(node, props2, parentFiber) {
     );
   }
   node.forceNextRender = false;
-  const hooks = node.willUpdateProps;
   const fiber = makeChildFiber(node, parentFiber);
   node.fiber = fiber;
   const parentRoot = parentFiber.root;
   if (node.willPatch.length) parentRoot.willPatch.push(fiber);
   if (node.patched.length) parentRoot.patched.push(fiber);
-  let promises;
-  if (hooks.length) {
-    let nextProps = props2;
-    const defaultProps = node.defaultProps;
-    if (defaultProps) {
-      nextProps = Object.assign({}, props2);
-      for (const k in defaultProps) {
-        if (nextProps[k] === void 0) {
-          nextProps[k] = defaultProps[k];
-        }
+  const promises = node.willUpdateProps.length ? callWillUpdateProps(node, props2) : void 0;
+  if (promises) {
+    renderAfter(promises, node, fiber, props2);
+  } else {
+    renderWithProps(node, fiber, props2);
+  }
+}
+function renderWithProps(node, fiber, props2) {
+  node.props = props2;
+  for (const view of node.propsUpdated) view.update();
+  fiber.render();
+}
+function callWillUpdateProps(node, props2) {
+  let nextProps = props2;
+  const defaultProps = node.defaultProps;
+  if (defaultProps) {
+    nextProps = Object.assign({}, props2);
+    for (const k in defaultProps) {
+      if (nextProps[k] === void 0) {
+        nextProps[k] = defaultProps[k];
       }
     }
-    const component = node.component;
-    untrack(() => {
-      for (const f of hooks) {
-        const r = f.call(component, nextProps);
-        if (r && typeof r.then === "function") {
-          (promises ||= []).push(r);
-        }
+  }
+  const hooks = node.willUpdateProps;
+  const component = node.component;
+  let promises;
+  untrack(() => {
+    for (const f of hooks) {
+      const r = f.call(component, nextProps);
+      if (r && typeof r.then === "function") {
+        (promises ||= []).push(r);
       }
-    });
+    }
+  });
+  return promises;
+}
+function renderAfter(promises, node, fiber, props2) {
+  const p = promises.length === 1 ? promises[0] : Promise.all(promises);
+  p.then(
+    () => {
+      if (fiber !== node.fiber) {
+        if (debug.fiber) {
+          debugLog(
+            "fiber",
+            `drop ${node.componentName}'s update: superseded, or the component destroyed`
+          );
+        }
+        return;
+      }
+      renderWithProps(node, fiber, props2);
+    },
+    (error) => handleHookRejection(node, fiber, error)
+  );
+}
+var classKeys = /* @__PURE__ */ new WeakMap();
+var nextClassKey = 1;
+function classKey(C) {
+  let key = classKeys.get(C);
+  if (key === void 0) {
+    key = `${C.name}#${nextClassKey++}`;
+    classKeys.set(C, key);
   }
-  if (promises) {
-    const p = promises.length === 1 ? promises[0] : Promise.all(promises);
-    p.then(
-      () => {
-        if (fiber !== node.fiber) return;
-        node.props = props2;
-        for (const view of node.propsUpdated) view.update();
-        fiber.render();
-      },
-      (error) => handleHookRejection(node, error)
-    );
-  } else {
-    node.props = props2;
-    for (const view of node.propsUpdated) view.update();
-    fiber.render();
-  }
+  return key;
 }
 function createComponent(app, name, isStatic, hasSlotsProp, hasDynamicPropList, propList, signalProps) {
   const isDynamic = !isStatic;
@@ -5897,12 +6720,25 @@ function createComponent(app, name, isStatic, hasSlotsProp, hasDynamicPropList, 
     arePropsDifferent = (_1, _2) => true;
   } else if (hasDynamicPropList) {
     arePropsDifferent = function(props1, props2) {
+      let n = 0;
       for (let k in props1) {
         if (props1[k] !== props2[k] || !(k in props2)) {
+          if (debug.fiber) {
+            debugLog("fiber", `t-props: prop "${k}" changed or went`);
+          }
+          return true;
+        }
+        n++;
+      }
+      for (let k in props2) {
+        if (n-- === 0) {
+          if (debug.fiber) {
+            debugLog("fiber", `t-props: prop "${k}" came`);
+          }
           return true;
         }
       }
-      return Object.keys(props1).length !== Object.keys(props2).length;
+      return n !== 0;
     };
   } else if (hasNoProp) {
     arePropsDifferent = (_1, _2) => false;
@@ -5916,12 +6752,11 @@ function createComponent(app, name, isStatic, hasSlotsProp, hasDynamicPropList, 
       return false;
     };
   }
-  const initiateRender = ComponentNode.prototype.initiateRender;
   return (props2, key, ctx, parent, C) => {
-    let node = ctx.childMap?.get(key);
-    if (isDynamic && node && node.component.constructor !== C) {
-      node = void 0;
+    if (isDynamic) {
+      key = classKey(C) + key;
     }
+    let node = ctx.childMap?.get(key);
     const parentFiber = ctx.fiber;
     let signals;
     if (signalProps) {
@@ -5961,28 +6796,28 @@ function createComponent(app, name, isStatic, hasSlotsProp, hasDynamicPropList, 
       if (signals) {
         propSignals.set(node, signals);
       }
-      (ctx.childMap ||= /* @__PURE__ */ new Map()).set(key, node);
-      const fiber = new Fiber2(node, parentFiber);
-      if (node.willStart.length) {
-        initiateRender.call(node, fiber);
-      } else {
-        node.fiber = fiber;
-        if (node.mounted.length) {
-          fiber.root.mounted.push(fiber);
-        }
-        fiber.render();
-      }
+      (parentFiber.childrenMap ||= /* @__PURE__ */ new Map()).set(key, node);
+      node.start(new Fiber2(node, parentFiber));
+      memoCollectChild(key);
+      return node;
     }
     (parentFiber.childrenMap ||= /* @__PURE__ */ new Map()).set(key, node);
     memoCollectChild(key);
     return node;
   };
 }
+var zero = /* @__PURE__ */ Symbol("zero");
+var zeroCtx = /* @__PURE__ */ Symbol("zeroCtx");
+function withoutZero(ctx) {
+  const callCtx = ObjectCreate(ctx);
+  callCtx[zero] = null;
+  return callCtx;
+}
 function callTemplate(subTemplate, owner, app, ctx, parent, key) {
   const template = app.getTemplate(subTemplate);
-  return toggler(subTemplate, template.call(owner, ctx, parent, key + subTemplate));
+  return toggler(subTemplate, template.call(owner, ctx, parent, key + ID_MARK + subTemplate));
 }
-var INVALID_TAG_NAME = /[\s"'<>\/=&`]/;
+var INVALID_TAG_NAME = /[\s"'<>\/=&`:]|^block-/;
 function checkTagName(tag) {
   if (tag && (typeof tag !== "string" || INVALID_TAG_NAME.test(tag))) {
     throw new OwlError(`Invalid tag name: '${tag}'`);
@@ -5992,7 +6827,9 @@ function checkTagName(tag) {
 var helpers = {
   withDefault,
   checkTagName,
-  zero: /* @__PURE__ */ Symbol("zero"),
+  zero,
+  zeroCtx,
+  withoutZero,
   callSlot,
   withKey,
   keyOf,
@@ -6000,7 +6837,6 @@ var helpers = {
   toNumber,
   LazyValue,
   safeOutput,
-  safeOutputOr,
   createCatcher,
   markRaw,
   OwlError,
@@ -6016,10 +6852,56 @@ var helpers = {
   memoEnd
 };
 
+// ../owl-runtime/src/build_info.ts
+var buildHash = "d6c1a1da";
+
 // ../owl-runtime/src/template_set.ts
 var bdom = { text, createBlock, list, multi, html, toggler };
+var COMPILER_KEY = /* @__PURE__ */ Symbol.for("@odoo/owl/compiler");
+var BUILD = `${version}+${buildHash}`;
+var ownCompiler;
+function registeredBuilds() {
+  return Object.keys(globalThis[COMPILER_KEY] || {});
+}
+function checkBuild(compiler) {
+  if (compiler.version === void 0 || compiler.hash === void 0) {
+    throw new OwlError(
+      `The template compiler does not name its build, as the compiler module of an owl older than this runtime (${BUILD}) does: load the owl.compiler.es.js built with this runtime`
+    );
+  }
+  const build = `${compiler.version}+${compiler.hash}`;
+  if (build !== BUILD) {
+    throw new OwlError(
+      `The template compiler is build ${build}, but the runtime is ${BUILD}: load the owl.compiler.es.js built with this runtime`
+    );
+  }
+}
 var TemplateSet = class _TemplateSet {
-  static compiler = null;
+  /**
+   * The compiler: the one the full build sets, else the compiler module of
+   * this runtime's build once it is registered. Setting a compiler checks
+   * that it is of this build; null leaves the runtime without one, undefined
+   * takes the registered one again.
+   */
+  static get compiler() {
+    if (ownCompiler === void 0) {
+      const registered = globalThis[COMPILER_KEY]?.[BUILD];
+      if (!registered) {
+        return null;
+      }
+      if (debug.template) {
+        debugLog("template", `compiler module ${BUILD} installed`);
+      }
+      ownCompiler = registered;
+    }
+    return ownCompiler;
+  }
+  static set compiler(compiler) {
+    if (compiler) {
+      checkBuild(compiler);
+    }
+    ownCompiler = compiler;
+  }
   static registerTemplate(name, fn) {
     globalTemplates[name] = fn;
   }
@@ -6108,29 +6990,55 @@ var TemplateSet = class _TemplateSet {
     return this.templates[cacheKey];
   }
   _compileTemplate(name, template) {
-    if (!_TemplateSet.compiler) {
+    const compiler = _TemplateSet.compiler;
+    if (!compiler) {
       throw new OwlError(
-        `Unable to compile a template: load the compiler module (@odoo/owl/compiler) or use the full build`
+        `Unable to compile a template: load the compiler module (@odoo/owl/compiler) of this runtime's build or use the full build${missingCompiler()}`
       );
     }
-    return _TemplateSet.compiler.compile(template, {
-      name,
-      dev: this.dev,
-      translateFn: this.translateFn,
-      translatableAttributes: this.translatableAttributes,
-      customDirectives: this.customDirectives,
-      hasGlobalValues: this.hasGlobalValues
-    });
+    try {
+      return compiler.compile(template, {
+        name,
+        dev: this.dev,
+        translateFn: this.translateFn,
+        translatableAttributes: this.translatableAttributes,
+        customDirectives: this.customDirectives,
+        hasGlobalValues: this.hasGlobalValues
+      });
+    } catch (error) {
+      throw asOwnError(error, compiler);
+    }
   }
   _parseXML(xml2) {
-    if (!_TemplateSet.compiler) {
+    const compiler = _TemplateSet.compiler;
+    if (!compiler) {
       throw new OwlError(
-        `Unable to parse XML templates: load the compiler module (@odoo/owl/compiler), use the full build, or pass a Document instance`
+        `Unable to parse XML templates: load the compiler module (@odoo/owl/compiler) of this runtime's build, use the full build, or pass a Document instance${missingCompiler()}`
       );
     }
-    return _TemplateSet.compiler.parseXML(xml2);
+    try {
+      return compiler.parseXML(xml2);
+    } catch (error) {
+      throw asOwnError(error, compiler);
+    }
   }
 };
+function missingCompiler() {
+  if (ownCompiler === null) {
+    return ` (TemplateSet.compiler was set to null)`;
+  }
+  const builds = registeredBuilds();
+  return builds.length ? ` (the runtime is ${BUILD}; the compiler modules loaded are ${builds.join(", ")})` : "";
+}
+function asOwnError(error, compiler) {
+  const ForeignError = compiler.OwlError;
+  if (!ForeignError || ForeignError === OwlError || !(error instanceof ForeignError)) {
+    return error;
+  }
+  const ownError = new OwlError(error.message);
+  ownError.cause = error;
+  return ownError;
+}
 var globalTemplates = /* @__PURE__ */ Object.create(null);
 function xml(...args) {
   const name = `__template__${xml.nextId++}`;
@@ -6197,9 +7105,9 @@ var App = class _App extends TemplateSet {
     });
     let node;
     let error = null;
+    const subConfig = config3;
     try {
       node = new ComponentNode(Root, props2, this, null, null);
-      const subConfig = config3;
       if (subConfig.pluginManager) {
         node.pluginManager = subConfig.pluginManager;
       }
@@ -6234,15 +7142,19 @@ var App = class _App extends TemplateSet {
         return Promise.reject(error);
       }
       fiber = new MountFiber(node, null);
-      let handlers = nodeErrorHandlers.get(node);
-      if (!handlers) {
-        handlers = [];
-        nodeErrorHandlers.set(node, handlers);
+      let rejectMount = null;
+      if (!subConfig.onError) {
+        rejectMount = (error2, finalize) => {
+          finalize();
+          reject(error2);
+        };
+        let handlers = nodeErrorHandlers.get(node);
+        if (!handlers) {
+          handlers = [];
+          nodeErrorHandlers.set(node, handlers);
+        }
+        handlers.unshift(rejectMount);
       }
-      handlers.unshift((error2, finalize) => {
-        finalize();
-        reject(error2);
-      });
       const ready = new Promise((res) => {
         resolvePrepared = res;
         fiber.onPrepared = () => res();
@@ -6250,24 +7162,19 @@ var App = class _App extends TemplateSet {
       preparedPromise = ready;
       node.addHook("mounted", () => {
         resolve(node.component);
-        handlers.shift();
+        if (rejectMount) {
+          const handlers = nodeErrorHandlers.get(node);
+          handlers.splice(handlers.indexOf(rejectMount), 1);
+        }
       });
       this.scheduler.addFiber(fiber);
       if (this.pluginManager.status < STATUS.MOUNTED) {
         node.willStart.unshift(() => this.pluginManager.ready);
       }
-      if (node.willStart.length) {
-        node.initiateRender(fiber);
-      } else {
-        node.fiber = fiber;
-        if (node.mounted.length) {
-          fiber.root.mounted.push(fiber);
-        }
-        try {
-          fiber.render();
-        } catch (e) {
-          reject(e);
-        }
+      try {
+        node.start(fiber);
+      } catch (e) {
+        reject(e);
       }
       return preparedPromise;
     };
@@ -6341,20 +7248,29 @@ var App = class _App extends TemplateSet {
 };
 async function mount2(C, target, config3 = {}) {
   const app = new App(config3);
-  if (app.pluginManager.status < STATUS.MOUNTED) {
-    await app.pluginManager.ready;
-    if (app.destroyed) {
-      throw makeAbortError();
+  try {
+    if (app.pluginManager.status < STATUS.MOUNTED) {
+      await app.pluginManager.ready;
+      if (app.destroyed) {
+        throw makeAbortError();
+      }
     }
+    const root = app.createRoot(C, config3);
+    return await root.mount(target, config3);
+  } catch (error) {
+    if (!app.destroyed) {
+      try {
+        app.destroy();
+      } catch {
+      }
+    }
+    throw error;
   }
-  const root = app.createRoot(C, config3);
-  return root.mount(target, config3);
 }
 
 // ../owl-runtime/src/event_handling.ts
-var mainEventHandler = (data, ev, currentTarget) => {
+var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) => {
   setCurrentEvent(ev);
-  const modifiers = data[2];
   if (modifiers) {
     if (modifiers & EventModifier.PREVENT_ANY) {
       ev.preventDefault();
@@ -6375,12 +7291,7 @@ var mainEventHandler = (data, ev, currentTarget) => {
       ev.stopPropagation();
     }
   }
-  const handler = data[0];
   if (handler !== null) {
-    if (typeof handler !== "function") {
-      throw new OwlError(`Invalid handler (expected a function, received: '${handler}')`);
-    }
-    const context = data[1];
     let node = context ? context.__owl__ : null;
     const live = node ? node.status === STATUS.MOUNTED : true;
     if (debug.event) {
@@ -6391,8 +7302,8 @@ var mainEventHandler = (data, ev, currentTarget) => {
       );
     }
     if (live) {
-      if (data.length > 3) {
-        handler(context, ev, data[3]);
+      if (model !== void 0) {
+        handler(context, ev, model);
       } else {
         handler(context, ev);
       }
@@ -6731,7 +7642,14 @@ var ErrorBoundary = class extends Component {
   `;
   props = props({ error: types2.signal().optional(() => signal(null)) });
   setup() {
-    onError((e) => this.props.error.set(e));
+    onError(
+      (e) => untrack(() => {
+        if (this.props.error()) {
+          throw e;
+        }
+        this.props.error.set(e);
+      })
+    );
   }
 };
 
@@ -6842,6 +7760,41 @@ function resolveTarget(target) {
 // ../owl-runtime/src/suspense.ts
 var SuspenseHost = class extends Component {
   static template = xml`<t t-call-slot="default"/>`;
+  setup() {
+    this.__owl__.props.content.node = this.__owl__;
+  }
+};
+var SuspenseContent = class {
+  node = null;
+  anchor = null;
+  parent = null;
+  mount(parent, afterNode) {
+    this.parent = parent;
+    this.anchor = document.createTextNode("");
+    parent.insertBefore(this.anchor, afterNode);
+  }
+  content() {
+    const node = this.node;
+    return node !== null && node.status === STATUS.MOUNTED ? node.bdom : null;
+  }
+  moveBeforeDOMNode(node) {
+    this.content()?.moveBeforeDOMNode(node);
+    this.parent.insertBefore(this.anchor, node);
+  }
+  moveBeforeVNode(other, afterNode) {
+    this.moveBeforeDOMNode(other ? other.firstNode() : afterNode);
+  }
+  patch() {
+  }
+  beforeRemove() {
+  }
+  // the content is removed by its root's destroy, from Suspense's onWillDestroy
+  remove() {
+    this.anchor.remove();
+  }
+  firstNode() {
+    return this.content()?.firstNode() ?? this.anchor;
+  }
 };
 var Suspense = class extends Component {
   static template = xml`
@@ -6855,12 +7808,16 @@ var Suspense = class extends Component {
   subRootMounted = false;
   setup() {
     const suspenseNode = this.__owl__;
+    const content = new SuspenseContent();
+    const render2 = suspenseNode.renderFn;
+    suspenseNode.renderFn = () => multi([render2(), content]);
     const suspenseProps = this.props;
     const root = suspenseNode.app.createRoot(SuspenseHost, {
       props: {
         get slots() {
           return suspenseProps.slots;
-        }
+        },
+        content
       },
       // Thread the plugin manager so `providePlugins` contributions from
       // ancestors are visible inside the default slot. (createRoot defaults
@@ -6885,8 +7842,7 @@ var Suspense = class extends Component {
         return;
       }
       this.subRootMounted = true;
-      const anchor = suspenseNode.bdom.firstNode();
-      root.mount(anchor.parentElement, { afterNode: anchor });
+      root.mount(content.parent, { afterNode: content.anchor });
     });
     onWillDestroy(() => root.destroy());
   }
@@ -6922,14 +7878,17 @@ var blockDom = {
 };
 var __info__ = {
   version: App.version,
-  date: "2026-10-06T10:20:04.177Z",
-  hash: "cb976f64",
+  date: "2026-10-06T18:49:28.507Z",
+  hash: "d6c1a1da",
   url: "https://github.com/odoo/owl"
 };
 
 // ../owl-compiler/src/inline_expressions.ts
 var RESERVED_WORDS = new Set(
   "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent".split(",")
+);
+var STATEMENT_KEYWORDS = new Set(
+  "break,case,catch,class,const,continue,default,do,else,enum,export,extends,finally,for,if,import,super,switch,throw,try,var,while,with,yield".split(",")
 );
 var WORD_REPLACEMENT = Object.assign(/* @__PURE__ */ Object.create(null), {
   and: "&&",
@@ -6949,7 +7908,7 @@ var STATIC_TOKEN_MAP = Object.assign(/* @__PURE__ */ Object.create(null), {
   "(": "LEFT_PAREN",
   ")": "RIGHT_PAREN"
 });
-var OPERATORS = "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,=>,=,;,in ,new ,|,&,^,~".split(
+var OPERATORS = "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,delete ,=>,=,;,in ,new ,|,&,^,~".split(
   ","
 );
 var tokenizeString = function(expr) {
@@ -7019,8 +7978,43 @@ function replaceInterpolations(template, replacer) {
   }
   return result;
 }
+var REGEXP_PREFIX_RE = /[(,=:[!&|?{};+\-*%<>~^]/;
+var REGEXP_PREFIX_WORDS = /* @__PURE__ */ new Set([
+  "return",
+  "void",
+  "typeof",
+  "delete",
+  "in",
+  "new",
+  ...Object.keys(WORD_REPLACEMENT)
+]);
+function startsRegExp(str, previous) {
+  if (previous < 0) {
+    return true;
+  }
+  const char = str[previous];
+  if ((char === "+" || char === "-") && str[previous - 1] === char) {
+    return false;
+  }
+  if (REGEXP_PREFIX_RE.test(char)) {
+    return true;
+  }
+  let start = previous + 1;
+  while (start > 0 && IDENTIFIER_CHAR_RE.test(str[start - 1])) {
+    start--;
+  }
+  if (!REGEXP_PREFIX_WORDS.has(str.slice(start, previous + 1))) {
+    return false;
+  }
+  let before = start - 1;
+  while (before >= 0 && /\s/.test(str[before])) {
+    before--;
+  }
+  return str[before] !== ".";
+}
 function findClosingBrace(str, start) {
   let depth = 0;
+  let previous = -1;
   for (let i = start; i < str.length; i++) {
     const char = str[i];
     if (char === "'" || char === '"') {
@@ -7031,6 +8025,11 @@ function findClosingBrace(str, start) {
       }
     } else if (char === "`") {
       i = findTemplateEnd(str, i);
+    } else if (str.startsWith("/*", i) || str.startsWith("//", i)) {
+      i = commentEnd(str, i) - 1;
+      continue;
+    } else if (char === "/" && startsRegExp(str, previous)) {
+      i = regExpEnd(str, i);
     } else if (char === "{") {
       depth++;
     } else if (char === "}") {
@@ -7039,8 +8038,40 @@ function findClosingBrace(str, start) {
       }
       depth--;
     }
+    if (!/\s/.test(char)) {
+      previous = i;
+    }
   }
   throw new OwlError("Invalid expression");
+}
+function regExpEnd(str, start) {
+  let inClass = false;
+  let i = start + 1;
+  for (; str[i] !== "/" || inClass; i++) {
+    const char = str[i];
+    if (!char || char === "\n") {
+      throw new OwlError("Invalid expression");
+    }
+    if (char === "\\") {
+      i++;
+    } else if (char === "[") {
+      inClass = true;
+    } else if (char === "]") {
+      inClass = false;
+    }
+  }
+  return i;
+}
+function commentEnd(str, start) {
+  if (str[start + 1] === "*") {
+    const end2 = str.indexOf("*/", start + 2);
+    if (end2 < 0) {
+      throw new OwlError("Invalid expression");
+    }
+    return end2 + 2;
+  }
+  const end = str.indexOf("\n", start);
+  return end < 0 ? str.length : end;
 }
 var NUMBER_RE = /^(?:0[xX][\da-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\d[\d_]*(?:\.[\d_]*)?(?:[eE][+-]?\d[\d_]*)?)n?/;
 var tokenizeNumber = function(expr) {
@@ -7076,21 +8107,7 @@ var tokenizeRegExp = function(expr, previous, beforePrevious) {
   if (expr[0] !== "/" || previous && !afterKeyword && (!OPERAND_PREFIXES.has(previous.type) || previous.value === "++" || previous.value === "--")) {
     return false;
   }
-  let inClass = false;
-  let i = 1;
-  for (; expr[i] !== "/" || inClass; i++) {
-    const char = expr[i];
-    if (!char || char === "\n") {
-      throw new OwlError("Invalid expression");
-    }
-    if (char === "\\") {
-      i++;
-    } else if (char === "[") {
-      inClass = true;
-    } else if (char === "]") {
-      inClass = false;
-    }
-  }
+  const i = regExpEnd(expr, 0);
   const flags = /^[a-z]*/.exec(expr.slice(i + 1))[0];
   return { type: "VALUE", value: expr.slice(0, i + 1 + flags.length) };
 };
@@ -7139,6 +8156,9 @@ function tokenize(expr) {
   try {
     while (token) {
       current = current.trim();
+      while (current.startsWith("/*") || current.startsWith("//")) {
+        current = current.slice(commentEnd(current, 0)).trim();
+      }
       if (current) {
         const previous = result[result.length - 1];
         const isProperty = previous?.value === "." || previous?.value === "?.";
@@ -7194,22 +8214,7 @@ function bindArrowParams(tokens, end, scope) {
       break;
     }
   }
-  const levels = [{ inDefault: false, base: false }];
-  for (let k = start + 1; k < end; k++) {
-    const t = tokens[k];
-    const level = levels[levels.length - 1];
-    if (LEFT_GROUPS.has(t.type)) {
-      levels.push({ inDefault: level.inDefault, base: level.inDefault });
-    } else if (RIGHT_GROUPS.has(t.type)) {
-      levels.pop();
-    } else if (t.type === "COMMA") {
-      level.inDefault = level.base;
-    } else if (t.type === "OPERATOR" && t.value === "=") {
-      level.inDefault = true;
-    } else if (t.type === "SYMBOL" && t.varName && !level.inDefault) {
-      scope.add(t.varName);
-    }
-  }
+  bindPattern(tokens, start, scope);
   for (let k = start + 1; k < end; k++) {
     const t = tokens[k];
     if (t.type === "SYMBOL" && t.varName && scope.has(t.varName)) {
@@ -7271,7 +8276,7 @@ function bindPattern(tokens, start, scope) {
     const t = tokens[k];
     const level = levels[levels.length - 1];
     if (LEFT_GROUPS.has(t.type)) {
-      const prev = tokens[k - 1].type;
+      const prev = tokens[k - 1]?.type;
       const inExpr = !!level && (level.inExpr || level.isObject && (prev === "LEFT_BRACE" || prev === "COMMA"));
       levels.push({ inExpr, base: inExpr, isObject: t.type === "LEFT_BRACE" });
     } else if (RIGHT_GROUPS.has(t.type)) {
@@ -7284,7 +8289,7 @@ function bindPattern(tokens, start, scope) {
     } else if (t.type === "OPERATOR" && t.value === "=") {
       level.inExpr = true;
     } else if (t.type === "SYMBOL" && !level.inExpr && tokens[k + 1]?.type !== "COLON" && tokens[k - 1].value !== "." && tokens[k - 1].value !== "?.") {
-      scope.add(t.value);
+      scope.add(t.varName ?? t.value);
     }
   }
   return k;
@@ -7325,9 +8330,9 @@ function collectVariables(tokens, start) {
   return [...vars];
 }
 function processExpr(expr, seededLocals, inAsyncArrow = false) {
-  const scopeStack2 = [];
+  const scopeStack3 = [];
   if (seededLocals?.size || inAsyncArrow) {
-    scopeStack2.push({
+    scopeStack3.push({
       vars: seededLocals || /* @__PURE__ */ new Set(),
       depth: -Infinity,
       ternaries: 0,
@@ -7340,10 +8345,10 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
   let topLevelArrowIndex = -1;
   let topLevelParams = null;
   function isLocal(name) {
-    return scopeStack2.some((s) => s.vars.has(name));
+    return scopeStack3.some((s) => s.vars.has(name));
   }
   function innermostScopeAtDepth() {
-    const scope = scopeStack2[scopeStack2.length - 1];
+    const scope = scopeStack3[scopeStack3.length - 1];
     return scope && scope.depth === stack.length ? scope : null;
   }
   while (i < tokens.length) {
@@ -7355,7 +8360,7 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
       case "LEFT_BRACE":
         if (prevToken?.value === "=>") {
           stack.push("BLOCK");
-          const scope = scopeStack2[scopeStack2.length - 1];
+          const scope = scopeStack3[scopeStack3.length - 1];
           if (scope) {
             bindBlockDeclarations(tokens, i, scope.vars);
           }
@@ -7371,13 +8376,13 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
       case "RIGHT_BRACKET":
       case "RIGHT_PAREN":
         stack.pop();
-        while (scopeStack2.length > 0 && stack.length < scopeStack2[scopeStack2.length - 1].depth) {
-          scopeStack2.pop();
+        while (scopeStack3.length > 0 && stack.length < scopeStack3[scopeStack3.length - 1].depth) {
+          scopeStack3.pop();
         }
         break;
       case "COMMA":
         while (innermostScopeAtDepth()) {
-          scopeStack2.pop();
+          scopeStack3.pop();
         }
         break;
       case "COLON": {
@@ -7387,14 +8392,14 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
             scope.ternaries--;
             break;
           }
-          scopeStack2.pop();
+          scopeStack3.pop();
         }
         break;
       }
       case "OPERATOR":
         if (token.value === ";") {
           while (innermostScopeAtDepth()) {
-            scopeStack2.pop();
+            scopeStack3.pop();
           }
         } else if (token.value === "?") {
           const scope = innermostScopeAtDepth();
@@ -7408,7 +8413,7 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
       if (token.value === "async") {
         token.isKeyword = isAsyncArrow(tokens, i);
       } else if (token.value === "await") {
-        token.isKeyword = !!scopeStack2[scopeStack2.length - 1]?.isAsync;
+        token.isKeyword = !!scopeStack3[scopeStack3.length - 1]?.isAsync;
       }
     }
     let isVar = token.type === "SYMBOL" && !token.isKeyword && !RESERVED_WORDS.has(token.value);
@@ -7426,15 +8431,21 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
           }
         }
       }
+      const startsStatement = groupType === "BLOCK" && (prevToken.type === "LEFT_BRACE" || prevToken.type === "RIGHT_BRACE" || prevToken.value === ";");
+      if (isVar && startsStatement && STATEMENT_KEYWORDS.has(token.value)) {
+        throw new OwlError(
+          `Unsupported statement '${token.value}' in a template expression (\`${expr}\`): an arrow function's block body takes declarations, expressions and return only`
+        );
+      }
     }
     if (token.type === "TEMPLATE_STRING") {
       const currentLocals = /* @__PURE__ */ new Set();
-      for (const scope of scopeStack2) {
+      for (const scope of scopeStack3) {
         for (const v of scope.vars) currentLocals.add(v);
       }
       const templateVars = [];
       token.value = token.replace((expr2) => {
-        const isAsync = !!scopeStack2[scopeStack2.length - 1]?.isAsync;
+        const isAsync = !!scopeStack3[scopeStack3.length - 1]?.isAsync;
         const processed = processExpr(expr2, currentLocals, isAsync);
         templateVars.push(...processed.variables);
         return processed.expr;
@@ -7456,12 +8467,11 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
         topLevelArrowIndex = i + 1;
         topLevelParams = params;
       }
-      scopeStack2.push({ vars: newScope, depth: stack.length, ternaries: 0, isAsync });
+      scopeStack3.push({ vars: newScope, depth: stack.length, ternaries: 0, isAsync });
     }
     if (isVar) {
       token.varName = token.value;
       if (!isLocal(token.value)) {
-        token.originalValue = token.value;
         token.value = `ctx['${token.value}']`;
       } else {
         token.value = `_${token.value}`;
@@ -7470,7 +8480,7 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
     }
     i++;
   }
-  const freeVariables = topLevelArrowIndex === -1 ? null : collectVariables(tokens, topLevelArrowIndex + 1).filter((v) => v !== "this");
+  const freeVariables = topLevelArrowIndex === -1 ? null : collectVariables(tokens, topLevelParams[0]).filter((v) => v !== "this");
   const arrow = topLevelArrowIndex === -1 ? null : {
     isAsync: !!tokens[0].isKeyword,
     params: render(tokens.slice(...topLevelParams)),
@@ -7483,34 +8493,49 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
     arrow
   };
 }
-function compileExpr(expr, seededLocals) {
-  return processExpr(expr, seededLocals).expr;
+function compileExpr(expr) {
+  return processExpr(expr).expr;
 }
-var INTERP_REGEXP = /\{\{.*?\}\}|\#\{.*?\}/g;
-var HAS_INTERP_REGEXP = /\{\{.*?\}\}|\#\{.*?\}/;
+function findInterpolations(s) {
+  const result = [];
+  for (let i = 0; i < s.length; i++) {
+    const isDouble = s.startsWith("{{", i);
+    if (!isDouble && !s.startsWith("#{", i)) {
+      continue;
+    }
+    let close;
+    try {
+      close = findClosingBrace(s, i + 2);
+    } catch {
+      continue;
+    }
+    if (isDouble && s[close + 1] !== "}") {
+      continue;
+    }
+    const end = isDouble ? close + 2 : close + 1;
+    result.push({ start: i, end, expr: s.slice(i + 2, close) });
+    i = end - 1;
+  }
+  return result;
+}
 function isInterpolated(s) {
-  return HAS_INTERP_REGEXP.test(s);
+  return findInterpolations(s).length > 0;
 }
 function escapeTemplateString(str) {
   return str.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 }
-function replaceDynamicParts(s, replacer) {
-  let matches = s.match(INTERP_REGEXP);
-  if (matches && matches[0].length === s.length) {
-    return `(${replacer(s.slice(2, matches[0][0] === "{" ? -2 : -1))})`;
+function interpolate(s) {
+  const parts = findInterpolations(s);
+  if (parts.length === 1 && parts[0].start === 0 && parts[0].end === s.length) {
+    return `(${compileExpr(parts[0].expr)})`;
   }
   let r = "";
   let last = 0;
-  for (const match of s.matchAll(INTERP_REGEXP)) {
-    const part = match[0];
-    r += escapeTemplateString(s.slice(last, match.index));
-    r += "${" + replacer(part.slice(2, part[0] === "{" ? -2 : -1)) + "}";
-    last = match.index + part.length;
+  for (const { start, end, expr } of parts) {
+    r += escapeTemplateString(s.slice(last, start)) + "${" + compileExpr(expr) + "}";
+    last = end;
   }
   return "`" + r + escapeTemplateString(s.slice(last)) + "`";
-}
-function interpolate(s) {
-  return replaceDynamicParts(s, compileExpr);
 }
 
 // ../owl-compiler/src/parse_xml.ts
@@ -7522,20 +8547,16 @@ function parseXML(xml2) {
     const parsererrorText = doc.getElementsByTagName("parsererror")[0].textContent;
     if (parsererrorText) {
       msg += "\nThe parser has produced the following error message:\n" + parsererrorText;
-      const re = /\d+/g;
-      const firstMatch = re.exec(parsererrorText);
-      if (firstMatch) {
-        const lineNumber = Number(firstMatch[0]);
+      const position = /line(?: number)?\s+(\d+)\D+?column\s+(\d+)/i.exec(parsererrorText) || /(\d+)\D+(\d+)/.exec(parsererrorText);
+      if (position) {
+        const lineNumber = Number(position[1]);
+        const column = Number(position[2]);
         const line = xml2.split("\n")[lineNumber - 1];
-        const secondMatch = re.exec(parsererrorText);
-        if (line && secondMatch) {
-          const column = Number(secondMatch[0]);
-          if (column >= 1 && column <= line.length) {
-            msg += `
+        if (line && column >= 1 && column <= line.length) {
+          msg += `
 The error might be located at xml line ${lineNumber} column ${column}
 ${line}
 ${"-".repeat(column - 1)}^`;
-          }
         }
       }
     }
@@ -7572,15 +8593,13 @@ var ForEachNoFlag = {
 var NO_DIRECTIVES = {};
 var cache2 = /* @__PURE__ */ new WeakMap();
 function parse(xml2, customDir) {
-  const ctx = {
-    inPreTag: false,
-    customDirectives: customDir
-  };
+  const customDirectives = customDir && Object.keys(customDir).length ? customDir : void 0;
+  const ctx = { inPreTag: false, customDirectives };
   if (typeof xml2 === "string") {
     const elem = parseXML(`<t>${xml2}</t>`).firstChild;
     return _parse(elem, ctx);
   }
-  const directivesKey = customDir || NO_DIRECTIVES;
+  const directivesKey = customDirectives || NO_DIRECTIVES;
   let astCache = cache2.get(directivesKey);
   if (!astCache) {
     astCache = /* @__PURE__ */ new WeakMap();
@@ -7604,7 +8623,7 @@ function parseNode(node, ctx) {
   return parseTCustom(node, ctx) || parseTDebugLog(node, ctx) || parseTForEach(node, ctx) || parseTIf(node, ctx) || parseTTranslation(node, ctx) || parseTTranslationContext(node, ctx) || parseTKey(node, ctx) || parseTCall(node, ctx) || parseTCallBlock(node, ctx) || parseTOutNode(node, ctx) || parseTCallSlot(node, ctx) || parseComponent(node, ctx) || parseDOMNode(node, ctx) || parseTSetNode(node, ctx) || parseTNode(node, ctx);
 }
 function isTranslationContext(attribute) {
-  return attribute === "t-translation-context" || attribute.startsWith("t-translation-context-");
+  return attribute === "t-translation-context" || attribute.startsWith(TRANSLATION_CONTEXT_PREFIX);
 }
 function unsupportedDirectiveError(directive, where) {
   return new OwlError(`Unsupported directive '${directive}' on ${where}`);
@@ -7613,6 +8632,38 @@ function tRefError(node) {
   return new OwlError(
     `Directive 't-ref' can only be used on DOM nodes (used on a <${node.tagName}>)`
   );
+}
+function exprAttr(node, attr) {
+  const value = node.getAttribute(attr);
+  if (value !== null && !value.trim()) {
+    throw emptyExprError(attr, node);
+  }
+  return value;
+}
+function emptyExprError(attr, node) {
+  return new OwlError(`Directive '${attr}' needs an expression (on a <${node.tagName}>)`);
+}
+function wrapping(ast, content) {
+  if (!content || content.hasNoRepresentation) {
+    ast.hasNoRepresentation = true;
+  }
+  return ast;
+}
+function isComponentNode(el) {
+  const first = el.tagName[0];
+  return first === first.toUpperCase() || el.hasAttribute("t-component");
+}
+var TRANSLATION_CONTEXT_PREFIX = "t-translation-context-";
+function collectHandler(found, name, value, events = true) {
+  if (name.startsWith(TRANSLATION_CONTEXT_PREFIX)) {
+    (found.translationCtx ||= {})[name.slice(TRANSLATION_CONTEXT_PREFIX.length)] = value;
+    return true;
+  }
+  if (events && name.startsWith("t-on-")) {
+    (found.on ||= {})[name.slice(5)] = value;
+    return true;
+  }
+  return false;
 }
 function parseTNode(node, ctx) {
   if (node.tagName !== "t") {
@@ -7669,28 +8720,13 @@ function parseTDebugLog(node, ctx) {
   if (node.hasAttribute("t-debug")) {
     node.removeAttribute("t-debug");
     const content = parseNode(node, ctx);
-    const ast = {
-      type: ASTType.TDebug,
-      content
-    };
-    if (content?.hasNoRepresentation) {
-      ast.hasNoRepresentation = true;
-    }
-    return ast;
+    return wrapping({ type: ASTType.TDebug, content }, content);
   }
   if (node.hasAttribute("t-log")) {
     const expr = node.getAttribute("t-log");
     node.removeAttribute("t-log");
     const content = parseNode(node, ctx);
-    const ast = {
-      type: ASTType.TLog,
-      expr,
-      content
-    };
-    if (content?.hasNoRepresentation) {
-      ast.hasNoRepresentation = true;
-    }
-    return ast;
+    return wrapping({ type: ASTType.TLog, expr, content }, content);
   }
   return null;
 }
@@ -7725,26 +8761,28 @@ function parseDOMNode(node, ctx) {
     ctx.inPreTag = true;
   }
   let ns = !ctx.nameSpace && ROOT_SVG_TAGS.has(tagName) ? "http://www.w3.org/2000/svg" : null;
-  const ref2 = node.getAttribute("t-ref");
+  const ref2 = exprAttr(node, "t-ref");
   node.removeAttribute("t-ref");
   const nodeAttrsNames = node.getAttributeNames();
   let attrs = null;
-  let attrsTranslationCtx = null;
-  let on = null;
+  const handlers = { on: null, translationCtx: null };
   let model = null;
   for (let attr of nodeAttrsNames) {
     const value = node.getAttribute(attr);
     if (attr === "t-on" || attr === "t-on-") {
       throw new OwlError("Missing event name with t-on directive");
     }
-    if (attr.startsWith("t-on-")) {
-      on = on || {};
-      on[attr.slice(5)] = value;
-    } else if (attr === "t-model" || attr.startsWith("t-model.")) {
+    if (collectHandler(handlers, attr, value)) {
+      continue;
+    }
+    if (attr === "t-model" || attr.startsWith("t-model.")) {
       if (!["input", "select", "textarea"].includes(tagName)) {
         throw new OwlError(
           "The t-model directive only works with <input>, <textarea> and <select>"
         );
+      }
+      if (!value.trim()) {
+        throw emptyExprError(attr, node);
       }
       const typeAttr = node.getAttribute("type");
       const isInput = tagName === "input";
@@ -7773,20 +8811,23 @@ function parseDOMNode(node, ctx) {
         isProxy: hasProxyMod
       };
       if (isSelect) {
-        ctx = Object.assign({}, ctx);
         ctx.tModelInfo = model;
       }
     } else if (attr.startsWith("block-")) {
       throw new OwlError(`Invalid attribute: '${attr}'`);
     } else if (attr === "xmlns") {
       ns = value;
-    } else if (attr.startsWith("t-translation-context-")) {
-      const attrName = attr.slice(22);
-      attrsTranslationCtx = attrsTranslationCtx || {};
-      attrsTranslationCtx[attrName] = value;
     } else if (attr !== "t-name") {
-      if (attr.startsWith("t-") && !ATT_DIRECTIVE_RE.test(attr)) {
-        throw new OwlError(`Unknown QWeb directive: '${attr}'`);
+      if (attr.startsWith("t-")) {
+        if (!ATT_DIRECTIVE_RE.test(attr)) {
+          if (attr.startsWith("t-custom-") && attr.length > 9) {
+            throw new OwlError(`Custom directive "${attr.split(".")[0].slice(9)}" is not defined`);
+          }
+          throw new OwlError(`Unknown QWeb directive: '${attr}'`);
+        }
+        if (!attr.startsWith("t-attf") && !value.trim()) {
+          throw emptyExprError(attr, node);
+        }
       }
       const tModel = ctx.tModelInfo;
       if (tModel && ["t-att-value", "t-attf-value"].includes(attr)) {
@@ -7805,8 +8846,8 @@ function parseDOMNode(node, ctx) {
     tag: tagName,
     dynamicTag,
     attrs,
-    attrsTranslationCtx,
-    on,
+    attrsTranslationCtx: handlers.translationCtx,
+    on: handlers.on,
     ref: ref2,
     content: children,
     model,
@@ -7822,7 +8863,7 @@ function parseTOutNode(node, ctx) {
       `t-esc has been deprecated in favor of t-out. If the value to render is not wrapped by the "markup" function, it will be escaped`
     );
   }
-  const expr = node.getAttribute("t-out") || node.getAttribute("t-esc");
+  const expr = exprAttr(node, node.hasAttribute("t-out") ? "t-out" : "t-esc");
   node.removeAttribute("t-out");
   node.removeAttribute("t-esc");
   const tOut = { type: ASTType.TOut, expr, body: null };
@@ -7838,7 +8879,7 @@ function parseTOutNode(node, ctx) {
     tOut.body = body.length ? body : null;
     return tOut;
   }
-  const ref2 = node.getAttribute("t-ref");
+  const ref2 = exprAttr(node, "t-ref");
   node.removeAttribute("t-ref");
   const ast = parseNode(node, ctx);
   if (ast?.type !== ASTType.DomNode) {
@@ -7856,7 +8897,7 @@ function parseTForEach(node, ctx) {
     return null;
   }
   const html2 = node.outerHTML;
-  const collection = node.getAttribute("t-foreach");
+  const collection = exprAttr(node, "t-foreach");
   node.removeAttribute("t-foreach");
   const elem = node.getAttribute("t-as");
   if (!elem) {
@@ -7865,21 +8906,21 @@ function parseTForEach(node, ctx) {
     );
   }
   node.removeAttribute("t-as");
-  const key = node.getAttribute("t-key");
+  const key = exprAttr(node, "t-key");
   if (!key) {
     throw new OwlError(
       `"Directive t-foreach should always be used with a t-key!" (expression: t-foreach="${collection}" t-as="${elem}")`
     );
   }
   node.removeAttribute("t-key");
-  const memo = node.getAttribute("t-memo");
+  const memo = exprAttr(node, "t-memo");
   node.removeAttribute("t-memo");
   const body = parseNode(node, ctx);
   if (!body) {
     return null;
   }
   if (memo !== null) {
-    const directive = findDirective(body, UNVISITABLE);
+    const directive = findNode(body, unvisitable);
     if (body.hasNoRepresentation || directive) {
       throw new OwlError(
         `t-memo needs an item made of elements, text, t-out and components only (expression: t-foreach="${collection}" t-memo="${memo}"${directive ? `, found ${directive}` : ""})`
@@ -7902,82 +8943,48 @@ function parseTForEach(node, ctx) {
   };
   if (memo !== null) {
     ast.memo = memo;
-    if (findDirective(body, COMPONENT) || hasMemoizedLoop(body)) {
+    if (findNode(body, memoizedContent)) {
       ast.memoContent = true;
     }
   }
-  if (body.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
-  }
-  return ast;
+  return wrapping(ast, body);
 }
 var UNVISITABLE = {
   [ASTType.TCall]: "t-call",
   [ASTType.TCallSlot]: "t-slot",
   [ASTType.TCallBlock]: "t-call-block"
 };
-var COMPONENT = { [ASTType.TComponent]: "a component" };
-function findDirective(value, directives) {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found2 = findDirective(item, directives);
-      if (found2) {
-        return found2;
-      }
-    }
-    return null;
-  }
+function findNode(value, test) {
   if (!value || typeof value !== "object") {
     return null;
   }
-  const found = typeof value.type === "number" && directives[value.type];
-  if (found) {
-    return found;
+  if (!Array.isArray(value)) {
+    const found = typeof value.type === "number" ? test(value) : null;
+    if (found) {
+      return found;
+    }
   }
   for (const key in value) {
-    const inner = findDirective(value[key], directives);
-    if (inner) {
-      return inner;
+    const found = findNode(value[key], test);
+    if (found) {
+      return found;
     }
   }
   return null;
 }
-function hasMemoizedLoop(value) {
-  if (Array.isArray(value)) {
-    return value.some(hasMemoizedLoop);
-  }
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  if (value.type === ASTType.TForEach && value.memo !== void 0) {
-    return true;
-  }
-  for (const key in value) {
-    if (hasMemoizedLoop(value[key])) {
-      return true;
-    }
-  }
-  return false;
-}
+var unvisitable = (ast) => UNVISITABLE[ast.type] || null;
+var memoizedContent = (ast) => ast.type === ASTType.TComponent ? "a component" : ast.type === ASTType.TForEach && ast.memo !== void 0 ? "a memoized list" : null;
 function parseTKey(node, ctx) {
   if (!node.hasAttribute("t-key")) {
     return null;
   }
-  const key = node.getAttribute("t-key");
+  const key = exprAttr(node, "t-key");
   node.removeAttribute("t-key");
   const content = parseNode(node, ctx);
   if (!content) {
     return null;
   }
-  const ast = {
-    type: ASTType.TKey,
-    expr: key,
-    content
-  };
-  if (content.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
-  }
-  return ast;
+  return wrapping({ type: ASTType.TKey, expr: key, content }, content);
 }
 function parseTCall(node, ctx) {
   if (!node.hasAttribute("t-call")) {
@@ -7989,30 +8996,28 @@ function parseTCall(node, ctx) {
     );
   }
   const subTemplate = node.getAttribute("t-call");
-  const context = node.getAttribute("t-call-context");
+  const context = exprAttr(node, "t-call-context");
   node.removeAttribute("t-call");
   node.removeAttribute("t-call-context");
   let attrs = null;
-  let attrsTranslationCtx = null;
+  const handlers = { on: null, translationCtx: null };
   for (let attributeName of node.getAttributeNames()) {
     const value = node.getAttribute(attributeName);
-    if (attributeName.startsWith("t-translation-context-")) {
-      const attrName = attributeName.slice(22);
-      attrsTranslationCtx = attrsTranslationCtx || {};
-      attrsTranslationCtx[attrName] = value;
-    } else if (attributeName.startsWith("t-")) {
-      throw unsupportedDirectiveError(attributeName, "a t-call node");
-    } else {
-      attrs = attrs || {};
-      attrs[attributeName] = value;
+    if (collectHandler(handlers, attributeName, value, false)) {
+      continue;
     }
+    if (attributeName.startsWith("t-")) {
+      throw unsupportedDirectiveError(attributeName, "a t-call node");
+    }
+    attrs = attrs || {};
+    attrs[attributeName] = value;
   }
   const body = parseChildNodes(node, ctx);
   return {
     type: ASTType.TCall,
     name: subTemplate,
     attrs,
-    attrsTranslationCtx,
+    attrsTranslationCtx: handlers.translationCtx,
     body,
     context
   };
@@ -8021,7 +9026,7 @@ function parseTCallBlock(node, ctx) {
   if (!node.hasAttribute("t-call-block")) {
     return null;
   }
-  const name = node.getAttribute("t-call-block");
+  const name = exprAttr(node, "t-call-block");
   const directive = node.getAttributeNames().find((a) => a.startsWith("t-") && a !== "t-call-block" && !isTranslationContext(a));
   if (directive) {
     throw unsupportedDirectiveError(directive, "a t-call-block node");
@@ -8035,13 +9040,13 @@ function parseTIf(node, ctx) {
   if (!node.hasAttribute("t-if")) {
     return null;
   }
-  const condition = node.getAttribute("t-if");
+  const condition = exprAttr(node, "t-if");
   node.removeAttribute("t-if");
   const content = parseNode(node, ctx) || { type: ASTType.Text, value: "" };
   let nextElement = node.nextElementSibling;
   const tElifs = [];
   while (nextElement && nextElement.hasAttribute("t-elif")) {
-    const condition2 = nextElement.getAttribute("t-elif");
+    const condition2 = exprAttr(nextElement, "t-elif");
     nextElement.removeAttribute("t-elif");
     const tElif = parseNode(nextElement, ctx) || { type: ASTType.Text, value: "" };
     const next = nextElement.nextElementSibling;
@@ -8095,114 +9100,72 @@ var directiveErrorMap = /* @__PURE__ */ new Map([
 ]);
 function parseComponent(node, ctx) {
   let name = node.tagName;
-  const firstLetter = name[0];
   let isDynamic = node.hasAttribute("t-component");
   if (isDynamic && name !== "t") {
     throw new OwlError(
       `Directive 't-component' can only be used on <t> nodes (used on a <${name}>)`
     );
   }
-  if (!(firstLetter === firstLetter.toUpperCase() || isDynamic)) {
+  if (!isComponentNode(node)) {
     return null;
   }
   if (isDynamic) {
-    name = node.getAttribute("t-component");
+    name = exprAttr(node, "t-component");
     node.removeAttribute("t-component");
   }
-  const dynamicProps = node.getAttribute("t-props");
+  const dynamicProps = exprAttr(node, "t-props");
   node.removeAttribute("t-props");
   const defaultSlotScope = node.getAttribute("t-slot-scope");
   node.removeAttribute("t-slot-scope");
-  let on = null;
+  const handlers = { on: null, translationCtx: null };
   let props2 = null;
-  let propsTranslationCtx = null;
   for (let name2 of node.getAttributeNames()) {
     const value = node.getAttribute(name2);
-    if (name2.startsWith("t-translation-context-")) {
-      const attrName = name2.slice(22);
-      propsTranslationCtx = propsTranslationCtx || {};
-      propsTranslationCtx[attrName] = value;
-    } else if (name2.startsWith("t-")) {
-      if (name2.startsWith("t-on-")) {
-        on = on || {};
-        on[name2.slice(5)] = value;
-      } else {
-        const message = directiveErrorMap.get(name2.split("-").slice(0, 2).join("-"));
-        throw new OwlError(message || `unsupported directive on Component: ${name2}`);
-      }
-    } else {
-      props2 = props2 || {};
-      props2[name2] = value;
+    if (collectHandler(handlers, name2, value)) {
+      continue;
     }
+    if (name2.startsWith("t-")) {
+      const message = directiveErrorMap.get(name2.split("-").slice(0, 2).join("-"));
+      throw new OwlError(message || `unsupported directive on Component: ${name2}`);
+    }
+    props2 = props2 || {};
+    props2[name2] = value;
   }
   let slots = null;
   if (node.hasChildNodes()) {
     const clone = node.cloneNode(true);
-    const slotNodes = Array.from(clone.querySelectorAll("[t-set-slot]"));
+    const slotNodes = Array.from(clone.querySelectorAll("[t-set-slot]")).filter(
+      (slotNode) => isOwnSlot(slotNode, clone)
+    );
     for (let slotNode of slotNodes) {
-      if (slotNode.tagName !== "t") {
-        throw new OwlError(
-          `Directive 't-set-slot' can only be used on <t> nodes (used on a <${slotNode.tagName}>)`
-        );
-      }
       const name2 = slotNode.getAttribute("t-set-slot");
-      let el = slotNode.parentElement;
-      let isInSubComponent = false;
-      let directiveAbove = null;
-      while (el && el !== clone) {
-        if (el.hasAttribute("t-component") || el.tagName[0] === el.tagName[0].toUpperCase()) {
-          isInSubComponent = true;
-          break;
-        }
-        const directive = el.getAttributeNames().find((a) => SLOT_HIDING_DIRECTIVES.has(a));
-        if (directive && !directiveAbove) {
-          directiveAbove = `${directive} on a <${el.tagName}>`;
-        }
-        el = el.parentElement;
-      }
-      if (isInSubComponent || !el) {
-        continue;
-      }
-      if (directiveAbove) {
-        throw new OwlError(
-          `Directive 't-set-slot' cannot be used under a directive (${directiveAbove}) inside a component`
-        );
-      }
       slotNode.removeAttribute("t-set-slot");
       slotNode.remove();
-      let on2 = null;
+      const slotHandlers = { on: null, translationCtx: null };
       let attrs = null;
-      let attrsTranslationCtx = null;
       let scope = null;
-      const isT = slotNode.tagName === "t";
       for (let attributeName of slotNode.getAttributeNames()) {
         const value = slotNode.getAttribute(attributeName);
         if (attributeName === "t-slot-scope") {
           scope = value;
-        } else if (attributeName.startsWith("t-translation-context-")) {
-          const attrName = attributeName.slice(22);
-          attrsTranslationCtx = attrsTranslationCtx || {};
-          attrsTranslationCtx[attrName] = value;
-        } else if (attributeName.startsWith("t-on-")) {
-          on2 = on2 || {};
-          on2[attributeName.slice(5)] = value;
-        } else {
+        } else if (!collectHandler(slotHandlers, attributeName, value)) {
           continue;
         }
-        if (isT) {
-          slotNode.removeAttribute(attributeName);
-        }
+        slotNode.removeAttribute(attributeName);
       }
       const slotAst = parseNode(slotNode, ctx);
       for (let attributeName of slotNode.getAttributeNames()) {
-        if (attributeName === "t-slot-scope" || attributeName.startsWith("t-translation-context-") || attributeName.startsWith("t-on-")) {
-          continue;
-        }
         attrs = attrs || {};
         attrs[attributeName] = slotNode.getAttribute(attributeName);
       }
       slots = slots || {};
-      slots[name2] = { content: slotAst, on: on2, attrs, attrsTranslationCtx, scope };
+      slots[name2] = {
+        content: slotAst,
+        on: slotHandlers.on,
+        attrs,
+        attrsTranslationCtx: slotHandlers.translationCtx,
+        scope
+      };
     }
     const defaultContent = parseChildNodes(clone, ctx);
     slots = slots || {};
@@ -8222,10 +9185,36 @@ function parseComponent(node, ctx) {
     isDynamic,
     dynamicProps,
     props: props2,
-    propsTranslationCtx,
+    propsTranslationCtx: handlers.translationCtx,
     slots,
-    on
+    on: handlers.on
   };
+}
+function isOwnSlot(slotNode, root) {
+  if (slotNode.tagName !== "t") {
+    throw new OwlError(
+      `Directive 't-set-slot' can only be used on <t> nodes (used on a <${slotNode.tagName}>)`
+    );
+  }
+  let directiveAbove = null;
+  for (let el = slotNode.parentElement; el !== root; el = el.parentElement) {
+    if (isComponentNode(el)) {
+      return false;
+    }
+    if (el.hasAttribute("t-set-slot")) {
+      throw new OwlError(
+        `Directive 't-set-slot' cannot be nested in another t-set-slot (slot "${slotNode.getAttribute("t-set-slot")}" in slot "${el.getAttribute("t-set-slot")}")`
+      );
+    }
+    const directive = el.getAttributeNames().find((a) => SLOT_HIDING_DIRECTIVES.has(a));
+    directiveAbove ||= directive ? `${directive} on a <${el.tagName}>` : null;
+  }
+  if (directiveAbove) {
+    throw new OwlError(
+      `Directive 't-set-slot' cannot be used under a directive (${directiveAbove}) inside a component`
+    );
+  }
+  return true;
 }
 function parseTCallSlot(node, ctx) {
   if (!node.hasAttribute("t-call-slot") && !node.hasAttribute("t-slot")) {
@@ -8237,76 +9226,64 @@ function parseTCallSlot(node, ctx) {
   const name = node.getAttribute("t-call-slot") || node.getAttribute("t-slot");
   node.removeAttribute("t-call-slot");
   node.removeAttribute("t-slot");
+  const dynamicProps = exprAttr(node, "t-props");
+  node.removeAttribute("t-props");
   let attrs = null;
-  let attrsTranslationCtx = null;
-  let on = null;
+  const handlers = { on: null, translationCtx: null };
   for (let attributeName of node.getAttributeNames()) {
     const value = node.getAttribute(attributeName);
-    if (attributeName.startsWith("t-on-")) {
-      on = on || {};
-      on[attributeName.slice(5)] = value;
-    } else if (attributeName.startsWith("t-translation-context-")) {
-      const attrName = attributeName.slice(22);
-      attrsTranslationCtx = attrsTranslationCtx || {};
-      attrsTranslationCtx[attrName] = value;
-    } else if (attributeName.startsWith("t-") && attributeName !== "t-props") {
-      throw unsupportedDirectiveError(attributeName, "a t-call-slot node");
-    } else {
-      attrs = attrs || {};
-      attrs[attributeName] = value;
+    if (collectHandler(handlers, attributeName, value)) {
+      continue;
     }
+    if (attributeName.startsWith("t-")) {
+      throw unsupportedDirectiveError(attributeName, "a t-call-slot node");
+    }
+    attrs = attrs || {};
+    attrs[attributeName] = value;
   }
   return {
     type: ASTType.TCallSlot,
     name,
+    dynamicProps,
     attrs,
-    attrsTranslationCtx,
-    on,
+    attrsTranslationCtx: handlers.translationCtx,
+    on: handlers.on,
     defaultContent: parseChildNodes(node, ctx)
   };
 }
-function wrapInTTranslationAST(r) {
-  const ast = { type: ASTType.TTranslation, content: r };
-  if (r?.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
+function parseWrapped(node, ctx, attr, wrap) {
+  node.removeAttribute(attr);
+  const result = parseNode(node, ctx);
+  if (result?.type === ASTType.Multi) {
+    return makeASTMulti(result.content.map(wrap));
   }
-  return ast;
+  return wrap(result);
 }
 function parseTTranslation(node, ctx) {
   if (node.getAttribute("t-translation") !== "off") {
     return null;
   }
-  node.removeAttribute("t-translation");
-  const result = parseNode(node, ctx);
-  if (result?.type === ASTType.Multi) {
-    const children = result.content.map(wrapInTTranslationAST);
-    return makeASTMulti(children);
-  }
-  return wrapInTTranslationAST(result);
-}
-function wrapInTTranslationContextAST(r, translationCtx) {
-  const ast = {
-    type: ASTType.TTranslationContext,
-    content: r,
-    translationCtx
-  };
-  if (r?.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
-  }
-  return ast;
+  return parseWrapped(
+    node,
+    ctx,
+    "t-translation",
+    (content) => wrapping({ type: ASTType.TTranslation, content }, content)
+  );
 }
 function parseTTranslationContext(node, ctx) {
   const translationCtx = node.getAttribute("t-translation-context");
   if (!translationCtx) {
     return null;
   }
-  node.removeAttribute("t-translation-context");
-  const result = parseNode(node, ctx);
-  if (result?.type === ASTType.Multi) {
-    const children = result.content.map((c) => wrapInTTranslationContextAST(c, translationCtx));
-    return makeASTMulti(children);
-  }
-  return wrapInTTranslationContextAST(result, translationCtx);
+  return parseWrapped(
+    node,
+    ctx,
+    "t-translation-context",
+    (content) => wrapping(
+      { type: ASTType.TTranslationContext, content, translationCtx },
+      content
+    )
+  );
 }
 function parseChildren(node, ctx) {
   const children = [];
@@ -8345,18 +9322,15 @@ function normalizeTIf(el) {
   for (let i = 0, ilen = tbranch.length; i < ilen; i++) {
     let node = tbranch[i];
     let prevElem = node.previousElementSibling;
-    let pattr = (name) => prevElem.hasAttribute(name);
-    let nattr = (name) => +node.hasAttribute(name);
-    if (prevElem && (pattr("t-if") || pattr("t-elif"))) {
-      if (pattr("t-foreach")) {
+    if (prevElem && (prevElem.hasAttribute("t-if") || prevElem.hasAttribute("t-elif"))) {
+      if (prevElem.hasAttribute("t-foreach")) {
         throw new OwlError(
           "t-if cannot stay at the same level as t-foreach when using t-elif or t-else"
         );
       }
       const elseIf = node.hasAttribute("t-else") && node.hasAttribute("t-if");
-      if (!(elseIf && !node.hasAttribute("t-elif")) && ["t-if", "t-elif", "t-else"].map(nattr).reduce(function(a, b) {
-        return a + b;
-      }) > 1) {
+      const branches = ["t-if", "t-elif", "t-else"].filter((a) => node.hasAttribute(a)).length;
+      if (!(elseIf && !node.hasAttribute("t-elif")) && branches > 1) {
         throw new OwlError("Only one conditional branching directive is allowed per node");
       }
       let textNode;
@@ -8374,9 +9348,7 @@ function normalizeTIf(el) {
   }
 }
 function normalizeTOut(el) {
-  const elements = [...el.querySelectorAll(`[t-out], [t-esc]`)].filter(
-    (el2) => el2.tagName[0] === el2.tagName[0].toUpperCase() || el2.hasAttribute("t-component")
-  );
+  const elements = [...el.querySelectorAll(`[t-out], [t-esc]`)].filter(isComponentNode);
   for (const el2 of elements) {
     if (el2.childNodes.length) {
       throw new OwlError(`Cannot have t-out on a component that already has content`);
@@ -8395,14 +9367,13 @@ function normalizeXML(el) {
 }
 
 // ../owl-compiler/src/code_generator.ts
-var zero = /* @__PURE__ */ Symbol("zero");
+var zero2 = /* @__PURE__ */ Symbol("zero");
 var MAX_LAZY_LOOP_KEYS = 3;
 var whitespaceRE = /[ \t\n\r\f]+/g;
 var xmlDoc;
 if (typeof document !== "undefined") {
   xmlDoc = document.implementation.createDocument(null, null, null);
 }
-var MODS = /* @__PURE__ */ new Set(["stop", "capture", "prevent", "self", "synthetic", "passive"]);
 function isProp(tag, key) {
   switch (tag) {
     case "input":
@@ -8419,6 +9390,9 @@ function isProp(tag, key) {
   }
   return false;
 }
+function propKey(name) {
+  return /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
+}
 function toStringExpression(str) {
   return `\`${escapeTemplateString(str)}\``;
 }
@@ -8430,6 +9404,8 @@ var BlockDescription = class {
   hasDynamicChildren = false;
   children = [];
   data = [];
+  // the code of the block's handlers, in the order of their data index
+  handlers = [];
   dom;
   currentDom;
   target;
@@ -8449,6 +9425,11 @@ var BlockDescription = class {
     const id = this.generateId(prefix);
     this.target.addLine(`let ${id} = ${str};`);
     return this.data.push(id) - 1;
+  }
+  // a handler's data is the context; its code is static, given with the block
+  insertHandler(fn) {
+    this.handlers.push(fn);
+    return this.data.push("ctx") - 1;
   }
   insert(dom) {
     if (this.currentDom) {
@@ -8489,7 +9470,7 @@ function createContext2(parentCtx, params) {
       translationCtx: parentCtx.translationCtx,
       tKeyExpr: null,
       nameSpace: parentCtx.nameSpace,
-      tModelSelectedExpr: parentCtx.tModelSelectedExpr,
+      tModelSelected: parentCtx.tModelSelected,
       inPreTag: parentCtx.inPreTag
     },
     params
@@ -8538,10 +9519,9 @@ var CodeTarget = class {
     result.push(`}`);
     return result.join("\n  ");
   }
+  // the key of a list's child: of the item of the innermost loop, which a
+  // list's child is always in
   currentKey(ctx) {
-    if (!this.loopLevel) {
-      return ctx.tKeyExpr ? `${ctx.tKeyExpr} + key` : "key";
-    }
     if (ctx.tKeyExpr) {
       return `${ctx.tKeyExpr} + ${this.stringKey(this.loopLevel)}`;
     }
@@ -8644,9 +9624,18 @@ var CodeGenerator = class {
           if (xmlString.endsWith(close)) {
             xmlString = xmlString.slice(0, -close.length) + `</${tag}>\``;
           }
-          mainCode.push(`let ${block.blockName} = tag => createBlock(${xmlString});`);
+          if (block.handlers.length) {
+            const types3 = `${block.blockName}_types`;
+            mainCode.push(`const ${types3} = Object.create(null);`);
+            mainCode.push(
+              `let ${block.blockName} = tag => ${types3}[tag] || (${types3}[tag] = createBlock(${xmlString}, [${block.handlers.join(", ")}]));`
+            );
+          } else {
+            mainCode.push(`let ${block.blockName} = tag => createBlock(${xmlString});`);
+          }
         } else {
-          mainCode.push(`let ${block.blockName} = createBlock(${xmlString});`);
+          const handlers = block.handlers.length ? `, [${block.handlers.join(", ")}]` : "";
+          mainCode.push(`let ${block.blockName} = createBlock(${xmlString}${handlers});`);
         }
       }
     }
@@ -8672,7 +9661,7 @@ ${code}`;
     const target = new CodeTarget(name, on);
     this.targets.push(target);
     this.target = target;
-    this.compileAST(ast, createContext2(ctx, { tModelSelectedExpr: void 0 }));
+    this.compileAST(ast, createContext2(ctx, { tModelSelected: void 0 }));
     this.target = initialTarget;
     return name;
   }
@@ -8775,19 +9764,18 @@ ${code}`;
         return this.compileTTranslationContext(ast, ctx);
     }
   }
+  // a t-debug, t-log, t-translation or t-translation-context renders what it
+  // wraps, if anything
+  compileContent(content, ctx) {
+    return content ? this.compileAST(content, ctx) : null;
+  }
   compileDebug(ast, ctx) {
     this.addLine(`debugger;`);
-    if (ast.content) {
-      return this.compileAST(ast.content, ctx);
-    }
-    return null;
+    return this.compileContent(ast.content, ctx);
   }
   compileLog(ast, ctx) {
     this.addLine(`console.log(${compileExpr(ast.expr)});`);
-    if (ast.content) {
-      return this.compileAST(ast.content, ctx);
-    }
-    return null;
+    return this.compileContent(ast.content, ctx);
   }
   compileText(ast, ctx) {
     let { block, forceNewBlock } = ctx;
@@ -8806,27 +9794,13 @@ ${code}`;
     }
     return block.varName;
   }
+  // the static code of a handler, a function of (context, event); its
+  // modifiers are read from its key at run time, checked here
   generateHandlerCode(rawEvent, handler) {
-    const modifiers = rawEvent.split(".").slice(1);
-    const selfIndex = modifiers.indexOf("self");
-    let mask = 0;
-    modifiers.forEach((m, i) => {
-      if (!MODS.has(m)) {
-        throw new OwlError(`Unknown event modifier: '${m}'`);
-      }
-      const beforeSelf = i < selfIndex;
-      if (m === "self") {
-        mask |= EventModifier.SELF;
-      } else if (m === "prevent") {
-        mask |= beforeSelf ? EventModifier.PREVENT_ANY : EventModifier.PREVENT;
-      } else if (m === "stop") {
-        mask |= beforeSelf ? EventModifier.STOP_ANY : EventModifier.STOP;
-      }
-    });
-    const modifiersCode = mask ? `, ${mask}` : "";
+    eventModifierMask(rawEvent);
     const { expr: compiled, arrow } = processExpr(handler);
     if (!compiled.trim()) {
-      return `[null, ctx${modifiersCode}]`;
+      return "null";
     }
     let hoistedExpr;
     if (arrow) {
@@ -8836,7 +9810,7 @@ ${code}`;
       this.helpers.add("callHandler");
       hoistedExpr = `(ctx, ev) => callHandler(${compiled}, ctx, ev)`;
     }
-    return `[${this.hoistHandler(hoistedExpr)}, ctx${modifiersCode}]`;
+    return this.hoistHandler(hoistedExpr);
   }
   // handlers are static functions of (context, event): one per distinct code
   hoistHandler(expr) {
@@ -8874,16 +9848,11 @@ ${code}`;
           if (attrName === "readonly") {
             attrName = "readOnly";
           }
-          if (attrName === "value") {
-            const valueId = this.generateId("v");
-            this.define(valueId, expr);
-            valueVar = valueId;
-            expr = `new String(${valueId} === 0 ? 0 : ${valueId} || "")`;
-          } else {
-            expr = `new Boolean(${expr})`;
-          }
           const idx = block.insertData(expr, "prop");
-          attrs[`block-property-${idx}`] = attrName;
+          attrs[`block-sync-property-${idx}`] = attrName;
+          if (attrName === "value") {
+            valueVar = block.data[idx];
+          }
         } else {
           const idx = block.insertData(expr, "attr");
           if (key === "t-att") {
@@ -8903,13 +9872,15 @@ ${code}`;
         attrName = key;
         attrs[key] = ast.attrs[key];
       }
-      if (attrName === "value" && ctx.tModelSelectedExpr) {
+      if (attrName === "value" && ctx.tModelSelected) {
+        const { expr: selected, number } = ctx.tModelSelected;
         const value = key.startsWith("t-att") ? valueVar : expr;
-        let selectedId = block.insertData(`${ctx.tModelSelectedExpr} === ${value}`, "attr");
+        const target = number ? `toNumber(${value})` : value;
+        let selectedId = block.insertData(`${selected} === ${target}`, "attr");
         attrs[`block-attribute-${selectedId}`] = "selected";
       }
     }
-    let tModelSelectedExpr;
+    let tModelSelected;
     if (ast.model) {
       const {
         hasDynamicChildren,
@@ -8922,7 +9893,7 @@ ${code}`;
         isProxy
       } = ast.model;
       let readExpr;
-      let handlerData;
+      let modelId = null;
       let valueCode = `ev.target.${targetAttr}`;
       valueCode = shouldTrim ? `${valueCode}.trim()` : valueCode;
       if (shouldNumberize) {
@@ -8933,34 +9904,38 @@ ${code}`;
       if (isProxy) {
         readExpr = compileExpr(expr);
         handlerId = this.hoistHandler(`(ctx, ev) => { ${readExpr} = ${valueCode}; }`);
-        handlerData = `[${handlerId}, ctx]`;
       } else {
-        const exprId = this.generateId("expr");
+        modelId = this.generateId("expr");
         this.helpers.add("modelExpr");
-        this.define(exprId, `modelExpr(${compileExpr(expr)})`);
-        readExpr = `${exprId}()`;
+        this.define(modelId, `modelExpr(${compileExpr(expr)})`);
+        readExpr = `${modelId}()`;
         handlerId = this.hoistHandler(`(ctx, ev, model) => model.set(${valueCode})`);
-        handlerData = `[${handlerId}, ctx, 0, ${exprId}]`;
       }
       let idx;
       if (specialInitTargetAttr) {
-        const targetExpr = targetAttr in attrs ? JSON.stringify(attrs[targetAttr]) : valueVar || "false";
+        let targetExpr = targetAttr in attrs ? JSON.stringify(attrs[targetAttr]) : valueVar || "false";
+        if (shouldNumberize) {
+          targetExpr = `toNumber(${targetExpr})`;
+        }
         idx = block.insertData(`${readExpr} === ${targetExpr}`, "prop");
         attrs[`block-property-${idx}`] = specialInitTargetAttr;
       } else if (hasDynamicChildren) {
         const bValueId = this.generateId("bValue");
-        tModelSelectedExpr = `${bValueId}`;
-        this.define(tModelSelectedExpr, readExpr);
+        tModelSelected = { expr: bValueId, number: shouldNumberize };
+        this.define(bValueId, readExpr);
       } else {
         idx = block.insertData(readExpr, "prop");
         attrs[`block-property-${idx}`] = targetAttr;
       }
-      idx = block.insertData(handlerData, "hdlr");
+      idx = block.insertHandler(handlerId);
       attrs[`block-handler-${idx}`] = eventType;
+      if (modelId) {
+        const argIdx = block.data.push(modelId) - 1;
+        attrs[`block-handler-arg-${argIdx}`] = String(idx);
+      }
     }
     for (let ev in ast.on) {
-      const name = this.generateHandlerCode(ev, ast.on[ev]);
-      const idx = block.insertData(name, "hdlr");
+      const idx = block.insertHandler(this.generateHandlerCode(ev, ast.on[ev]));
       attrs[`block-handler-${idx}`] = ev;
     }
     if (ast.ref) {
@@ -8989,7 +9964,7 @@ ${code}`;
           forceNewBlock: false,
           tKeyExpr: ctx.tKeyExpr,
           nameSpace,
-          tModelSelectedExpr: tModelSelectedExpr || ctx.tModelSelectedExpr,
+          tModelSelected: tModelSelected || ctx.tModelSelected,
           inPreTag: ctx.inPreTag || ast.tag === "pre"
         });
         this.compileAST(child, subCtx);
@@ -9018,8 +9993,9 @@ ${code}`;
   }
   compileZero(ast, ctx) {
     this.helpers.add("zero");
-    const isMultiple = this.slotNames.has(zero);
-    this.slotNames.add(zero);
+    this.helpers.add("zeroCtx");
+    const isMultiple = this.slotNames.has(zero2);
+    this.slotNames.add(zero2);
     const key = this.scopeKey(ctx, isMultiple);
     let defaultContent = `text("")`;
     if (ast.body) {
@@ -9027,7 +10003,7 @@ ${code}`;
       const name = this.compileInNewTarget("defaultContent", bodyAst, ctx);
       defaultContent = `${name}.call(this, ctx, node, ${key})`;
     }
-    return `ctx[zero] ? ctx[zero](node, ${key}) : ${defaultContent}`;
+    return `ctx[zero] ? ctx[zero].call(this, ctx[zeroCtx], node, ${key}) : ${defaultContent}`;
   }
   compileTOut(ast, ctx) {
     let { block } = ctx;
@@ -9052,14 +10028,15 @@ ${code}`;
         keyArgs = `${this.scopeKey(ctx, false, site)}, ""`;
       }
       const expr = compileExpr(ast.expr);
+      this.helpers.add("safeOutput");
       if (ast.body) {
         const bodyAst = { type: ASTType.Multi, content: ast.body };
         const name = this.compileInNewTarget("defaultContent", bodyAst, ctx);
         const key = this.scopeKey(ctx, false, site);
-        this.helpers.add("safeOutputOr");
-        blockStr = `safeOutputOr(${expr}, () => ${name}.call(this, ctx, node, ${key}), ${keyArgs})`;
+        const value = this.generateId("out");
+        this.define(value, expr);
+        blockStr = `${value} === undefined || ${value} === null ? toggler("default", ${name}.call(this, ctx, node, ${key})) : safeOutput(${value}, ${keyArgs})`;
       } else {
-        this.helpers.add("safeOutput");
         blockStr = `safeOutput(${expr}, ${keyArgs})`;
       }
     }
@@ -9270,29 +10247,42 @@ ${code}`;
   }
   compileTCall(ast, ctx) {
     let { block } = ctx;
-    const attrs = ast.attrs ? this.formatPropObject(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
+    const attrs = ast.attrs ? this.propEntries(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
     const isDynamic = isInterpolated(ast.name);
     const subTemplate = isDynamic ? interpolate(ast.name) : toStringExpression(ast.name);
     block = this.createBlock(block, "multi");
+    const zero3 = [];
     if (ast.body) {
       const name = this.compileInNewTarget("callBody", ast.body, ctx);
-      const zeroStr = this.generateId("lazyBlock");
-      this.define(zeroStr, `${name}.bind(this, ctx)`);
       this.helpers.add("zero");
-      attrs.push(`[zero]: ${zeroStr}`);
+      this.helpers.add("zeroCtx");
+      zero3.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
     } else if (!ast.context) {
       this.helpers.add("zero");
-      attrs.push(`[zero]: null`);
+      zero3.push(["[zero]", "null"]);
     }
     let ctxExpr;
-    const ctxString = `{${attrs.join(", ")}}`;
     if (ast.context) {
       const dynCtxVar = this.generateId("ctx");
       this.addLine(`const ${dynCtxVar} = ${compileExpr(ast.context)};`);
-      const extra = attrs.length ? `, ${ctxString}` : "";
-      ctxExpr = `Object.assign({}, ${dynCtxVar}, {this: ${dynCtxVar}}${extra})`;
+      const entries = [
+        `this: ${dynCtxVar}`,
+        ...attrs.map(([name, value]) => `${propKey(name)}: ${value}`),
+        ...zero3.map(([key2, value]) => `${key2}: ${value}`)
+      ];
+      ctxExpr = `Object.assign({}, ${dynCtxVar}, {${entries.join(", ")}})`;
+    } else if (!attrs.length && !ast.body) {
+      this.helpers.add("withoutZero");
+      ctxExpr = `ctx[zero] ? withoutZero(ctx) : ctx`;
     } else {
-      ctxExpr = `Object.assign(Object.create(ctx), ${ctxString})`;
+      ctxExpr = this.generateId("ctx");
+      this.define(ctxExpr, `Object.create(ctx)`);
+      for (const [name, value] of attrs) {
+        this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
+      }
+      for (const [key2, value] of zero3) {
+        this.addLine(`${ctxExpr}${key2} = ${value};`);
+      }
     }
     const key = this.scopeKey(ctx, true);
     this.helpers.add("callTemplate");
@@ -9366,6 +10356,14 @@ ${code}`;
    * "onClick.bind"    "onClick"        "onClick: bind(ctx, ctx['onClick'])"
    */
   formatProp(name, value, attrsTranslationCtx, ctx) {
+    const [key, code] = this.propEntry(name, value, attrsTranslationCtx, ctx);
+    return `${propKey(key)}: ${code}`;
+  }
+  /**
+   * The name a prop or t-call attribute `name` (suffix stripped) defines, and
+   * the code of its value.
+   */
+  propEntry(name, value, attrsTranslationCtx, ctx) {
     if (name.endsWith(".translate")) {
       const attrTranslationCtx = attrsTranslationCtx?.[name] || ctx.translationCtx;
       value = toStringExpression(ctx.translate ? this.translate(value, attrTranslationCtx) : value);
@@ -9386,18 +10384,17 @@ ${code}`;
           throw new OwlError(`Invalid prop suffix: ${suffix}`);
       }
     }
-    name = /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
-    return `${name}: ${value || void 0}`;
+    return [name, value || "undefined"];
   }
   formatPropObject(obj, attrsTranslationCtx, ctx) {
-    return Object.entries(obj).map(([k, v]) => this.formatProp(k, v, attrsTranslationCtx, ctx));
+    return this.propEntries(obj, attrsTranslationCtx, ctx).map(([k, v]) => `${propKey(k)}: ${v}`);
+  }
+  propEntries(obj, attrsTranslationCtx, ctx) {
+    return Object.entries(obj).map(([k, v]) => this.propEntry(k, v, attrsTranslationCtx, ctx));
   }
   getPropString(props2, dynProps) {
-    let propString = `{${props2.join(",")}}`;
-    if (dynProps) {
-      propString = `Object.assign({}, ${compileExpr(dynProps)}${props2.length ? ", " + propString : ""})`;
-    }
-    return propString;
+    const entries = dynProps ? [`...${compileExpr(dynProps)}`, ...props2] : props2;
+    return `{${entries.join(",")}}`;
   }
   compileComponent(ast, ctx) {
     let { block } = ctx;
@@ -9408,8 +10405,7 @@ ${code}`;
     for (let p in ast.props || {}) {
       let [name, suffix] = p.split(".");
       if (suffix === "signal") {
-        const propName2 = /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
-        props2.push(`${propName2}: ${compileExpr(ast.props[p]) || void 0}`);
+        props2.push(`${propKey(name)}: ${compileExpr(ast.props[p]) || void 0}`);
         signalProps.push(JSON.stringify(name));
         continue;
       }
@@ -9418,8 +10414,7 @@ ${code}`;
         continue;
       }
       const { expr: compiledValue, freeVariables } = processExpr(ast.props[p]);
-      const propName = /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
-      props2.push(`${propName}: ${compiledValue || void 0}`);
+      props2.push(`${propKey(name)}: ${compiledValue || void 0}`);
       if (freeVariables) {
         for (const varName of freeVariables) {
           const syntheticKey = `${name}.${varName}`;
@@ -9438,7 +10433,7 @@ ${code}`;
         const params = [];
         if (slotAst.content) {
           const name = this.compileInNewTarget("slot", slotAst.content, ctx, slotAst.on);
-          params.push(`__render: ${name}.bind(this), __ctx: ctx`);
+          params.push(`__render: ${name}, __ctx: ctx, __owner: this`);
         }
         const scope = ast.slots[slotName].scope;
         if (scope) {
@@ -9471,7 +10466,7 @@ ${code}`;
     }
     if (slotDef && (ast.dynamicProps || hasSlotsProp)) {
       this.helpers.add("markRaw");
-      this.addLine(`${propVar}.slots = markRaw(Object.assign(${slotDef}, ${propVar}.slots))`);
+      this.addLine(`${propVar}.slots = markRaw(Object.assign(${slotDef}, ${propVar}.slots));`);
     }
     let expr;
     if (ast.isDynamic) {
@@ -9480,16 +10475,13 @@ ${code}`;
     } else {
       expr = `\`${ast.name}\``;
     }
-    let keyArg = this.scopeKey(ctx, true);
+    const keyArg = this.scopeKey(ctx, true);
     let id = this.generateId("comp");
     this.helpers.add("createComponent");
     this.staticDefs.push({
       id,
       expr: `createComponent(app, ${ast.isDynamic ? null : expr}, ${!ast.isDynamic}, ${!!ast.slots}, ${!!ast.dynamicProps}, [${propList}]${signalProps.length ? `, [${signalProps}]` : ""})`
     });
-    if (ast.isDynamic) {
-      keyArg = `(${expr}).name + ${keyArg}`;
-    }
     let blockExpr = `${id}(${propString}, ${keyArg}, node, this, ${ast.isDynamic ? expr : null})`;
     if (ast.isDynamic) {
       blockExpr = `toggler(${expr}, ${blockExpr})`;
@@ -9501,20 +10493,21 @@ ${code}`;
     this.insertBlock(block, ctx, blockExpr);
     return block.varName;
   }
+  // a catcher's handlers are static, given with its spec; a render gives it
+  // their context
   wrapWithEventCatcher(expr, on) {
     this.helpers.add("createCatcher");
     let name = this.generateId("catcher");
     let spec = {};
     let handlers = [];
     for (let ev in on) {
-      let handlerId = this.generateId("hdlr");
-      let idx = handlers.push(handlerId) - 1;
-      spec[ev] = idx;
-      const handler = this.generateHandlerCode(ev, on[ev]);
-      this.define(handlerId, handler);
+      spec[ev] = handlers.push(this.generateHandlerCode(ev, on[ev])) - 1;
     }
-    this.staticDefs.push({ id: name, expr: `createCatcher(${JSON.stringify(spec)})` });
-    return `${name}(${expr}, [${handlers.join(",")}])`;
+    this.staticDefs.push({
+      id: name,
+      expr: `createCatcher(${JSON.stringify(spec)}, [${handlers.join(", ")}])`
+    });
+    return `${name}(${expr}, ctx)`;
   }
   compileTCallSlot(ast, ctx) {
     this.helpers.add("callSlot");
@@ -9529,18 +10522,15 @@ ${code}`;
       slotName = interpolate(ast.name);
     } else {
       slotName = JSON.stringify(ast.name);
-      isMultiple = isMultiple || this.slotNames.has(ast.name);
+      isMultiple = this.slotNames.has(ast.name);
       this.slotNames.add(ast.name);
     }
-    const attrs = { ...ast.attrs };
-    const dynProps = attrs["t-props"];
-    delete attrs["t-props"];
     const key = this.scopeKey(ctx, isMultiple);
-    const props2 = ast.attrs ? this.formatPropObject(attrs, ast.attrsTranslationCtx, ctx) : [];
-    const scope = this.getPropString(props2, dynProps);
+    const props2 = ast.attrs ? this.formatPropObject(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
+    const scope = props2.length || ast.dynamicProps ? this.getPropString(props2, ast.dynamicProps) : "null";
     if (ast.defaultContent) {
       const name = this.compileInNewTarget("defaultContent", ast.defaultContent, ctx);
-      blockString = `callSlot(ctx, node, ${key}, ${slotName}, ${dynamic}, ${scope}, ${name}.bind(this))`;
+      blockString = `callSlot(ctx, node, ${key}, ${slotName}, ${dynamic}, ${scope}, ${name}, this)`;
     } else {
       if (dynamic) {
         let name = this.generateId("slot");
@@ -9558,19 +10548,10 @@ ${code}`;
     return block.varName;
   }
   compileTTranslation(ast, ctx) {
-    if (ast.content) {
-      return this.compileAST(ast.content, Object.assign({}, ctx, { translate: false }));
-    }
-    return null;
+    return this.compileContent(ast.content, { ...ctx, translate: false });
   }
   compileTTranslationContext(ast, ctx) {
-    if (ast.content) {
-      return this.compileAST(
-        ast.content,
-        Object.assign({}, ctx, { translationCtx: ast.translationCtx })
-      );
-    }
-    return null;
+    return this.compileContent(ast.content, { ...ctx, translationCtx: ast.translationCtx });
   }
 };
 
@@ -9600,7 +10581,7 @@ ${code}
 }
 
 // src/index.ts
-TemplateSet.compiler = { compile, parseXML };
+TemplateSet.compiler = { compile, parseXML, version, hash: buildHash };
 export {
   App,
   Component,
@@ -9619,6 +10600,7 @@ export {
   applyDefaults,
   assertType,
   asyncComputed,
+  batch,
   batched,
   blockDom,
   computed,

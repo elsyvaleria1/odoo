@@ -4782,8 +4782,11 @@ class TestServedLibraries(TransactionCase):
                 source.count(b"\n") // 20,
                 f"{name}: the served copy is minified",
             )
-        # the compiler module shares the page's runtime through the import map
-        self.assertRegex(owl.raw, rb"""from\s*["']@odoo/owl["']""")
+        # the compiler module imports nothing: it registers itself, under its
+        # build, in the global registry the page's runtime takes its own
+        # build's compiler from
+        self.assertNotRegex(owl.raw, rb"""(?:\bfrom|\bimport)\s*["']""")
+        self.assertIn(b'Symbol.for("@odoo/owl/compiler")', owl.raw)
         self.assertIn(b"export", owl.raw)
 
     def test_a_page_preloads_the_libraries_its_bundle_imports_statically(self):

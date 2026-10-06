@@ -486,9 +486,9 @@ assert_eq "_pl selects via Intl.PluralRules with an 'other' fallback" \
     "$(grep -c 'forms\[category\] ?? forms.other' "$WEB/static/src/core/translation.js")" "1"
 
 # ------- OWL bundle -------
-assert_eq "OWL bundle bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.es.js")" "289566"
-assert_eq "OWL runtime bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.runtime.es.js")" "201671"
-assert_eq "OWL compiler module bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.compiler.es.js")" "88102"
+assert_eq "OWL bundle bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.es.js")" "319229"
+assert_eq "OWL runtime bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.runtime.es.js")" "229838"
+assert_eq "OWL compiler module bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.compiler.es.js")" "90565"
 assert_eq "OWL version string" \
     "$(grep -oE 'version = "[0-9]+\.[0-9]+\.[0-9]+[^"]*"' "$WEB/static/lib/owl/owl.es.js" | head -1)" \
     'version = "3.0.0-alpha.49"'

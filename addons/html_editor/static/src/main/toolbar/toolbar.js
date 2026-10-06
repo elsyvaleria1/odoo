@@ -16,9 +16,9 @@ export class Toolbar extends Component {
                     buttons: t.array(
                         t.customValidator(t.object(), (button) => {
                             const base = {
-                                id: String,
-                                description: String,
-                                isDisabled: Boolean,
+                                id: t.string(),
+                                description: t.string(),
+                                isDisabled: t.boolean(),
                             };
                             if (button.Component) {
                                 assertType(

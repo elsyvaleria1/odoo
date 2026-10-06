@@ -1,8 +1,6 @@
-// src/compiler.ts
-import { TemplateSet } from "@odoo/owl";
-
-// src/compiler_core.ts
-import { OwlError } from "@odoo/owl";
+// ../owl-core/src/owl_error.ts
+var OwlError = class extends Error {
+};
 
 // ../owl-core/src/event_modifiers.ts
 var EventModifier = {
@@ -12,10 +10,34 @@ var EventModifier = {
   PREVENT: 8,
   STOP: 16
 };
+var MODIFIERS = /* @__PURE__ */ new Set(["stop", "capture", "prevent", "self", "synthetic", "passive"]);
+function eventModifierMask(key) {
+  const modifiers = key.split(".").slice(1);
+  const selfIndex = modifiers.indexOf("self");
+  let mask = 0;
+  for (let i = 0; i < modifiers.length; i++) {
+    const m = modifiers[i];
+    if (!MODIFIERS.has(m)) {
+      throw new OwlError(`Unknown event modifier: '${m}'`);
+    }
+    const beforeSelf = i < selfIndex;
+    if (m === "self") {
+      mask |= EventModifier.SELF;
+    } else if (m === "prevent") {
+      mask |= beforeSelf ? EventModifier.PREVENT_ANY : EventModifier.PREVENT;
+    } else if (m === "stop") {
+      mask |= beforeSelf ? EventModifier.STOP_ANY : EventModifier.STOP;
+    }
+  }
+  return mask;
+}
 
 // ../owl-compiler/src/inline_expressions.ts
 var RESERVED_WORDS = new Set(
   "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent".split(",")
+);
+var STATEMENT_KEYWORDS = new Set(
+  "break,case,catch,class,const,continue,default,do,else,enum,export,extends,finally,for,if,import,super,switch,throw,try,var,while,with,yield".split(",")
 );
 var WORD_REPLACEMENT = Object.assign(/* @__PURE__ */ Object.create(null), {
   and: "&&",
@@ -35,7 +57,7 @@ var STATIC_TOKEN_MAP = Object.assign(/* @__PURE__ */ Object.create(null), {
   "(": "LEFT_PAREN",
   ")": "RIGHT_PAREN"
 });
-var OPERATORS = "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,=>,=,;,in ,new ,|,&,^,~".split(
+var OPERATORS = "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,delete ,=>,=,;,in ,new ,|,&,^,~".split(
   ","
 );
 var tokenizeString = function(expr) {
@@ -105,8 +127,43 @@ function replaceInterpolations(template, replacer) {
   }
   return result;
 }
+var REGEXP_PREFIX_RE = /[(,=:[!&|?{};+\-*%<>~^]/;
+var REGEXP_PREFIX_WORDS = /* @__PURE__ */ new Set([
+  "return",
+  "void",
+  "typeof",
+  "delete",
+  "in",
+  "new",
+  ...Object.keys(WORD_REPLACEMENT)
+]);
+function startsRegExp(str, previous) {
+  if (previous < 0) {
+    return true;
+  }
+  const char = str[previous];
+  if ((char === "+" || char === "-") && str[previous - 1] === char) {
+    return false;
+  }
+  if (REGEXP_PREFIX_RE.test(char)) {
+    return true;
+  }
+  let start = previous + 1;
+  while (start > 0 && IDENTIFIER_CHAR_RE.test(str[start - 1])) {
+    start--;
+  }
+  if (!REGEXP_PREFIX_WORDS.has(str.slice(start, previous + 1))) {
+    return false;
+  }
+  let before = start - 1;
+  while (before >= 0 && /\s/.test(str[before])) {
+    before--;
+  }
+  return str[before] !== ".";
+}
 function findClosingBrace(str, start) {
   let depth = 0;
+  let previous = -1;
   for (let i = start; i < str.length; i++) {
     const char = str[i];
     if (char === "'" || char === '"') {
@@ -117,6 +174,11 @@ function findClosingBrace(str, start) {
       }
     } else if (char === "`") {
       i = findTemplateEnd(str, i);
+    } else if (str.startsWith("/*", i) || str.startsWith("//", i)) {
+      i = commentEnd(str, i) - 1;
+      continue;
+    } else if (char === "/" && startsRegExp(str, previous)) {
+      i = regExpEnd(str, i);
     } else if (char === "{") {
       depth++;
     } else if (char === "}") {
@@ -125,8 +187,40 @@ function findClosingBrace(str, start) {
       }
       depth--;
     }
+    if (!/\s/.test(char)) {
+      previous = i;
+    }
   }
   throw new OwlError("Invalid expression");
+}
+function regExpEnd(str, start) {
+  let inClass = false;
+  let i = start + 1;
+  for (; str[i] !== "/" || inClass; i++) {
+    const char = str[i];
+    if (!char || char === "\n") {
+      throw new OwlError("Invalid expression");
+    }
+    if (char === "\\") {
+      i++;
+    } else if (char === "[") {
+      inClass = true;
+    } else if (char === "]") {
+      inClass = false;
+    }
+  }
+  return i;
+}
+function commentEnd(str, start) {
+  if (str[start + 1] === "*") {
+    const end2 = str.indexOf("*/", start + 2);
+    if (end2 < 0) {
+      throw new OwlError("Invalid expression");
+    }
+    return end2 + 2;
+  }
+  const end = str.indexOf("\n", start);
+  return end < 0 ? str.length : end;
 }
 var NUMBER_RE = /^(?:0[xX][\da-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\d[\d_]*(?:\.[\d_]*)?(?:[eE][+-]?\d[\d_]*)?)n?/;
 var tokenizeNumber = function(expr) {
@@ -162,21 +256,7 @@ var tokenizeRegExp = function(expr, previous, beforePrevious) {
   if (expr[0] !== "/" || previous && !afterKeyword && (!OPERAND_PREFIXES.has(previous.type) || previous.value === "++" || previous.value === "--")) {
     return false;
   }
-  let inClass = false;
-  let i = 1;
-  for (; expr[i] !== "/" || inClass; i++) {
-    const char = expr[i];
-    if (!char || char === "\n") {
-      throw new OwlError("Invalid expression");
-    }
-    if (char === "\\") {
-      i++;
-    } else if (char === "[") {
-      inClass = true;
-    } else if (char === "]") {
-      inClass = false;
-    }
-  }
+  const i = regExpEnd(expr, 0);
   const flags = /^[a-z]*/.exec(expr.slice(i + 1))[0];
   return { type: "VALUE", value: expr.slice(0, i + 1 + flags.length) };
 };
@@ -225,6 +305,9 @@ function tokenize(expr) {
   try {
     while (token) {
       current = current.trim();
+      while (current.startsWith("/*") || current.startsWith("//")) {
+        current = current.slice(commentEnd(current, 0)).trim();
+      }
       if (current) {
         const previous = result[result.length - 1];
         const isProperty = previous?.value === "." || previous?.value === "?.";
@@ -280,22 +363,7 @@ function bindArrowParams(tokens, end, scope) {
       break;
     }
   }
-  const levels = [{ inDefault: false, base: false }];
-  for (let k = start + 1; k < end; k++) {
-    const t = tokens[k];
-    const level = levels[levels.length - 1];
-    if (LEFT_GROUPS.has(t.type)) {
-      levels.push({ inDefault: level.inDefault, base: level.inDefault });
-    } else if (RIGHT_GROUPS.has(t.type)) {
-      levels.pop();
-    } else if (t.type === "COMMA") {
-      level.inDefault = level.base;
-    } else if (t.type === "OPERATOR" && t.value === "=") {
-      level.inDefault = true;
-    } else if (t.type === "SYMBOL" && t.varName && !level.inDefault) {
-      scope.add(t.varName);
-    }
-  }
+  bindPattern(tokens, start, scope);
   for (let k = start + 1; k < end; k++) {
     const t = tokens[k];
     if (t.type === "SYMBOL" && t.varName && scope.has(t.varName)) {
@@ -357,7 +425,7 @@ function bindPattern(tokens, start, scope) {
     const t = tokens[k];
     const level = levels[levels.length - 1];
     if (LEFT_GROUPS.has(t.type)) {
-      const prev = tokens[k - 1].type;
+      const prev = tokens[k - 1]?.type;
       const inExpr = !!level && (level.inExpr || level.isObject && (prev === "LEFT_BRACE" || prev === "COMMA"));
       levels.push({ inExpr, base: inExpr, isObject: t.type === "LEFT_BRACE" });
     } else if (RIGHT_GROUPS.has(t.type)) {
@@ -370,7 +438,7 @@ function bindPattern(tokens, start, scope) {
     } else if (t.type === "OPERATOR" && t.value === "=") {
       level.inExpr = true;
     } else if (t.type === "SYMBOL" && !level.inExpr && tokens[k + 1]?.type !== "COLON" && tokens[k - 1].value !== "." && tokens[k - 1].value !== "?.") {
-      scope.add(t.value);
+      scope.add(t.varName ?? t.value);
     }
   }
   return k;
@@ -512,6 +580,12 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
           }
         }
       }
+      const startsStatement = groupType === "BLOCK" && (prevToken.type === "LEFT_BRACE" || prevToken.type === "RIGHT_BRACE" || prevToken.value === ";");
+      if (isVar && startsStatement && STATEMENT_KEYWORDS.has(token.value)) {
+        throw new OwlError(
+          `Unsupported statement '${token.value}' in a template expression (\`${expr}\`): an arrow function's block body takes declarations, expressions and return only`
+        );
+      }
     }
     if (token.type === "TEMPLATE_STRING") {
       const currentLocals = /* @__PURE__ */ new Set();
@@ -547,7 +621,6 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
     if (isVar) {
       token.varName = token.value;
       if (!isLocal(token.value)) {
-        token.originalValue = token.value;
         token.value = `ctx['${token.value}']`;
       } else {
         token.value = `_${token.value}`;
@@ -556,7 +629,7 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
     }
     i++;
   }
-  const freeVariables = topLevelArrowIndex === -1 ? null : collectVariables(tokens, topLevelArrowIndex + 1).filter((v) => v !== "this");
+  const freeVariables = topLevelArrowIndex === -1 ? null : collectVariables(tokens, topLevelParams[0]).filter((v) => v !== "this");
   const arrow = topLevelArrowIndex === -1 ? null : {
     isAsync: !!tokens[0].isKeyword,
     params: render(tokens.slice(...topLevelParams)),
@@ -569,34 +642,49 @@ function processExpr(expr, seededLocals, inAsyncArrow = false) {
     arrow
   };
 }
-function compileExpr(expr, seededLocals) {
-  return processExpr(expr, seededLocals).expr;
+function compileExpr(expr) {
+  return processExpr(expr).expr;
 }
-var INTERP_REGEXP = /\{\{.*?\}\}|\#\{.*?\}/g;
-var HAS_INTERP_REGEXP = /\{\{.*?\}\}|\#\{.*?\}/;
+function findInterpolations(s) {
+  const result = [];
+  for (let i = 0; i < s.length; i++) {
+    const isDouble = s.startsWith("{{", i);
+    if (!isDouble && !s.startsWith("#{", i)) {
+      continue;
+    }
+    let close;
+    try {
+      close = findClosingBrace(s, i + 2);
+    } catch {
+      continue;
+    }
+    if (isDouble && s[close + 1] !== "}") {
+      continue;
+    }
+    const end = isDouble ? close + 2 : close + 1;
+    result.push({ start: i, end, expr: s.slice(i + 2, close) });
+    i = end - 1;
+  }
+  return result;
+}
 function isInterpolated(s) {
-  return HAS_INTERP_REGEXP.test(s);
+  return findInterpolations(s).length > 0;
 }
 function escapeTemplateString(str) {
   return str.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 }
-function replaceDynamicParts(s, replacer) {
-  let matches = s.match(INTERP_REGEXP);
-  if (matches && matches[0].length === s.length) {
-    return `(${replacer(s.slice(2, matches[0][0] === "{" ? -2 : -1))})`;
+function interpolate(s) {
+  const parts = findInterpolations(s);
+  if (parts.length === 1 && parts[0].start === 0 && parts[0].end === s.length) {
+    return `(${compileExpr(parts[0].expr)})`;
   }
   let r = "";
   let last = 0;
-  for (const match of s.matchAll(INTERP_REGEXP)) {
-    const part = match[0];
-    r += escapeTemplateString(s.slice(last, match.index));
-    r += "${" + replacer(part.slice(2, part[0] === "{" ? -2 : -1)) + "}";
-    last = match.index + part.length;
+  for (const { start, end, expr } of parts) {
+    r += escapeTemplateString(s.slice(last, start)) + "${" + compileExpr(expr) + "}";
+    last = end;
   }
   return "`" + r + escapeTemplateString(s.slice(last)) + "`";
-}
-function interpolate(s) {
-  return replaceDynamicParts(s, compileExpr);
 }
 
 // ../owl-compiler/src/parse_xml.ts
@@ -608,20 +696,16 @@ function parseXML(xml) {
     const parsererrorText = doc.getElementsByTagName("parsererror")[0].textContent;
     if (parsererrorText) {
       msg += "\nThe parser has produced the following error message:\n" + parsererrorText;
-      const re = /\d+/g;
-      const firstMatch = re.exec(parsererrorText);
-      if (firstMatch) {
-        const lineNumber = Number(firstMatch[0]);
+      const position = /line(?: number)?\s+(\d+)\D+?column\s+(\d+)/i.exec(parsererrorText) || /(\d+)\D+(\d+)/.exec(parsererrorText);
+      if (position) {
+        const lineNumber = Number(position[1]);
+        const column = Number(position[2]);
         const line = xml.split("\n")[lineNumber - 1];
-        const secondMatch = re.exec(parsererrorText);
-        if (line && secondMatch) {
-          const column = Number(secondMatch[0]);
-          if (column >= 1 && column <= line.length) {
-            msg += `
+        if (line && column >= 1 && column <= line.length) {
+          msg += `
 The error might be located at xml line ${lineNumber} column ${column}
 ${line}
 ${"-".repeat(column - 1)}^`;
-          }
         }
       }
     }
@@ -658,15 +742,13 @@ var ForEachNoFlag = {
 var NO_DIRECTIVES = {};
 var cache = /* @__PURE__ */ new WeakMap();
 function parse(xml, customDir) {
-  const ctx = {
-    inPreTag: false,
-    customDirectives: customDir
-  };
+  const customDirectives = customDir && Object.keys(customDir).length ? customDir : void 0;
+  const ctx = { inPreTag: false, customDirectives };
   if (typeof xml === "string") {
     const elem = parseXML(`<t>${xml}</t>`).firstChild;
     return _parse(elem, ctx);
   }
-  const directivesKey = customDir || NO_DIRECTIVES;
+  const directivesKey = customDirectives || NO_DIRECTIVES;
   let astCache = cache.get(directivesKey);
   if (!astCache) {
     astCache = /* @__PURE__ */ new WeakMap();
@@ -690,7 +772,7 @@ function parseNode(node, ctx) {
   return parseTCustom(node, ctx) || parseTDebugLog(node, ctx) || parseTForEach(node, ctx) || parseTIf(node, ctx) || parseTTranslation(node, ctx) || parseTTranslationContext(node, ctx) || parseTKey(node, ctx) || parseTCall(node, ctx) || parseTCallBlock(node, ctx) || parseTOutNode(node, ctx) || parseTCallSlot(node, ctx) || parseComponent(node, ctx) || parseDOMNode(node, ctx) || parseTSetNode(node, ctx) || parseTNode(node, ctx);
 }
 function isTranslationContext(attribute) {
-  return attribute === "t-translation-context" || attribute.startsWith("t-translation-context-");
+  return attribute === "t-translation-context" || attribute.startsWith(TRANSLATION_CONTEXT_PREFIX);
 }
 function unsupportedDirectiveError(directive, where) {
   return new OwlError(`Unsupported directive '${directive}' on ${where}`);
@@ -699,6 +781,38 @@ function tRefError(node) {
   return new OwlError(
     `Directive 't-ref' can only be used on DOM nodes (used on a <${node.tagName}>)`
   );
+}
+function exprAttr(node, attr) {
+  const value = node.getAttribute(attr);
+  if (value !== null && !value.trim()) {
+    throw emptyExprError(attr, node);
+  }
+  return value;
+}
+function emptyExprError(attr, node) {
+  return new OwlError(`Directive '${attr}' needs an expression (on a <${node.tagName}>)`);
+}
+function wrapping(ast, content) {
+  if (!content || content.hasNoRepresentation) {
+    ast.hasNoRepresentation = true;
+  }
+  return ast;
+}
+function isComponentNode(el) {
+  const first = el.tagName[0];
+  return first === first.toUpperCase() || el.hasAttribute("t-component");
+}
+var TRANSLATION_CONTEXT_PREFIX = "t-translation-context-";
+function collectHandler(found, name, value, events = true) {
+  if (name.startsWith(TRANSLATION_CONTEXT_PREFIX)) {
+    (found.translationCtx ||= {})[name.slice(TRANSLATION_CONTEXT_PREFIX.length)] = value;
+    return true;
+  }
+  if (events && name.startsWith("t-on-")) {
+    (found.on ||= {})[name.slice(5)] = value;
+    return true;
+  }
+  return false;
 }
 function parseTNode(node, ctx) {
   if (node.tagName !== "t") {
@@ -755,28 +869,13 @@ function parseTDebugLog(node, ctx) {
   if (node.hasAttribute("t-debug")) {
     node.removeAttribute("t-debug");
     const content = parseNode(node, ctx);
-    const ast = {
-      type: ASTType.TDebug,
-      content
-    };
-    if (content?.hasNoRepresentation) {
-      ast.hasNoRepresentation = true;
-    }
-    return ast;
+    return wrapping({ type: ASTType.TDebug, content }, content);
   }
   if (node.hasAttribute("t-log")) {
     const expr = node.getAttribute("t-log");
     node.removeAttribute("t-log");
     const content = parseNode(node, ctx);
-    const ast = {
-      type: ASTType.TLog,
-      expr,
-      content
-    };
-    if (content?.hasNoRepresentation) {
-      ast.hasNoRepresentation = true;
-    }
-    return ast;
+    return wrapping({ type: ASTType.TLog, expr, content }, content);
   }
   return null;
 }
@@ -811,26 +910,28 @@ function parseDOMNode(node, ctx) {
     ctx.inPreTag = true;
   }
   let ns = !ctx.nameSpace && ROOT_SVG_TAGS.has(tagName) ? "http://www.w3.org/2000/svg" : null;
-  const ref = node.getAttribute("t-ref");
+  const ref = exprAttr(node, "t-ref");
   node.removeAttribute("t-ref");
   const nodeAttrsNames = node.getAttributeNames();
   let attrs = null;
-  let attrsTranslationCtx = null;
-  let on = null;
+  const handlers = { on: null, translationCtx: null };
   let model = null;
   for (let attr of nodeAttrsNames) {
     const value = node.getAttribute(attr);
     if (attr === "t-on" || attr === "t-on-") {
       throw new OwlError("Missing event name with t-on directive");
     }
-    if (attr.startsWith("t-on-")) {
-      on = on || {};
-      on[attr.slice(5)] = value;
-    } else if (attr === "t-model" || attr.startsWith("t-model.")) {
+    if (collectHandler(handlers, attr, value)) {
+      continue;
+    }
+    if (attr === "t-model" || attr.startsWith("t-model.")) {
       if (!["input", "select", "textarea"].includes(tagName)) {
         throw new OwlError(
           "The t-model directive only works with <input>, <textarea> and <select>"
         );
+      }
+      if (!value.trim()) {
+        throw emptyExprError(attr, node);
       }
       const typeAttr = node.getAttribute("type");
       const isInput = tagName === "input";
@@ -859,20 +960,23 @@ function parseDOMNode(node, ctx) {
         isProxy: hasProxyMod
       };
       if (isSelect) {
-        ctx = Object.assign({}, ctx);
         ctx.tModelInfo = model;
       }
     } else if (attr.startsWith("block-")) {
       throw new OwlError(`Invalid attribute: '${attr}'`);
     } else if (attr === "xmlns") {
       ns = value;
-    } else if (attr.startsWith("t-translation-context-")) {
-      const attrName = attr.slice(22);
-      attrsTranslationCtx = attrsTranslationCtx || {};
-      attrsTranslationCtx[attrName] = value;
     } else if (attr !== "t-name") {
-      if (attr.startsWith("t-") && !ATT_DIRECTIVE_RE.test(attr)) {
-        throw new OwlError(`Unknown QWeb directive: '${attr}'`);
+      if (attr.startsWith("t-")) {
+        if (!ATT_DIRECTIVE_RE.test(attr)) {
+          if (attr.startsWith("t-custom-") && attr.length > 9) {
+            throw new OwlError(`Custom directive "${attr.split(".")[0].slice(9)}" is not defined`);
+          }
+          throw new OwlError(`Unknown QWeb directive: '${attr}'`);
+        }
+        if (!attr.startsWith("t-attf") && !value.trim()) {
+          throw emptyExprError(attr, node);
+        }
       }
       const tModel = ctx.tModelInfo;
       if (tModel && ["t-att-value", "t-attf-value"].includes(attr)) {
@@ -891,8 +995,8 @@ function parseDOMNode(node, ctx) {
     tag: tagName,
     dynamicTag,
     attrs,
-    attrsTranslationCtx,
-    on,
+    attrsTranslationCtx: handlers.translationCtx,
+    on: handlers.on,
     ref,
     content: children,
     model,
@@ -908,7 +1012,7 @@ function parseTOutNode(node, ctx) {
       `t-esc has been deprecated in favor of t-out. If the value to render is not wrapped by the "markup" function, it will be escaped`
     );
   }
-  const expr = node.getAttribute("t-out") || node.getAttribute("t-esc");
+  const expr = exprAttr(node, node.hasAttribute("t-out") ? "t-out" : "t-esc");
   node.removeAttribute("t-out");
   node.removeAttribute("t-esc");
   const tOut = { type: ASTType.TOut, expr, body: null };
@@ -924,7 +1028,7 @@ function parseTOutNode(node, ctx) {
     tOut.body = body.length ? body : null;
     return tOut;
   }
-  const ref = node.getAttribute("t-ref");
+  const ref = exprAttr(node, "t-ref");
   node.removeAttribute("t-ref");
   const ast = parseNode(node, ctx);
   if (ast?.type !== ASTType.DomNode) {
@@ -942,7 +1046,7 @@ function parseTForEach(node, ctx) {
     return null;
   }
   const html = node.outerHTML;
-  const collection = node.getAttribute("t-foreach");
+  const collection = exprAttr(node, "t-foreach");
   node.removeAttribute("t-foreach");
   const elem = node.getAttribute("t-as");
   if (!elem) {
@@ -951,21 +1055,21 @@ function parseTForEach(node, ctx) {
     );
   }
   node.removeAttribute("t-as");
-  const key = node.getAttribute("t-key");
+  const key = exprAttr(node, "t-key");
   if (!key) {
     throw new OwlError(
       `"Directive t-foreach should always be used with a t-key!" (expression: t-foreach="${collection}" t-as="${elem}")`
     );
   }
   node.removeAttribute("t-key");
-  const memo = node.getAttribute("t-memo");
+  const memo = exprAttr(node, "t-memo");
   node.removeAttribute("t-memo");
   const body = parseNode(node, ctx);
   if (!body) {
     return null;
   }
   if (memo !== null) {
-    const directive = findDirective(body, UNVISITABLE);
+    const directive = findNode(body, unvisitable);
     if (body.hasNoRepresentation || directive) {
       throw new OwlError(
         `t-memo needs an item made of elements, text, t-out and components only (expression: t-foreach="${collection}" t-memo="${memo}"${directive ? `, found ${directive}` : ""})`
@@ -988,82 +1092,48 @@ function parseTForEach(node, ctx) {
   };
   if (memo !== null) {
     ast.memo = memo;
-    if (findDirective(body, COMPONENT) || hasMemoizedLoop(body)) {
+    if (findNode(body, memoizedContent)) {
       ast.memoContent = true;
     }
   }
-  if (body.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
-  }
-  return ast;
+  return wrapping(ast, body);
 }
 var UNVISITABLE = {
   [ASTType.TCall]: "t-call",
   [ASTType.TCallSlot]: "t-slot",
   [ASTType.TCallBlock]: "t-call-block"
 };
-var COMPONENT = { [ASTType.TComponent]: "a component" };
-function findDirective(value, directives) {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found2 = findDirective(item, directives);
-      if (found2) {
-        return found2;
-      }
-    }
-    return null;
-  }
+function findNode(value, test) {
   if (!value || typeof value !== "object") {
     return null;
   }
-  const found = typeof value.type === "number" && directives[value.type];
-  if (found) {
-    return found;
+  if (!Array.isArray(value)) {
+    const found = typeof value.type === "number" ? test(value) : null;
+    if (found) {
+      return found;
+    }
   }
   for (const key in value) {
-    const inner = findDirective(value[key], directives);
-    if (inner) {
-      return inner;
+    const found = findNode(value[key], test);
+    if (found) {
+      return found;
     }
   }
   return null;
 }
-function hasMemoizedLoop(value) {
-  if (Array.isArray(value)) {
-    return value.some(hasMemoizedLoop);
-  }
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  if (value.type === ASTType.TForEach && value.memo !== void 0) {
-    return true;
-  }
-  for (const key in value) {
-    if (hasMemoizedLoop(value[key])) {
-      return true;
-    }
-  }
-  return false;
-}
+var unvisitable = (ast) => UNVISITABLE[ast.type] || null;
+var memoizedContent = (ast) => ast.type === ASTType.TComponent ? "a component" : ast.type === ASTType.TForEach && ast.memo !== void 0 ? "a memoized list" : null;
 function parseTKey(node, ctx) {
   if (!node.hasAttribute("t-key")) {
     return null;
   }
-  const key = node.getAttribute("t-key");
+  const key = exprAttr(node, "t-key");
   node.removeAttribute("t-key");
   const content = parseNode(node, ctx);
   if (!content) {
     return null;
   }
-  const ast = {
-    type: ASTType.TKey,
-    expr: key,
-    content
-  };
-  if (content.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
-  }
-  return ast;
+  return wrapping({ type: ASTType.TKey, expr: key, content }, content);
 }
 function parseTCall(node, ctx) {
   if (!node.hasAttribute("t-call")) {
@@ -1075,30 +1145,28 @@ function parseTCall(node, ctx) {
     );
   }
   const subTemplate = node.getAttribute("t-call");
-  const context = node.getAttribute("t-call-context");
+  const context = exprAttr(node, "t-call-context");
   node.removeAttribute("t-call");
   node.removeAttribute("t-call-context");
   let attrs = null;
-  let attrsTranslationCtx = null;
+  const handlers = { on: null, translationCtx: null };
   for (let attributeName of node.getAttributeNames()) {
     const value = node.getAttribute(attributeName);
-    if (attributeName.startsWith("t-translation-context-")) {
-      const attrName = attributeName.slice(22);
-      attrsTranslationCtx = attrsTranslationCtx || {};
-      attrsTranslationCtx[attrName] = value;
-    } else if (attributeName.startsWith("t-")) {
-      throw unsupportedDirectiveError(attributeName, "a t-call node");
-    } else {
-      attrs = attrs || {};
-      attrs[attributeName] = value;
+    if (collectHandler(handlers, attributeName, value, false)) {
+      continue;
     }
+    if (attributeName.startsWith("t-")) {
+      throw unsupportedDirectiveError(attributeName, "a t-call node");
+    }
+    attrs = attrs || {};
+    attrs[attributeName] = value;
   }
   const body = parseChildNodes(node, ctx);
   return {
     type: ASTType.TCall,
     name: subTemplate,
     attrs,
-    attrsTranslationCtx,
+    attrsTranslationCtx: handlers.translationCtx,
     body,
     context
   };
@@ -1107,7 +1175,7 @@ function parseTCallBlock(node, ctx) {
   if (!node.hasAttribute("t-call-block")) {
     return null;
   }
-  const name = node.getAttribute("t-call-block");
+  const name = exprAttr(node, "t-call-block");
   const directive = node.getAttributeNames().find((a) => a.startsWith("t-") && a !== "t-call-block" && !isTranslationContext(a));
   if (directive) {
     throw unsupportedDirectiveError(directive, "a t-call-block node");
@@ -1121,13 +1189,13 @@ function parseTIf(node, ctx) {
   if (!node.hasAttribute("t-if")) {
     return null;
   }
-  const condition = node.getAttribute("t-if");
+  const condition = exprAttr(node, "t-if");
   node.removeAttribute("t-if");
   const content = parseNode(node, ctx) || { type: ASTType.Text, value: "" };
   let nextElement = node.nextElementSibling;
   const tElifs = [];
   while (nextElement && nextElement.hasAttribute("t-elif")) {
-    const condition2 = nextElement.getAttribute("t-elif");
+    const condition2 = exprAttr(nextElement, "t-elif");
     nextElement.removeAttribute("t-elif");
     const tElif = parseNode(nextElement, ctx) || { type: ASTType.Text, value: "" };
     const next = nextElement.nextElementSibling;
@@ -1181,114 +1249,72 @@ var directiveErrorMap = /* @__PURE__ */ new Map([
 ]);
 function parseComponent(node, ctx) {
   let name = node.tagName;
-  const firstLetter = name[0];
   let isDynamic = node.hasAttribute("t-component");
   if (isDynamic && name !== "t") {
     throw new OwlError(
       `Directive 't-component' can only be used on <t> nodes (used on a <${name}>)`
     );
   }
-  if (!(firstLetter === firstLetter.toUpperCase() || isDynamic)) {
+  if (!isComponentNode(node)) {
     return null;
   }
   if (isDynamic) {
-    name = node.getAttribute("t-component");
+    name = exprAttr(node, "t-component");
     node.removeAttribute("t-component");
   }
-  const dynamicProps = node.getAttribute("t-props");
+  const dynamicProps = exprAttr(node, "t-props");
   node.removeAttribute("t-props");
   const defaultSlotScope = node.getAttribute("t-slot-scope");
   node.removeAttribute("t-slot-scope");
-  let on = null;
+  const handlers = { on: null, translationCtx: null };
   let props = null;
-  let propsTranslationCtx = null;
   for (let name2 of node.getAttributeNames()) {
     const value = node.getAttribute(name2);
-    if (name2.startsWith("t-translation-context-")) {
-      const attrName = name2.slice(22);
-      propsTranslationCtx = propsTranslationCtx || {};
-      propsTranslationCtx[attrName] = value;
-    } else if (name2.startsWith("t-")) {
-      if (name2.startsWith("t-on-")) {
-        on = on || {};
-        on[name2.slice(5)] = value;
-      } else {
-        const message = directiveErrorMap.get(name2.split("-").slice(0, 2).join("-"));
-        throw new OwlError(message || `unsupported directive on Component: ${name2}`);
-      }
-    } else {
-      props = props || {};
-      props[name2] = value;
+    if (collectHandler(handlers, name2, value)) {
+      continue;
     }
+    if (name2.startsWith("t-")) {
+      const message = directiveErrorMap.get(name2.split("-").slice(0, 2).join("-"));
+      throw new OwlError(message || `unsupported directive on Component: ${name2}`);
+    }
+    props = props || {};
+    props[name2] = value;
   }
   let slots = null;
   if (node.hasChildNodes()) {
     const clone = node.cloneNode(true);
-    const slotNodes = Array.from(clone.querySelectorAll("[t-set-slot]"));
+    const slotNodes = Array.from(clone.querySelectorAll("[t-set-slot]")).filter(
+      (slotNode) => isOwnSlot(slotNode, clone)
+    );
     for (let slotNode of slotNodes) {
-      if (slotNode.tagName !== "t") {
-        throw new OwlError(
-          `Directive 't-set-slot' can only be used on <t> nodes (used on a <${slotNode.tagName}>)`
-        );
-      }
       const name2 = slotNode.getAttribute("t-set-slot");
-      let el = slotNode.parentElement;
-      let isInSubComponent = false;
-      let directiveAbove = null;
-      while (el && el !== clone) {
-        if (el.hasAttribute("t-component") || el.tagName[0] === el.tagName[0].toUpperCase()) {
-          isInSubComponent = true;
-          break;
-        }
-        const directive = el.getAttributeNames().find((a) => SLOT_HIDING_DIRECTIVES.has(a));
-        if (directive && !directiveAbove) {
-          directiveAbove = `${directive} on a <${el.tagName}>`;
-        }
-        el = el.parentElement;
-      }
-      if (isInSubComponent || !el) {
-        continue;
-      }
-      if (directiveAbove) {
-        throw new OwlError(
-          `Directive 't-set-slot' cannot be used under a directive (${directiveAbove}) inside a component`
-        );
-      }
       slotNode.removeAttribute("t-set-slot");
       slotNode.remove();
-      let on2 = null;
+      const slotHandlers = { on: null, translationCtx: null };
       let attrs = null;
-      let attrsTranslationCtx = null;
       let scope = null;
-      const isT = slotNode.tagName === "t";
       for (let attributeName of slotNode.getAttributeNames()) {
         const value = slotNode.getAttribute(attributeName);
         if (attributeName === "t-slot-scope") {
           scope = value;
-        } else if (attributeName.startsWith("t-translation-context-")) {
-          const attrName = attributeName.slice(22);
-          attrsTranslationCtx = attrsTranslationCtx || {};
-          attrsTranslationCtx[attrName] = value;
-        } else if (attributeName.startsWith("t-on-")) {
-          on2 = on2 || {};
-          on2[attributeName.slice(5)] = value;
-        } else {
+        } else if (!collectHandler(slotHandlers, attributeName, value)) {
           continue;
         }
-        if (isT) {
-          slotNode.removeAttribute(attributeName);
-        }
+        slotNode.removeAttribute(attributeName);
       }
       const slotAst = parseNode(slotNode, ctx);
       for (let attributeName of slotNode.getAttributeNames()) {
-        if (attributeName === "t-slot-scope" || attributeName.startsWith("t-translation-context-") || attributeName.startsWith("t-on-")) {
-          continue;
-        }
         attrs = attrs || {};
         attrs[attributeName] = slotNode.getAttribute(attributeName);
       }
       slots = slots || {};
-      slots[name2] = { content: slotAst, on: on2, attrs, attrsTranslationCtx, scope };
+      slots[name2] = {
+        content: slotAst,
+        on: slotHandlers.on,
+        attrs,
+        attrsTranslationCtx: slotHandlers.translationCtx,
+        scope
+      };
     }
     const defaultContent = parseChildNodes(clone, ctx);
     slots = slots || {};
@@ -1308,10 +1334,36 @@ function parseComponent(node, ctx) {
     isDynamic,
     dynamicProps,
     props,
-    propsTranslationCtx,
+    propsTranslationCtx: handlers.translationCtx,
     slots,
-    on
+    on: handlers.on
   };
+}
+function isOwnSlot(slotNode, root) {
+  if (slotNode.tagName !== "t") {
+    throw new OwlError(
+      `Directive 't-set-slot' can only be used on <t> nodes (used on a <${slotNode.tagName}>)`
+    );
+  }
+  let directiveAbove = null;
+  for (let el = slotNode.parentElement; el !== root; el = el.parentElement) {
+    if (isComponentNode(el)) {
+      return false;
+    }
+    if (el.hasAttribute("t-set-slot")) {
+      throw new OwlError(
+        `Directive 't-set-slot' cannot be nested in another t-set-slot (slot "${slotNode.getAttribute("t-set-slot")}" in slot "${el.getAttribute("t-set-slot")}")`
+      );
+    }
+    const directive = el.getAttributeNames().find((a) => SLOT_HIDING_DIRECTIVES.has(a));
+    directiveAbove ||= directive ? `${directive} on a <${el.tagName}>` : null;
+  }
+  if (directiveAbove) {
+    throw new OwlError(
+      `Directive 't-set-slot' cannot be used under a directive (${directiveAbove}) inside a component`
+    );
+  }
+  return true;
 }
 function parseTCallSlot(node, ctx) {
   if (!node.hasAttribute("t-call-slot") && !node.hasAttribute("t-slot")) {
@@ -1323,76 +1375,64 @@ function parseTCallSlot(node, ctx) {
   const name = node.getAttribute("t-call-slot") || node.getAttribute("t-slot");
   node.removeAttribute("t-call-slot");
   node.removeAttribute("t-slot");
+  const dynamicProps = exprAttr(node, "t-props");
+  node.removeAttribute("t-props");
   let attrs = null;
-  let attrsTranslationCtx = null;
-  let on = null;
+  const handlers = { on: null, translationCtx: null };
   for (let attributeName of node.getAttributeNames()) {
     const value = node.getAttribute(attributeName);
-    if (attributeName.startsWith("t-on-")) {
-      on = on || {};
-      on[attributeName.slice(5)] = value;
-    } else if (attributeName.startsWith("t-translation-context-")) {
-      const attrName = attributeName.slice(22);
-      attrsTranslationCtx = attrsTranslationCtx || {};
-      attrsTranslationCtx[attrName] = value;
-    } else if (attributeName.startsWith("t-") && attributeName !== "t-props") {
-      throw unsupportedDirectiveError(attributeName, "a t-call-slot node");
-    } else {
-      attrs = attrs || {};
-      attrs[attributeName] = value;
+    if (collectHandler(handlers, attributeName, value)) {
+      continue;
     }
+    if (attributeName.startsWith("t-")) {
+      throw unsupportedDirectiveError(attributeName, "a t-call-slot node");
+    }
+    attrs = attrs || {};
+    attrs[attributeName] = value;
   }
   return {
     type: ASTType.TCallSlot,
     name,
+    dynamicProps,
     attrs,
-    attrsTranslationCtx,
-    on,
+    attrsTranslationCtx: handlers.translationCtx,
+    on: handlers.on,
     defaultContent: parseChildNodes(node, ctx)
   };
 }
-function wrapInTTranslationAST(r) {
-  const ast = { type: ASTType.TTranslation, content: r };
-  if (r?.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
+function parseWrapped(node, ctx, attr, wrap) {
+  node.removeAttribute(attr);
+  const result = parseNode(node, ctx);
+  if (result?.type === ASTType.Multi) {
+    return makeASTMulti(result.content.map(wrap));
   }
-  return ast;
+  return wrap(result);
 }
 function parseTTranslation(node, ctx) {
   if (node.getAttribute("t-translation") !== "off") {
     return null;
   }
-  node.removeAttribute("t-translation");
-  const result = parseNode(node, ctx);
-  if (result?.type === ASTType.Multi) {
-    const children = result.content.map(wrapInTTranslationAST);
-    return makeASTMulti(children);
-  }
-  return wrapInTTranslationAST(result);
-}
-function wrapInTTranslationContextAST(r, translationCtx) {
-  const ast = {
-    type: ASTType.TTranslationContext,
-    content: r,
-    translationCtx
-  };
-  if (r?.hasNoRepresentation) {
-    ast.hasNoRepresentation = true;
-  }
-  return ast;
+  return parseWrapped(
+    node,
+    ctx,
+    "t-translation",
+    (content) => wrapping({ type: ASTType.TTranslation, content }, content)
+  );
 }
 function parseTTranslationContext(node, ctx) {
   const translationCtx = node.getAttribute("t-translation-context");
   if (!translationCtx) {
     return null;
   }
-  node.removeAttribute("t-translation-context");
-  const result = parseNode(node, ctx);
-  if (result?.type === ASTType.Multi) {
-    const children = result.content.map((c) => wrapInTTranslationContextAST(c, translationCtx));
-    return makeASTMulti(children);
-  }
-  return wrapInTTranslationContextAST(result, translationCtx);
+  return parseWrapped(
+    node,
+    ctx,
+    "t-translation-context",
+    (content) => wrapping(
+      { type: ASTType.TTranslationContext, content, translationCtx },
+      content
+    )
+  );
 }
 function parseChildren(node, ctx) {
   const children = [];
@@ -1431,18 +1471,15 @@ function normalizeTIf(el) {
   for (let i = 0, ilen = tbranch.length; i < ilen; i++) {
     let node = tbranch[i];
     let prevElem = node.previousElementSibling;
-    let pattr = (name) => prevElem.hasAttribute(name);
-    let nattr = (name) => +node.hasAttribute(name);
-    if (prevElem && (pattr("t-if") || pattr("t-elif"))) {
-      if (pattr("t-foreach")) {
+    if (prevElem && (prevElem.hasAttribute("t-if") || prevElem.hasAttribute("t-elif"))) {
+      if (prevElem.hasAttribute("t-foreach")) {
         throw new OwlError(
           "t-if cannot stay at the same level as t-foreach when using t-elif or t-else"
         );
       }
       const elseIf = node.hasAttribute("t-else") && node.hasAttribute("t-if");
-      if (!(elseIf && !node.hasAttribute("t-elif")) && ["t-if", "t-elif", "t-else"].map(nattr).reduce(function(a, b) {
-        return a + b;
-      }) > 1) {
+      const branches = ["t-if", "t-elif", "t-else"].filter((a) => node.hasAttribute(a)).length;
+      if (!(elseIf && !node.hasAttribute("t-elif")) && branches > 1) {
         throw new OwlError("Only one conditional branching directive is allowed per node");
       }
       let textNode;
@@ -1460,9 +1497,7 @@ function normalizeTIf(el) {
   }
 }
 function normalizeTOut(el) {
-  const elements = [...el.querySelectorAll(`[t-out], [t-esc]`)].filter(
-    (el2) => el2.tagName[0] === el2.tagName[0].toUpperCase() || el2.hasAttribute("t-component")
-  );
+  const elements = [...el.querySelectorAll(`[t-out], [t-esc]`)].filter(isComponentNode);
   for (const el2 of elements) {
     if (el2.childNodes.length) {
       throw new OwlError(`Cannot have t-out on a component that already has content`);
@@ -1488,7 +1523,6 @@ var xmlDoc;
 if (typeof document !== "undefined") {
   xmlDoc = document.implementation.createDocument(null, null, null);
 }
-var MODS = /* @__PURE__ */ new Set(["stop", "capture", "prevent", "self", "synthetic", "passive"]);
 function isProp(tag, key) {
   switch (tag) {
     case "input":
@@ -1505,6 +1539,9 @@ function isProp(tag, key) {
   }
   return false;
 }
+function propKey(name) {
+  return /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
+}
 function toStringExpression(str) {
   return `\`${escapeTemplateString(str)}\``;
 }
@@ -1516,6 +1553,8 @@ var BlockDescription = class {
   hasDynamicChildren = false;
   children = [];
   data = [];
+  // the code of the block's handlers, in the order of their data index
+  handlers = [];
   dom;
   currentDom;
   target;
@@ -1535,6 +1574,11 @@ var BlockDescription = class {
     const id = this.generateId(prefix);
     this.target.addLine(`let ${id} = ${str};`);
     return this.data.push(id) - 1;
+  }
+  // a handler's data is the context; its code is static, given with the block
+  insertHandler(fn) {
+    this.handlers.push(fn);
+    return this.data.push("ctx") - 1;
   }
   insert(dom) {
     if (this.currentDom) {
@@ -1575,7 +1619,7 @@ function createContext(parentCtx, params) {
       translationCtx: parentCtx.translationCtx,
       tKeyExpr: null,
       nameSpace: parentCtx.nameSpace,
-      tModelSelectedExpr: parentCtx.tModelSelectedExpr,
+      tModelSelected: parentCtx.tModelSelected,
       inPreTag: parentCtx.inPreTag
     },
     params
@@ -1624,10 +1668,9 @@ var CodeTarget = class {
     result.push(`}`);
     return result.join("\n  ");
   }
+  // the key of a list's child: of the item of the innermost loop, which a
+  // list's child is always in
   currentKey(ctx) {
-    if (!this.loopLevel) {
-      return ctx.tKeyExpr ? `${ctx.tKeyExpr} + key` : "key";
-    }
     if (ctx.tKeyExpr) {
       return `${ctx.tKeyExpr} + ${this.stringKey(this.loopLevel)}`;
     }
@@ -1730,9 +1773,18 @@ var CodeGenerator = class {
           if (xmlString.endsWith(close)) {
             xmlString = xmlString.slice(0, -close.length) + `</${tag}>\``;
           }
-          mainCode.push(`let ${block.blockName} = tag => createBlock(${xmlString});`);
+          if (block.handlers.length) {
+            const types = `${block.blockName}_types`;
+            mainCode.push(`const ${types} = Object.create(null);`);
+            mainCode.push(
+              `let ${block.blockName} = tag => ${types}[tag] || (${types}[tag] = createBlock(${xmlString}, [${block.handlers.join(", ")}]));`
+            );
+          } else {
+            mainCode.push(`let ${block.blockName} = tag => createBlock(${xmlString});`);
+          }
         } else {
-          mainCode.push(`let ${block.blockName} = createBlock(${xmlString});`);
+          const handlers = block.handlers.length ? `, [${block.handlers.join(", ")}]` : "";
+          mainCode.push(`let ${block.blockName} = createBlock(${xmlString}${handlers});`);
         }
       }
     }
@@ -1758,7 +1810,7 @@ ${code}`;
     const target = new CodeTarget(name, on);
     this.targets.push(target);
     this.target = target;
-    this.compileAST(ast, createContext(ctx, { tModelSelectedExpr: void 0 }));
+    this.compileAST(ast, createContext(ctx, { tModelSelected: void 0 }));
     this.target = initialTarget;
     return name;
   }
@@ -1861,19 +1913,18 @@ ${code}`;
         return this.compileTTranslationContext(ast, ctx);
     }
   }
+  // a t-debug, t-log, t-translation or t-translation-context renders what it
+  // wraps, if anything
+  compileContent(content, ctx) {
+    return content ? this.compileAST(content, ctx) : null;
+  }
   compileDebug(ast, ctx) {
     this.addLine(`debugger;`);
-    if (ast.content) {
-      return this.compileAST(ast.content, ctx);
-    }
-    return null;
+    return this.compileContent(ast.content, ctx);
   }
   compileLog(ast, ctx) {
     this.addLine(`console.log(${compileExpr(ast.expr)});`);
-    if (ast.content) {
-      return this.compileAST(ast.content, ctx);
-    }
-    return null;
+    return this.compileContent(ast.content, ctx);
   }
   compileText(ast, ctx) {
     let { block, forceNewBlock } = ctx;
@@ -1892,27 +1943,13 @@ ${code}`;
     }
     return block.varName;
   }
+  // the static code of a handler, a function of (context, event); its
+  // modifiers are read from its key at run time, checked here
   generateHandlerCode(rawEvent, handler) {
-    const modifiers = rawEvent.split(".").slice(1);
-    const selfIndex = modifiers.indexOf("self");
-    let mask = 0;
-    modifiers.forEach((m, i) => {
-      if (!MODS.has(m)) {
-        throw new OwlError(`Unknown event modifier: '${m}'`);
-      }
-      const beforeSelf = i < selfIndex;
-      if (m === "self") {
-        mask |= EventModifier.SELF;
-      } else if (m === "prevent") {
-        mask |= beforeSelf ? EventModifier.PREVENT_ANY : EventModifier.PREVENT;
-      } else if (m === "stop") {
-        mask |= beforeSelf ? EventModifier.STOP_ANY : EventModifier.STOP;
-      }
-    });
-    const modifiersCode = mask ? `, ${mask}` : "";
+    eventModifierMask(rawEvent);
     const { expr: compiled, arrow } = processExpr(handler);
     if (!compiled.trim()) {
-      return `[null, ctx${modifiersCode}]`;
+      return "null";
     }
     let hoistedExpr;
     if (arrow) {
@@ -1922,7 +1959,7 @@ ${code}`;
       this.helpers.add("callHandler");
       hoistedExpr = `(ctx, ev) => callHandler(${compiled}, ctx, ev)`;
     }
-    return `[${this.hoistHandler(hoistedExpr)}, ctx${modifiersCode}]`;
+    return this.hoistHandler(hoistedExpr);
   }
   // handlers are static functions of (context, event): one per distinct code
   hoistHandler(expr) {
@@ -1960,16 +1997,11 @@ ${code}`;
           if (attrName === "readonly") {
             attrName = "readOnly";
           }
-          if (attrName === "value") {
-            const valueId = this.generateId("v");
-            this.define(valueId, expr);
-            valueVar = valueId;
-            expr = `new String(${valueId} === 0 ? 0 : ${valueId} || "")`;
-          } else {
-            expr = `new Boolean(${expr})`;
-          }
           const idx = block.insertData(expr, "prop");
-          attrs[`block-property-${idx}`] = attrName;
+          attrs[`block-sync-property-${idx}`] = attrName;
+          if (attrName === "value") {
+            valueVar = block.data[idx];
+          }
         } else {
           const idx = block.insertData(expr, "attr");
           if (key === "t-att") {
@@ -1989,13 +2021,15 @@ ${code}`;
         attrName = key;
         attrs[key] = ast.attrs[key];
       }
-      if (attrName === "value" && ctx.tModelSelectedExpr) {
+      if (attrName === "value" && ctx.tModelSelected) {
+        const { expr: selected, number } = ctx.tModelSelected;
         const value = key.startsWith("t-att") ? valueVar : expr;
-        let selectedId = block.insertData(`${ctx.tModelSelectedExpr} === ${value}`, "attr");
+        const target = number ? `toNumber(${value})` : value;
+        let selectedId = block.insertData(`${selected} === ${target}`, "attr");
         attrs[`block-attribute-${selectedId}`] = "selected";
       }
     }
-    let tModelSelectedExpr;
+    let tModelSelected;
     if (ast.model) {
       const {
         hasDynamicChildren,
@@ -2008,7 +2042,7 @@ ${code}`;
         isProxy
       } = ast.model;
       let readExpr;
-      let handlerData;
+      let modelId = null;
       let valueCode = `ev.target.${targetAttr}`;
       valueCode = shouldTrim ? `${valueCode}.trim()` : valueCode;
       if (shouldNumberize) {
@@ -2019,34 +2053,38 @@ ${code}`;
       if (isProxy) {
         readExpr = compileExpr(expr);
         handlerId = this.hoistHandler(`(ctx, ev) => { ${readExpr} = ${valueCode}; }`);
-        handlerData = `[${handlerId}, ctx]`;
       } else {
-        const exprId = this.generateId("expr");
+        modelId = this.generateId("expr");
         this.helpers.add("modelExpr");
-        this.define(exprId, `modelExpr(${compileExpr(expr)})`);
-        readExpr = `${exprId}()`;
+        this.define(modelId, `modelExpr(${compileExpr(expr)})`);
+        readExpr = `${modelId}()`;
         handlerId = this.hoistHandler(`(ctx, ev, model) => model.set(${valueCode})`);
-        handlerData = `[${handlerId}, ctx, 0, ${exprId}]`;
       }
       let idx;
       if (specialInitTargetAttr) {
-        const targetExpr = targetAttr in attrs ? JSON.stringify(attrs[targetAttr]) : valueVar || "false";
+        let targetExpr = targetAttr in attrs ? JSON.stringify(attrs[targetAttr]) : valueVar || "false";
+        if (shouldNumberize) {
+          targetExpr = `toNumber(${targetExpr})`;
+        }
         idx = block.insertData(`${readExpr} === ${targetExpr}`, "prop");
         attrs[`block-property-${idx}`] = specialInitTargetAttr;
       } else if (hasDynamicChildren) {
         const bValueId = this.generateId("bValue");
-        tModelSelectedExpr = `${bValueId}`;
-        this.define(tModelSelectedExpr, readExpr);
+        tModelSelected = { expr: bValueId, number: shouldNumberize };
+        this.define(bValueId, readExpr);
       } else {
         idx = block.insertData(readExpr, "prop");
         attrs[`block-property-${idx}`] = targetAttr;
       }
-      idx = block.insertData(handlerData, "hdlr");
+      idx = block.insertHandler(handlerId);
       attrs[`block-handler-${idx}`] = eventType;
+      if (modelId) {
+        const argIdx = block.data.push(modelId) - 1;
+        attrs[`block-handler-arg-${argIdx}`] = String(idx);
+      }
     }
     for (let ev in ast.on) {
-      const name = this.generateHandlerCode(ev, ast.on[ev]);
-      const idx = block.insertData(name, "hdlr");
+      const idx = block.insertHandler(this.generateHandlerCode(ev, ast.on[ev]));
       attrs[`block-handler-${idx}`] = ev;
     }
     if (ast.ref) {
@@ -2075,7 +2113,7 @@ ${code}`;
           forceNewBlock: false,
           tKeyExpr: ctx.tKeyExpr,
           nameSpace,
-          tModelSelectedExpr: tModelSelectedExpr || ctx.tModelSelectedExpr,
+          tModelSelected: tModelSelected || ctx.tModelSelected,
           inPreTag: ctx.inPreTag || ast.tag === "pre"
         });
         this.compileAST(child, subCtx);
@@ -2104,6 +2142,7 @@ ${code}`;
   }
   compileZero(ast, ctx) {
     this.helpers.add("zero");
+    this.helpers.add("zeroCtx");
     const isMultiple = this.slotNames.has(zero);
     this.slotNames.add(zero);
     const key = this.scopeKey(ctx, isMultiple);
@@ -2113,7 +2152,7 @@ ${code}`;
       const name = this.compileInNewTarget("defaultContent", bodyAst, ctx);
       defaultContent = `${name}.call(this, ctx, node, ${key})`;
     }
-    return `ctx[zero] ? ctx[zero](node, ${key}) : ${defaultContent}`;
+    return `ctx[zero] ? ctx[zero].call(this, ctx[zeroCtx], node, ${key}) : ${defaultContent}`;
   }
   compileTOut(ast, ctx) {
     let { block } = ctx;
@@ -2138,14 +2177,15 @@ ${code}`;
         keyArgs = `${this.scopeKey(ctx, false, site)}, ""`;
       }
       const expr = compileExpr(ast.expr);
+      this.helpers.add("safeOutput");
       if (ast.body) {
         const bodyAst = { type: ASTType.Multi, content: ast.body };
         const name = this.compileInNewTarget("defaultContent", bodyAst, ctx);
         const key = this.scopeKey(ctx, false, site);
-        this.helpers.add("safeOutputOr");
-        blockStr = `safeOutputOr(${expr}, () => ${name}.call(this, ctx, node, ${key}), ${keyArgs})`;
+        const value = this.generateId("out");
+        this.define(value, expr);
+        blockStr = `${value} === undefined || ${value} === null ? toggler("default", ${name}.call(this, ctx, node, ${key})) : safeOutput(${value}, ${keyArgs})`;
       } else {
-        this.helpers.add("safeOutput");
         blockStr = `safeOutput(${expr}, ${keyArgs})`;
       }
     }
@@ -2356,29 +2396,42 @@ ${code}`;
   }
   compileTCall(ast, ctx) {
     let { block } = ctx;
-    const attrs = ast.attrs ? this.formatPropObject(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
+    const attrs = ast.attrs ? this.propEntries(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
     const isDynamic = isInterpolated(ast.name);
     const subTemplate = isDynamic ? interpolate(ast.name) : toStringExpression(ast.name);
     block = this.createBlock(block, "multi");
+    const zero2 = [];
     if (ast.body) {
       const name = this.compileInNewTarget("callBody", ast.body, ctx);
-      const zeroStr = this.generateId("lazyBlock");
-      this.define(zeroStr, `${name}.bind(this, ctx)`);
       this.helpers.add("zero");
-      attrs.push(`[zero]: ${zeroStr}`);
+      this.helpers.add("zeroCtx");
+      zero2.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
     } else if (!ast.context) {
       this.helpers.add("zero");
-      attrs.push(`[zero]: null`);
+      zero2.push(["[zero]", "null"]);
     }
     let ctxExpr;
-    const ctxString = `{${attrs.join(", ")}}`;
     if (ast.context) {
       const dynCtxVar = this.generateId("ctx");
       this.addLine(`const ${dynCtxVar} = ${compileExpr(ast.context)};`);
-      const extra = attrs.length ? `, ${ctxString}` : "";
-      ctxExpr = `Object.assign({}, ${dynCtxVar}, {this: ${dynCtxVar}}${extra})`;
+      const entries = [
+        `this: ${dynCtxVar}`,
+        ...attrs.map(([name, value]) => `${propKey(name)}: ${value}`),
+        ...zero2.map(([key2, value]) => `${key2}: ${value}`)
+      ];
+      ctxExpr = `Object.assign({}, ${dynCtxVar}, {${entries.join(", ")}})`;
+    } else if (!attrs.length && !ast.body) {
+      this.helpers.add("withoutZero");
+      ctxExpr = `ctx[zero] ? withoutZero(ctx) : ctx`;
     } else {
-      ctxExpr = `Object.assign(Object.create(ctx), ${ctxString})`;
+      ctxExpr = this.generateId("ctx");
+      this.define(ctxExpr, `Object.create(ctx)`);
+      for (const [name, value] of attrs) {
+        this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
+      }
+      for (const [key2, value] of zero2) {
+        this.addLine(`${ctxExpr}${key2} = ${value};`);
+      }
     }
     const key = this.scopeKey(ctx, true);
     this.helpers.add("callTemplate");
@@ -2452,6 +2505,14 @@ ${code}`;
    * "onClick.bind"    "onClick"        "onClick: bind(ctx, ctx['onClick'])"
    */
   formatProp(name, value, attrsTranslationCtx, ctx) {
+    const [key, code] = this.propEntry(name, value, attrsTranslationCtx, ctx);
+    return `${propKey(key)}: ${code}`;
+  }
+  /**
+   * The name a prop or t-call attribute `name` (suffix stripped) defines, and
+   * the code of its value.
+   */
+  propEntry(name, value, attrsTranslationCtx, ctx) {
     if (name.endsWith(".translate")) {
       const attrTranslationCtx = attrsTranslationCtx?.[name] || ctx.translationCtx;
       value = toStringExpression(ctx.translate ? this.translate(value, attrTranslationCtx) : value);
@@ -2472,18 +2533,17 @@ ${code}`;
           throw new OwlError(`Invalid prop suffix: ${suffix}`);
       }
     }
-    name = /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
-    return `${name}: ${value || void 0}`;
+    return [name, value || "undefined"];
   }
   formatPropObject(obj, attrsTranslationCtx, ctx) {
-    return Object.entries(obj).map(([k, v]) => this.formatProp(k, v, attrsTranslationCtx, ctx));
+    return this.propEntries(obj, attrsTranslationCtx, ctx).map(([k, v]) => `${propKey(k)}: ${v}`);
+  }
+  propEntries(obj, attrsTranslationCtx, ctx) {
+    return Object.entries(obj).map(([k, v]) => this.propEntry(k, v, attrsTranslationCtx, ctx));
   }
   getPropString(props, dynProps) {
-    let propString = `{${props.join(",")}}`;
-    if (dynProps) {
-      propString = `Object.assign({}, ${compileExpr(dynProps)}${props.length ? ", " + propString : ""})`;
-    }
-    return propString;
+    const entries = dynProps ? [`...${compileExpr(dynProps)}`, ...props] : props;
+    return `{${entries.join(",")}}`;
   }
   compileComponent(ast, ctx) {
     let { block } = ctx;
@@ -2494,8 +2554,7 @@ ${code}`;
     for (let p in ast.props || {}) {
       let [name, suffix] = p.split(".");
       if (suffix === "signal") {
-        const propName2 = /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
-        props.push(`${propName2}: ${compileExpr(ast.props[p]) || void 0}`);
+        props.push(`${propKey(name)}: ${compileExpr(ast.props[p]) || void 0}`);
         signalProps.push(JSON.stringify(name));
         continue;
       }
@@ -2504,8 +2563,7 @@ ${code}`;
         continue;
       }
       const { expr: compiledValue, freeVariables } = processExpr(ast.props[p]);
-      const propName = /^[a-z_]+$/i.test(name) ? name : `'${name}'`;
-      props.push(`${propName}: ${compiledValue || void 0}`);
+      props.push(`${propKey(name)}: ${compiledValue || void 0}`);
       if (freeVariables) {
         for (const varName of freeVariables) {
           const syntheticKey = `${name}.${varName}`;
@@ -2524,7 +2582,7 @@ ${code}`;
         const params = [];
         if (slotAst.content) {
           const name = this.compileInNewTarget("slot", slotAst.content, ctx, slotAst.on);
-          params.push(`__render: ${name}.bind(this), __ctx: ctx`);
+          params.push(`__render: ${name}, __ctx: ctx, __owner: this`);
         }
         const scope = ast.slots[slotName].scope;
         if (scope) {
@@ -2557,7 +2615,7 @@ ${code}`;
     }
     if (slotDef && (ast.dynamicProps || hasSlotsProp)) {
       this.helpers.add("markRaw");
-      this.addLine(`${propVar}.slots = markRaw(Object.assign(${slotDef}, ${propVar}.slots))`);
+      this.addLine(`${propVar}.slots = markRaw(Object.assign(${slotDef}, ${propVar}.slots));`);
     }
     let expr;
     if (ast.isDynamic) {
@@ -2566,16 +2624,13 @@ ${code}`;
     } else {
       expr = `\`${ast.name}\``;
     }
-    let keyArg = this.scopeKey(ctx, true);
+    const keyArg = this.scopeKey(ctx, true);
     let id = this.generateId("comp");
     this.helpers.add("createComponent");
     this.staticDefs.push({
       id,
       expr: `createComponent(app, ${ast.isDynamic ? null : expr}, ${!ast.isDynamic}, ${!!ast.slots}, ${!!ast.dynamicProps}, [${propList}]${signalProps.length ? `, [${signalProps}]` : ""})`
     });
-    if (ast.isDynamic) {
-      keyArg = `(${expr}).name + ${keyArg}`;
-    }
     let blockExpr = `${id}(${propString}, ${keyArg}, node, this, ${ast.isDynamic ? expr : null})`;
     if (ast.isDynamic) {
       blockExpr = `toggler(${expr}, ${blockExpr})`;
@@ -2587,20 +2642,21 @@ ${code}`;
     this.insertBlock(block, ctx, blockExpr);
     return block.varName;
   }
+  // a catcher's handlers are static, given with its spec; a render gives it
+  // their context
   wrapWithEventCatcher(expr, on) {
     this.helpers.add("createCatcher");
     let name = this.generateId("catcher");
     let spec = {};
     let handlers = [];
     for (let ev in on) {
-      let handlerId = this.generateId("hdlr");
-      let idx = handlers.push(handlerId) - 1;
-      spec[ev] = idx;
-      const handler = this.generateHandlerCode(ev, on[ev]);
-      this.define(handlerId, handler);
+      spec[ev] = handlers.push(this.generateHandlerCode(ev, on[ev])) - 1;
     }
-    this.staticDefs.push({ id: name, expr: `createCatcher(${JSON.stringify(spec)})` });
-    return `${name}(${expr}, [${handlers.join(",")}])`;
+    this.staticDefs.push({
+      id: name,
+      expr: `createCatcher(${JSON.stringify(spec)}, [${handlers.join(", ")}])`
+    });
+    return `${name}(${expr}, ctx)`;
   }
   compileTCallSlot(ast, ctx) {
     this.helpers.add("callSlot");
@@ -2615,18 +2671,15 @@ ${code}`;
       slotName = interpolate(ast.name);
     } else {
       slotName = JSON.stringify(ast.name);
-      isMultiple = isMultiple || this.slotNames.has(ast.name);
+      isMultiple = this.slotNames.has(ast.name);
       this.slotNames.add(ast.name);
     }
-    const attrs = { ...ast.attrs };
-    const dynProps = attrs["t-props"];
-    delete attrs["t-props"];
     const key = this.scopeKey(ctx, isMultiple);
-    const props = ast.attrs ? this.formatPropObject(attrs, ast.attrsTranslationCtx, ctx) : [];
-    const scope = this.getPropString(props, dynProps);
+    const props = ast.attrs ? this.formatPropObject(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
+    const scope = props.length || ast.dynamicProps ? this.getPropString(props, ast.dynamicProps) : "null";
     if (ast.defaultContent) {
       const name = this.compileInNewTarget("defaultContent", ast.defaultContent, ctx);
-      blockString = `callSlot(ctx, node, ${key}, ${slotName}, ${dynamic}, ${scope}, ${name}.bind(this))`;
+      blockString = `callSlot(ctx, node, ${key}, ${slotName}, ${dynamic}, ${scope}, ${name}, this)`;
     } else {
       if (dynamic) {
         let name = this.generateId("slot");
@@ -2644,19 +2697,10 @@ ${code}`;
     return block.varName;
   }
   compileTTranslation(ast, ctx) {
-    if (ast.content) {
-      return this.compileAST(ast.content, Object.assign({}, ctx, { translate: false }));
-    }
-    return null;
+    return this.compileContent(ast.content, { ...ctx, translate: false });
   }
   compileTTranslationContext(ast, ctx) {
-    if (ast.content) {
-      return this.compileAST(
-        ast.content,
-        Object.assign({}, ctx, { translationCtx: ast.translationCtx })
-      );
-    }
-    return null;
+    return this.compileContent(ast.content, { ...ctx, translationCtx: ast.translationCtx });
   }
 };
 
@@ -2685,8 +2729,15 @@ ${code}
   }
 }
 
+// ../owl-runtime/src/version.ts
+var version = "3.0.0-alpha.49";
+
+// ../owl-runtime/src/build_info.ts
+var buildHash = "d6c1a1da";
+
 // src/compiler.ts
-TemplateSet.compiler = { compile, parseXML };
+var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);
+registry[`${version}+${buildHash}`] = { compile, parseXML, version, hash: buildHash, OwlError };
 export {
   compile,
   parseXML
