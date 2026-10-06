@@ -39,6 +39,7 @@ class SmsApiTwilio(SmsApiBase):
         "twilio_from_missing": "twilio_from_missing",
         "twilio_from_to": "twilio_from_to",
         "twilio_opted_out": "sms_optout",
+        "twilio_no_automated_sender": "twilio_from_missing",
         "country_not_supported": "sms_country_not_supported",
     }
 
@@ -70,11 +71,30 @@ class SmsApiTwilio(SmsApiBase):
         company = self.company or self.env.company
         client = company.integration_twilio_config_id._get_twilio_client()
         error_messages = self._get_sms_api_error_messages()
+        # no sender at all, or only numbers kept for conversations: either way
+        # Twilio would refuse an SMS with no From, so none is sent
+        missing = (
+            "twilio_no_automated_sender"
+            if company.twilio_number_ids.filtered("is_conversation_only")
+            else "twilio_from_missing"
+        )
         results = []
         for message in messages:
             body = message.get("content") or ""
             for number_info in message.get("numbers") or []:
                 uuid = number_info["uuid"]
+                if not (
+                    self.sender or company._get_twilio_sender(number_info["number"])
+                ):
+                    results.append(
+                        {
+                            "failure_reason": error_messages[missing],
+                            "failure_type": missing,
+                            "state": missing,
+                            "uuid": uuid,
+                        }
+                    )
+                    continue
                 response = self._post_twilio_message(
                     client, number_info["number"], body, uuid
                 )
@@ -135,6 +155,11 @@ class SmsApiTwilio(SmsApiBase):
             "twilio_acc_unverified": self.env._(
                 "The Twilio account may not send to this recipient yet: a trial "
                 "account, or one without an approved compliance profile"
+            ),
+            "twilio_no_automated_sender": self.env._(
+                "No Twilio number of this company may send automated SMS: its "
+                "numbers answer conversations only. Send through Odoo, or add "
+                "a number that allows automated SMS."
             ),
             "twilio_opted_out": self.env._(
                 "The recipient replied STOP to this number; Twilio refuses to "

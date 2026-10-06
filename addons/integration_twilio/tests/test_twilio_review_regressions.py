@@ -441,3 +441,75 @@ class TestTwilioReviewConversations(MockSmsTwilio, HttpCase):
         )
         with self.assertRaises(ValidationError):
             self.number.user_ids = [Command.link(stranger.id)]
+
+
+@tagged("post_install", "-at_install", "twilio")
+class TestTwilioConversationOnlyNumbers(MockSmsTwilio):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_sms_twilio(cls.company_admin)
+        cls.mexican = cls.env["integration.twilio.number"].create(
+            {
+                "number": "+525629162188",
+                "country_id": cls.env.ref("base.mx").id,
+                "twilio_sid": "PN33333333333333333333333333333333",
+                "company_id": cls.company_admin.id,
+                "sequence": -1,
+            }
+        )
+
+    def _automated(self, number):
+        with self.mock_sms_twilio_gateway():
+            composer = self.env["wizard.sms.sms.send"].create(
+                {
+                    "body": "Your order shipped",
+                    "composition_mode": "numbers",
+                    "numbers": number,
+                }
+            )
+            composer._action_send_sms()
+        return self._new_sms[-1]
+
+    def _sent_from(self):
+        return [
+            parse_qs(request.body)["From"][0]
+            for request in self.mock_requests
+            if request.url.endswith("/Messages.json")
+        ]
+
+    def test_a_mexican_number_answers_conversations_only(self):
+        self.assertTrue(self.mexican.is_conversation_only)
+        self.assertFalse(
+            self.company_admin.twilio_number_ids.filtered(
+                lambda number: number.country_code != "MX"
+            ).mapped("is_conversation_only")[0]
+        )
+
+    def test_automated_sms_never_leave_from_it(self):
+        self.mock_requests.clear()
+        self._automated("+525512345678")
+        self.assertEqual(self._sent_from(), ["+32455998877"])
+
+    def test_without_another_number_an_automated_sms_fails_before_twilio(self):
+        (self.company_admin.twilio_number_ids - self.mexican).active = False
+        self.mock_requests.clear()
+        sms = self._automated("+525512345678")
+        self.assertFalse(self._sent_from())
+        self.assertEqual(sms.failure_type, "twilio_from_missing")
+        wizard = self.env["wizard.integration.twilio.config.update"].create({})
+        self.assertTrue(wizard.is_automated_sms_blocked)
+
+    def test_a_conversation_reply_still_leaves_from_it(self):
+        channel = self.env["discuss.channel"]._get_sms_channel(
+            self.mexican, "+525512345678"
+        )
+        self.mock_requests.clear()
+        with self.mock_sms_twilio_gateway():
+            channel.message_post(
+                body="Claro, mañana",
+                author_id=self.user_admin.partner_id.id,
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+            )
+        self.assertEqual(self._sent_from(), ["+525629162188"])

@@ -60,6 +60,24 @@ class WizardIntegrationTwilioConfigUpdate(models.TransientModel):
         readonly=False,
     )
     test_number = fields.Char()
+    is_automated_sms_blocked = fields.Boolean(
+        compute="_compute_is_automated_sms_blocked",
+    )
+
+    @api.depends(
+        "sms_provider",
+        "twilio_number_ids.is_sms_capable",
+        "twilio_number_ids.is_conversation_only",
+    )
+    def _compute_is_automated_sms_blocked(self) -> None:
+        for wizard in self:
+            wizard.is_automated_sms_blocked = (
+                wizard.sms_provider == "twilio"
+                and not any(
+                    number.is_sms_capable and not number.is_conversation_only
+                    for number in wizard.twilio_number_ids
+                )
+            )
 
     @api.model_create_multi
     def create(self, vals_list):

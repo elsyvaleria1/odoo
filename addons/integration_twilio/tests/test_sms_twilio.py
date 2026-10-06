@@ -176,6 +176,14 @@ class TestSmsTwilio(MockSmsTwilio):
                     "sms_provider": "twilio",
                     "twilio_account_sid": "AC11111222223333344444555556666677",
                     "twilio_auth_token": "skarsnik",
+                    "twilio_number_ids": [
+                        Command.create(
+                            {
+                                "country_id": self.env.ref("base.us").id,
+                                "number": "+15056998800",
+                            }
+                        )
+                    ],
                 }
             )
         )

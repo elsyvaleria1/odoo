@@ -96,7 +96,11 @@ class TestSmsTwilio(MockSmsTwilio, TransactionCase):
         with self.mock_sms_twilio_send():
             notif = wizard.action_send_test()
         message = notif["params"]["message"]
-        self.assertEqual(message, "The SMS has been sent from False")
+        # no sender: refused before Twilio, as Twilio would refuse no From
+        self.assertEqual(
+            message,
+            "Missing From Number: A 'From' number is required to send a message",
+        )
 
 
 @tagged("post_install", "-at_install", "twilio", "twilio_manage")

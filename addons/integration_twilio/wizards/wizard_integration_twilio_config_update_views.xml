@@ -50,6 +50,14 @@
                             class="btn btn-link ms-1" />
                     </div>
                 </group>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="not is_automated_sms_blocked">
+                    No number here may send automated SMS (notifications, mass SMS,
+                    marketing automation): they will fail. Send them through Odoo, or
+                    add a number that is not limited to conversations.
+                </div>
                 <group string="SMS">
                     <field
                         name="sms_provider"
@@ -88,6 +96,7 @@
                             <field name="number" placeholder="+1 555-123-4567" />
                             <field name="is_sms_capable" />
                             <field name="is_voice_capable" />
+                            <field name="is_conversation_only" />
                             <field name="is_sms_routed" />
                             <field name="user_ids" widget="many2many_tags" />
                             <button

@@ -31,6 +31,10 @@ OPT_OUT_KEYWORDS = {
     "OPTOUT",
 }
 OPT_IN_KEYWORDS = {"START", "YES", "UNSTOP"}
+# Twilio sells SMS in Mexico on mobile numbers only, and "Mexico Mobile numbers
+# may only be used for two-way person-to-person (P2P) communication"
+# (twilio.com/en-us/guidelines/mx/regulatory): automated SMS are blocked
+CONVERSATION_ONLY_COUNTRIES = {"MX"}
 
 
 class IntegrationTwilioNumber(models.Model):
@@ -73,6 +77,16 @@ class IntegrationTwilioNumber(models.Model):
     )
     is_mms_capable = fields.Boolean(string="MMS")
     is_voice_capable = fields.Boolean(string="Voice")
+    is_conversation_only = fields.Boolean(
+        string="Conversations Only",
+        compute="_compute_is_conversation_only",
+        store=True,
+        readonly=False,
+        help="The number answers people who write to it and sends nothing "
+        "automated: notifications, mass SMS and marketing automation never "
+        "leave from it. Set for Mexican numbers, whose carriers block "
+        "automated SMS from mobile numbers.",
+    )
     is_sms_routed = fields.Boolean(
         string="Receives SMS in Odoo",
         copy=False,
@@ -142,6 +156,13 @@ class IntegrationTwilioNumber(models.Model):
             leaving.unlink()
             if missing:
                 channel._add_members(partners=missing, post_joined_message=False)
+
+    @api.depends("country_id")
+    def _compute_is_conversation_only(self) -> None:
+        for number in self:
+            number.is_conversation_only = (
+                number.country_code in CONVERSATION_ONLY_COUNTRIES
+            )
 
     @api.depends("number", "country_id")
     def _compute_display_name(self):

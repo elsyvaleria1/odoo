@@ -306,6 +306,11 @@ msgid "Configure Twilio Account"
 msgstr "Twilio-Konto konfigurieren"
 
 #. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__is_conversation_only
+msgid "Conversations Only"
+msgstr ""
+
+#. module: integration_twilio
 #: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__country_id
 msgid "Country"
 msgstr "Land"
@@ -501,6 +506,11 @@ msgid "Integration Twilio Config"
 msgstr ""
 
 #. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__is_automated_sms_blocked
+msgid "Is Automated Sms Blocked"
+msgstr ""
+
+#. module: integration_twilio
 #: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_is_follower
 msgid "Is Follower"
 msgstr ""
@@ -616,6 +626,23 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/integration_twilio/static/src/core/public_web/messaging_menu_model_patch.js:0
 msgid "No SMS conversation yet."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid ""
+"No Twilio number of this company may send automated SMS: its numbers answer "
+"conversations only. Send through Odoo, or add a number that allows automated"
+" SMS."
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid ""
+"No number here may send automated SMS (notifications, mass SMS,\n"
+"                    marketing automation): they will fail. Send them through Odoo, or\n"
+"                    add a number that is not limited to conversations."
 msgstr ""
 
 #. module: integration_twilio
@@ -878,6 +905,14 @@ msgstr ""
 #. module: integration_twilio
 #: model:ir.model.fields,help:integration_twilio.field_discuss_channel__sms_partner_id
 msgid "The contact the sender's number matched when the conversation began."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_number__is_conversation_only
+msgid ""
+"The number answers people who write to it and sends nothing automated: "
+"notifications, mass SMS and marketing automation never leave from it. Set "
+"for Mexican numbers, whose carriers block automated SMS from mobile numbers."
 msgstr ""
 
 #. module: integration_twilio

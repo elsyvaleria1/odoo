@@ -36,7 +36,10 @@ class ResCompany(models.Model):
         return super()._get_sms_api_class()
 
     def _get_twilio_sender(self, to_number):
-        senders = self.twilio_number_ids.filtered("is_sms_capable")
+        # an automated SMS: a conversation's reply names its own number
+        senders = self.twilio_number_ids.filtered(
+            lambda number: number.is_sms_capable and not number.is_conversation_only
+        )
         country_code = phone_validation.phone_get_country_code_for_number(to_number)
         if not senders or not country_code:
             return senders[:1]
