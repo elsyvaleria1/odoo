@@ -12,7 +12,7 @@
         id="approvals_menu_product_variant"
         name="Product Variants"
         parent="approval_app.approvals_menu_config"
-        action="product.product_variant_action"
+        action="product.product_normal_action"
         sequence="40"
         groups="product.group_product_variant" />
 
