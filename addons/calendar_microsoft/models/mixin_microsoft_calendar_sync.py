@@ -15,10 +15,10 @@ from odoo.addons.base.models.mixin_recurrence_rrule import (
     MAX_RECURRENT_OCCURRENCES,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
+    TIMEOUT,
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
-from odoo.addons.microsoft_account.models.microsoft_service import TIMEOUT
 
 _logger = logging.getLogger(__name__)
 
@@ -52,8 +52,8 @@ def after_commit(func):
 
 
 @contextmanager
-def microsoft_calendar_token(user):
-    yield user._get_microsoft_calendar_token()
+def microsoft_calendar_connection(user):
+    yield user._calendar_sync_connection("microsoft")
 
 
 class MixinMicrosoftCalendarSync(models.AbstractModel):
@@ -83,13 +83,13 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         if (
             fields_to_sync
             and "need_sync_m" not in vals
-            and not self.env.user.microsoft_synchronization_stopped
+            and not self.env.user._calendar_sync_stopped("microsoft")
         ):
             vals["need_sync_m"] = True
 
         result = super().write(vals)
 
-        if self.env.user._get_microsoft_sync_status() != "sync_paused":
+        if self.env.user._calendar_sync_status("microsoft") != "sync_paused":
             timeout = self._get_microsoft_graph_timeout()
 
             for record in self:
@@ -116,12 +116,12 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        if self.env.user.microsoft_synchronization_stopped:
+        if self.env.user._calendar_sync_stopped("microsoft"):
             for vals in vals_list:
                 vals.update({"need_sync_m": False})
         records = super().create(vals_list)
 
-        if self.env.user._get_microsoft_sync_status() != "sync_paused":
+        if self.env.user._calendar_sync_status("microsoft") != "sync_paused":
             timeout = self._get_microsoft_graph_timeout()
 
             for record in records:
@@ -134,7 +134,7 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
 
     @api.model
     def _get_microsoft_service(self):
-        return MicrosoftCalendarService(self.env["microsoft.service"])
+        return MicrosoftCalendarService(self.env)
 
     def _filtered_synced(self) -> Self:
         """
@@ -144,7 +144,7 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
 
     def unlink(self):
         synced = self._filtered_synced()
-        if self.env.user._get_microsoft_sync_status() != "sync_paused":
+        if self.env.user._calendar_sync_status("microsoft") != "sync_paused":
             for ev in synced:
                 ev._microsoft_delete(ev._get_organizer(), ev.microsoft_id)
         return super().unlink()
@@ -494,9 +494,11 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         """
         microsoft_service = self._get_microsoft_service()
         sender_user = self._get_event_user_m(user_id).sudo()
-        with microsoft_calendar_token(sender_user) as token:
-            if token and not sender_user.microsoft_synchronization_stopped:
-                microsoft_service.delete(event_id, token=token, timeout=timeout)
+        with microsoft_calendar_connection(sender_user) as connection:
+            if connection and not sender_user._calendar_sync_stopped("microsoft"):
+                microsoft_service.delete(
+                    event_id, connection=connection, timeout=timeout
+                )
 
     @after_commit
     def _microsoft_patch(self, user_id, event_id, values, timeout=TIMEOUT) -> None:
@@ -509,11 +511,11 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         """
         microsoft_service = self._get_microsoft_service()
         sender_user = self._get_event_user_m(user_id)
-        with microsoft_calendar_token(sender_user.sudo()) as token:
-            if token:
+        with microsoft_calendar_connection(sender_user.sudo()) as connection:
+            if connection:
                 self._check_attendees_have_email()
                 res = microsoft_service.patch(
-                    event_id, values, token=token, timeout=timeout
+                    event_id, values, connection=connection, timeout=timeout
                 )
                 self.with_context(
                     dont_notify=True, microsoft_calendar_syncing=True
@@ -536,11 +538,11 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
             return
         microsoft_service = self._get_microsoft_service()
         sender_user = self._get_event_user_m()
-        with microsoft_calendar_token(sender_user.sudo()) as token:
-            if token:
+        with microsoft_calendar_connection(sender_user.sudo()) as connection:
+            if connection:
                 self._check_attendees_have_email()
                 event_id, uid = microsoft_service.insert(
-                    values, token=token, timeout=timeout
+                    values, connection=connection, timeout=timeout
                 )
                 self.with_context(
                     dont_notify=True, microsoft_calendar_syncing=True
@@ -556,14 +558,14 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         if not answer:
             return
         microsoft_service = self._get_microsoft_service()
-        with microsoft_calendar_token(self.env.user.sudo()) as token:
-            if token:
+        with microsoft_calendar_connection(self.env.user.sudo()) as connection:
+            if connection:
                 self._check_attendees_have_email()
                 # Fetch the event's id (ms_organizer_event_id) using its iCalUId (ms_universal_event_id) since the
                 # former differs for each attendee. This info is required for sending the event answer and Odoo currently
                 # saves the event's id of the last user who synced the event (who might be or not the current user).
                 status, event = microsoft_service._get_single_event(
-                    self.ms_universal_event_id, token=token
+                    self.ms_universal_event_id, connection=connection
                 )
                 if (
                     status
@@ -576,7 +578,7 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
                         event.get("value")[0].get("id"),
                         answer,
                         params,
-                        token=token,
+                        connection=connection,
                         timeout=timeout,
                     )
                     self.need_sync_m = not res
@@ -667,11 +669,12 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
                 Domain("ms_universal_event_id", "=", False) & is_active_clause
             ) | Domain("need_sync_m", "=", True)
         # Sync only events created/updated after last sync date (with 5 min of time acceptance).
-        if self.env.user.microsoft_last_sync_date:
+        last_sync_date = self.env.user._calendar_sync_existing_account(
+            "microsoft"
+        ).last_sync_date
+        if last_sync_date:
             time_offset = timedelta(minutes=5)
-            domain &= Domain(
-                "write_date", ">=", self.env.user.microsoft_last_sync_date - time_offset
-            )
+            domain &= Domain("write_date", ">=", last_sync_date - time_offset)
         return domain
 
     def _get_event_user_m(self, user_id=None):

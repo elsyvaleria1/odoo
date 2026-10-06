@@ -10,15 +10,18 @@ from odoo.addons.calendar_google.models.res_users import ResUsers
 from odoo.addons.calendar_google.tests.test_sync_common import TestSyncGoogle, patch_api
 from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 from odoo.addons.calendar_google.utils.google_event import GoogleEvent
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 
 
 @tagged("odoo2google", "calendar_performance", "is_query_count")
-@patch.object(ResUsers, "_get_google_calendar_token", lambda user: "dummy-token")
+@patch.object(
+    CalendarSyncUsers, "_calendar_sync_connection", lambda user, code: "dummy-token"
+)
 class TestSyncOdoo2Google(TestSyncGoogle):
     def setUp(self):
         super().setUp()
         self.env.user.partner_id.tz = "Europe/Brussels"
-        self.google_service = GoogleCalendarService(self.env["google.service"])
+        self.google_service = GoogleCalendarService(self.env)
         # Make sure this test will work for the next 30 years
         self.env["ir.config_parameter"].set_param(
             "calendar_google.sync.range_days", 10000
@@ -521,9 +524,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_stop_synchronization(self):
-        self.env.user.stop_google_synchronization()
+        self.env.user.calendar_sync_stop("google")
         self.assertTrue(
-            self.env.user.google_synchronization_stopped,
+            self.env.user._calendar_sync_account("google").stopped,
             "The google synchronization flag should be switched on",
         )
         self.assertFalse(
@@ -556,7 +559,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "partner_id": partner.id,
             }
         )
-        user.stop_google_synchronization()
+        user.calendar_sync_stop("google")
         event = (
             self.env["calendar.event"]
             .with_user(user)
@@ -571,7 +574,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             )
         )
 
-        user.with_user(user).restart_google_synchronization()
+        user.with_user(user).calendar_sync_restart("google")
         self.assertGoogleEventPatched(
             event.google_id,
             {
@@ -956,8 +959,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         must be True for later synchronizing it with Google Calendar.
         """
         # Set synchronization as active and unpause the synchronization.
-        self.env.user.google_synchronization_stopped = False
-        self.env.user.sudo().pause_google_synchronization()
+        self.env.user._calendar_sync_account("google").stopped = False
+        self.env["calendar.sync.account"]._set_paused("google", True)
 
         # Create record and call synchronization method.
         record = self.env["calendar.event"].create(
@@ -971,8 +974,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         record._sync_odoo2google(self.google_service)
 
         # Assert that synchronization is paused, insert wasn't called and record is waiting to be synced.
-        self.assertFalse(self.env.user.google_synchronization_stopped)
-        self.assertEqual(self.env.user._get_google_sync_status(), "sync_paused")
+        self.assertFalse(self.env.user._calendar_sync_account("google").stopped)
+        self.assertEqual(self.env.user._calendar_sync_status("google"), "sync_paused")
         self.assertTrue(
             record.need_sync,
             "Sync variable must be true for updating event when sync re-activates",
@@ -986,8 +989,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         field 'need_sync' as True for later synchronizing it with Google Calendar.
         """
         # Set synchronization as active and unpause it.
-        self.env.user.google_synchronization_stopped = False
-        self.env.user.sudo().unpause_google_synchronization()
+        self.env.user._calendar_sync_account("google").stopped = False
+        self.env["calendar.sync.account"]._set_paused("google", False)
 
         # Setup synced record in Calendar.
         record = self.env["calendar.event"].create(
@@ -1001,13 +1004,13 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
 
         # Pause synchronization and update synced event. It will only update it locally.
-        self.env.user.sudo().pause_google_synchronization()
+        self.env["calendar.sync.account"]._set_paused("google", True)
         record.write({"name": "Updated Event"})
         record._sync_odoo2google(self.google_service)
 
         # Assert that synchronization is paused, patch wasn't called and record is waiting to be synced.
-        self.assertFalse(self.env.user.google_synchronization_stopped)
-        self.assertEqual(self.env.user._get_google_sync_status(), "sync_paused")
+        self.assertFalse(self.env.user._calendar_sync_account("google").stopped)
+        self.assertEqual(self.env.user._calendar_sync_status("google"), "sync_paused")
         self.assertEqual(
             record.name,
             "Updated Event",
@@ -1026,8 +1029,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         have its field 'need_sync' as True for later synchronizing it with Google Calendar.
         """
         # Set synchronization as active and then pause synchronization.
-        self.env.user.google_synchronization_stopped = False
-        self.env.user.sudo().unpause_google_synchronization()
+        self.env.user._calendar_sync_account("google").stopped = False
+        self.env["calendar.sync.account"]._set_paused("google", False)
 
         # Setup synced record in Calendar.
         record = self.env["calendar.event"].create(
@@ -1041,12 +1044,12 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
 
         # Pause synchronization and delete synced event.
-        self.env.user.sudo().pause_google_synchronization()
+        self.env["calendar.sync.account"]._set_paused("google", True)
         record.unlink()
 
         # Assert that synchronization is paused, delete wasn't called and record was archived in Odoo.
-        self.assertFalse(self.env.user.google_synchronization_stopped)
-        self.assertEqual(self.env.user._get_google_sync_status(), "sync_paused")
+        self.assertFalse(self.env.user._calendar_sync_account("google").stopped)
+        self.assertEqual(self.env.user._calendar_sync_status("google"), "sync_paused")
         self.assertFalse(
             record.active, "Event must be archived in Odoo after unlinking it"
         )
@@ -1147,8 +1150,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
     def test_event_sync_after_pause_period(self, mock_sync_request):
         """Ensure that an event created during the paused synchronization period gets synchronized after resuming it."""
         # Pause the synchronization and creates the local event.
-        self.organizer_user.google_synchronization_stopped = False
-        self.organizer_user.sudo().pause_google_synchronization()
+        self.organizer_user._calendar_sync_account("google").stopped = False
+        self.env["calendar.sync.account"]._set_paused("google", True)
         record = (
             self.env["calendar.event"]
             .with_user(self.organizer_user)
@@ -1175,11 +1178,11 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         # With the synchronization paused, manually call the synchronization to simulate the page refresh.
         self.organizer_user.sudo()._sync_google_calendar(self.google_service)
         self.assertFalse(
-            self.organizer_user.google_synchronization_stopped,
+            self.organizer_user._calendar_sync_account("google").stopped,
             "Synchronization should not be stopped, only paused.",
         )
         self.assertEqual(
-            self.organizer_user._get_google_sync_status(),
+            self.organizer_user._calendar_sync_status("google"),
             "sync_paused",
             "Synchronization must be paused since it wasn't resumed yet.",
         )
@@ -1190,7 +1193,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         self.assertGoogleEventNotInserted()
 
         # Unpause the synchronization and call the calendar synchronization. Ensure the event was inserted in Google side.
-        self.organizer_user.sudo().unpause_google_synchronization()
+        self.env["calendar.sync.account"]._set_paused("google", False)
         self.organizer_user.with_user(self.organizer_user).sudo()._sync_google_calendar(
             self.google_service
         )
@@ -1297,8 +1300,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         with self.mock_datetime_and_now("2023-01-10"):
             # Stop the synchronization for the organizer and leave the attendee synchronized.
             # Then, create an event with the organizer and attendee. Assert that it was not inserted.
-            self.organizer_user.google_synchronization_stopped = True
-            self.attendee_user.google_synchronization_stopped = False
+            self.organizer_user._calendar_sync_account("google").stopped = True
+            self.attendee_user._calendar_sync_account("google").stopped = False
             record = (
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
@@ -1331,9 +1334,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             self.assertGoogleAPINotCalled()
 
             # Now, we synchronize the organizer and make sure the event got inserted by him.
-            self.organizer_user.with_user(
-                self.organizer_user
-            ).restart_google_synchronization()
+            self.organizer_user.with_user(self.organizer_user).calendar_sync_restart(
+                "google"
+            )
             self.organizer_user.with_user(
                 self.organizer_user
             ).sudo()._sync_google_calendar(self.google_service)
@@ -1559,8 +1562,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         Test event is synchronized for organizer with active google synchronization if it is
         created by a user with google synchronization stopped.
         """
-        self.attendee_user.google_synchronization_stopped = True
-        self.organizer_user.google_calendar_token = "dummy-token"
+        self.attendee_user._calendar_sync_account("google").stopped = True
         event = (
             self.env["calendar.event"]
             .with_user(self.attendee_user)

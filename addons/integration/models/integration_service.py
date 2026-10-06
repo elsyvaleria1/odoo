@@ -294,6 +294,90 @@ class IntegrationService(models.Model):
                     )
                 )
 
+    def _oauth_app_connection(self, company=None):
+        """The connection holding this service's OAuth client: the company's
+        own first, then one every company shares."""
+        self.check_singleton()
+        company_id = getattr(company, "id", company) or self.env.company.id
+        return (
+            self.env["integration.connection"]
+            .sudo()
+            .search(
+                [
+                    ("service_id", "=", self.id),
+                    ("active", "=", True),
+                    ("user_id", "=", False),
+                    ("res_model", "=", False),
+                    ("credential_id", "!=", False),
+                    ("company_id", "in", [company_id, False]),
+                ],
+                order="company_id, sequence, id",
+                limit=1,
+            )
+        )
+
+    def _oauth_client_id(self, company=None) -> str:
+        self.check_singleton()
+        app = self._oauth_app_connection(company)
+        return (app._oauth_client()[0] if app else "") or self.oauth_client_id or ""
+
+    def _has_oauth_client(self, company=None) -> bool:
+        self.check_singleton()
+        app = self._oauth_app_connection(company)
+        return bool(app) and all(app._oauth_client())
+
+    def _set_oauth_client(self, client_id, client_secret=None, company=None) -> None:
+        """Keep the OAuth client in the vault: the connection already holding
+        it, else a new one for `company`, or for every company when False."""
+        self.check_singleton()
+        values = {"oauth_client_id": client_id or False}
+        if client_secret:
+            values["oauth_client_secret"] = client_secret
+        app = self._oauth_app_connection(company)
+        if app:
+            app.credential_id.write(values)
+            return
+        if not client_id:
+            return
+        if not client_secret:
+            raise ValidationError(
+                self.env._(
+                    "%(service)s needs its OAuth client secret with the client ID.",
+                    service=self.name,
+                )
+            )
+        # the vault: an OAuth client is written by no user's rights
+        Connection = self.env["integration.connection"].sudo()
+        if company is False:
+            connection = Connection.search(
+                [
+                    ("service_id", "=", self.id),
+                    ("company_id", "=", False),
+                    ("user_id", "=", False),
+                    ("res_model", "=", False),
+                    ("environment", "=", self.environment),
+                    ("active", "=", True),
+                ],
+                limit=1,
+            ) or Connection.create(
+                {
+                    "name": self.name,
+                    "service_id": self.id,
+                    "environment": self.environment,
+                }
+            )
+        else:
+            connection = Connection._shared(self, company)
+        connection.credential_id = connection.env["credential.credential"].create(
+            {
+                "name": self.env._("%(service)s OAuth client", service=self.name),
+                "category_id": self.env.ref("credential.credential_category_oauth2").id,
+                "company_id": connection.company_id.id,
+                "environment": self.environment,
+                **values,
+            }
+        )
+
     @api.model
     def _oauth_callback_paths(self) -> tuple[str, ...]:
         return (OAUTH_CALLBACK_PATH, *OAUTH_LEGACY_CALLBACK_PATHS)

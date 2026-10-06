@@ -1,22 +1,12 @@
 from odoo.tests import TransactionCase, tagged
 
-SYNC_DOMAIN = [
-    ("microsoft_calendar_rtoken", "!=", False),
-    ("microsoft_synchronization_stopped", "=", False),
-]
+from odoo.addons.calendar_microsoft.tests.common import authorize_microsoft_calendar
 
 
 @tagged("post_install", "-at_install")
 class TestMicrosoftSyncCandidates(TransactionCase):
-    """Who the synchronisation cron picks up, and why it cannot ask SQL.
-
-    The refresh token rests in `credential.credential`'s encrypted JSON, so
-    `res.users.microsoft_calendar_rtoken` is a compute, and the stop flag is a
-    related through `res_users_settings_id`, which has no column. The cron
-    searched res.users on both and died with `Cannot convert
-    res.users.microsoft_calendar_rtoken to SQL because it is not stored` on
-    every run, whether or not anybody had connected a calendar.
-    """
+    """Who the synchronisation cron picks up: the users whose Microsoft connection
+    is authorized, found in SQL on the connections, less the stopped ones."""
 
     @classmethod
     def setUpClass(cls):
@@ -26,39 +16,39 @@ class TestMicrosoftSyncCandidates(TransactionCase):
         )
 
     def _candidates(self):
-        return self.env["res.users"]._microsoft_sync_candidates()
+        return self.env["res.users"]._calendar_sync_candidates("microsoft")
 
     def test_the_cron_runs_when_nobody_has_connected(self):
         self.assertNotIn(self.user, self._candidates())
 
-        self.env["res.users"]._sync_all_microsoft_calendar()
+        self.env["calendar.sync.account"]._cron_sync()
 
-    def test_a_connected_user_is_picked_up(self):
-        self.user._set_microsoft_auth_tokens("an-access", "a-refresh", 3600)
+    def test_an_authorized_user_is_picked_up(self):
+        authorize_microsoft_calendar(self.user)
 
         self.assertIn(self.user, self._candidates())
 
-    def test_a_user_who_stopped_syncing_is_left_out(self):
-        self.user._set_microsoft_auth_tokens("an-access", "a-refresh", 3600)
-        self.user.sudo().microsoft_synchronization_stopped = True
-
-        self.assertNotIn(self.user, self._candidates())
-
-    def test_a_user_who_never_connected_is_left_out(self):
-        self.assertFalse(self.user.sudo().microsoft_calendar_credential_id)
-
-        self.assertNotIn(self.user, self._candidates())
-
-    def test_a_credential_without_a_refresh_token_falls_out_in_python(self):
-        """The SQL half is deliberately a superset: it sees the link to the
-        credential, not what is inside it."""
-        self.user._set_microsoft_auth_tokens("access-only", False, 3600)
-        candidates = (
-            self.env["res.users"]
-            .sudo()
-            .search([("microsoft_calendar_credential_id", "!=", False)])
+    def test_a_user_who_never_authorized_is_left_out(self):
+        self.env["integration.connection"]._personal(
+            self.env.ref("integration_microsoft.service_microsoft"), self.user
         )
 
-        self.assertIn(self.user, candidates)
         self.assertNotIn(self.user, self._candidates())
-        self.assertNotIn(self.user, candidates.filtered_domain(SYNC_DOMAIN))
+
+    def test_a_revoked_grant_is_left_out_until_authorized_again(self):
+        authorize_microsoft_calendar(self.user).needs_reauthorization = True
+
+        self.assertNotIn(self.user, self._candidates())
+        self.assertFalse(self.user._calendar_sync_connection("microsoft"))
+
+    def test_a_user_who_stopped_syncing_is_not_synced(self):
+        authorize_microsoft_calendar(self.user)
+        self.user._calendar_sync_account("microsoft").stopped = True
+
+        self.assertEqual(self.user._calendar_sync_status("microsoft"), "sync_stopped")
+
+    def test_a_user_who_stopped_syncing_is_left_out(self):
+        authorize_microsoft_calendar(self.user)
+        self.user.calendar_sync_stop("microsoft")
+
+        self.assertNotIn(self.user, self._candidates())

@@ -1,5 +1,4 @@
 from odoo import fields, models
-from odoo.tools import str2bool
 
 
 class AppointmentType(models.Model):
@@ -14,18 +13,13 @@ class AppointmentType(models.Model):
 
     def _get_calendars_already_setup(self):
         calendars = super()._get_calendars_already_setup()
-        if self.env.user.sudo().microsoft_calendar_token:
+        if self.env.user._calendar_sync_connection("microsoft"):
             calendars.append("microsoft")
         return calendars
 
     def _get_calendars_possible_to_setup(self):
         calendars = super()._get_calendars_possible_to_setup()
-        if self.env.user.check_synchronization_status()[
-            "calendar_microsoft"
-        ] != "missing_credentials" and not str2bool(
-            self.env.registry.settings.get(
-                self.env, "microsoft_calendar_sync_paused", False
-            )
-        ):
+        Account = self.env["calendar.sync.account"]
+        if Account._has_client("microsoft") and not Account._is_paused("microsoft"):
             calendars.append("microsoft")
         return calendars

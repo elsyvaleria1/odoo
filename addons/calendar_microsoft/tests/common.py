@@ -11,10 +11,30 @@ from odoo.tests.common import HttpCase
 from odoo.addons.calendar_microsoft.models.mixin_microsoft_calendar_sync import (
     MixinMicrosoftCalendarSync,
 )
+from odoo.addons.calendar_microsoft.utils.calendar_microsoft import CALENDAR_SCOPE
 
 
-def mock_get_token(user):
+def mock_get_connection(user, code=None):
     return f"TOKEN_FOR_USER_{user.id}"
+
+
+def authorize_microsoft_calendar(
+    user, access_token="an-access", refresh_token="a-refresh"
+):
+    """What the OAuth callback leaves behind for `user`'s calendar."""
+    env = user.env
+    connection = env["integration.connection"]._personal(
+        env.ref("integration_microsoft.service_microsoft"), user, scope=CALENDAR_SCOPE
+    )
+    connection._oauth_store_tokens(
+        {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_in": 3600,
+        },
+        "https://odoo.example/integration/oauth/callback",
+    )
+    return connection
 
 
 def _modified_date_in_the_future(event):
@@ -43,7 +63,7 @@ class TestCommon(HttpCase):
     @patch_api
     def setUp(self):
         super().setUp()
-        self.env.user.unpause_microsoft_synchronization()
+        self.env["calendar.sync.account"]._set_paused("microsoft", False)
 
         # prepare users
         self.organizer_user = self.env["res.users"].search(
@@ -74,12 +94,6 @@ class TestCommon(HttpCase):
                     "login": "john@attendee.com",
                     "partner_id": partner.id,
                 }
-            )
-
-        # Add token validity with one hour of time window for properly checking the sync status.
-        for user in [self.organizer_user, self.attendee_user]:
-            user.microsoft_calendar_token_validity = fields.Datetime.now() + timedelta(
-                hours=1
             )
 
         # -----------------------------------------------------------------------------------------
@@ -603,8 +617,8 @@ class TestCommon(HttpCase):
 
         # Currently, it is forbidden to create recurrences in Odoo. A trick for deactivating the checking
         # is needed below in this test setup: deactivating the synchronization during recurrences creation.
-        sync_previous_state = self.env.user.microsoft_synchronization_stopped
-        self.env.user.microsoft_synchronization_stopped = False
+        sync_previous_state = self.env.user._calendar_sync_account("microsoft").stopped
+        self.env.user._calendar_sync_account("microsoft").stopped = False
 
         if not already_created:
             self.recurrent_base_event = (
@@ -641,7 +655,7 @@ class TestCommon(HttpCase):
             self.recurrent_events_count = len(self.recurrent_events)
 
         # Rollback the synchronization status after setup.
-        self.env.user.microsoft_synchronization_stopped = sync_previous_state
+        self.env.user._calendar_sync_account("microsoft").stopped = sync_previous_state
 
     def assert_odoo_event(self, odoo_event, expected_values):
         """

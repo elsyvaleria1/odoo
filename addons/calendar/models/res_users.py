@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import UTC
 
 from odoo import api, fields, models, modules
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.libs.datetime import timezone
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
@@ -238,6 +238,23 @@ class ResUsers(models.Model):
     @api.model
     def check_calendar_credentials(self):
         return {}
+
+    @api.model
+    def _calendar_provider_client_id(self, provider: str) -> str:
+        """The OAuth client ID `provider`'s calendar authorizes with, "" while
+        its module is not installed."""
+        return ""
+
+    @api.model
+    def _set_calendar_provider_client(
+        self, provider: str, client_id: str, client_secret: str | None
+    ) -> None:
+        raise UserError(
+            self.env._(
+                "No module found to configure the %(provider)s calendar.",
+                provider=provider,
+            )
+        )
 
     def check_synchronization_status(self):
         return {}

@@ -80,12 +80,11 @@ class CalendarEvent(models.Model):
     def _check_microsoft_sync_status(self):
         """
         Returns True if synchronization with Outlook Calendar is active and False otherwise.
-        The 'microsoft_synchronization_stopped' variable needs to be 'False' and Outlook account must be connected.
+        The user's Microsoft synchronization must not be stopped and Outlook account must be connected.
         """
-        outlook_connected = self.env.user._get_microsoft_calendar_token()
-        return (
-            outlook_connected
-            and self.env.user.sudo().microsoft_synchronization_stopped is False
+        outlook_connected = self.env.user._calendar_sync_connection("microsoft")
+        return outlook_connected and not self.env.user._calendar_sync_stopped(
+            "microsoft"
         )
 
     def _skip_send_mail_status_update(self):
@@ -93,7 +92,7 @@ class CalendarEvent(models.Model):
         user_id = self._get_event_user_m()
         if (
             self.with_user(user_id)._check_microsoft_sync_status()
-            and user_id._get_microsoft_sync_status() == "sync_active"
+            and user_id._calendar_sync_status("microsoft") == "sync_active"
         ):
             return self.microsoft_id or self.need_sync_m
         return super()._skip_send_mail_status_update()
@@ -293,9 +292,9 @@ class CalendarEvent(models.Model):
 
         # if a single event becomes the base event of a recurrency, it should be first
         # removed from the Outlook calendar. Additionaly, checks if synchronization is not paused.
-        if self.env.user._get_microsoft_sync_status() != "sync_paused" and values.get(
-            "recurrency"
-        ):
+        if self.env.user._calendar_sync_status(
+            "microsoft"
+        ) != "sync_paused" and values.get("recurrency"):
             for event in self:
                 if not event.recurrency and not event.recurrence_id:
                     event._microsoft_delete(
@@ -922,7 +921,7 @@ class CalendarEvent(models.Model):
         """Get the user who will send the request to Microsoft (organizer if synchronized and current user otherwise)."""
         self.check_singleton()
         # Current user must have access to token in order to access event properties (non-public user).
-        current_user_status = self.env.user._get_microsoft_calendar_token()
+        current_user_status = self.env.user._calendar_sync_connection("microsoft")
         if user_id != self.env.user and current_user_status:
             if user_id is None:
                 user_id = self.user_id

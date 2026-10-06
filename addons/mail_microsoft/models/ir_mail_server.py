@@ -3,19 +3,27 @@ import base64
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.mail_microsoft.models.mixin_mail_microsoft import OUTLOOK
+
 
 class IrMail_Server(models.Model):
     """Add the Outlook OAuth authentication on the outgoing mail servers."""
 
     _name = "ir.mail_server"
-    _inherit = ["ir.mail_server", "mixin.microsoft.outlook"]
+    _inherit = ["ir.mail_server", "mixin.mail.microsoft"]
+    _oauth2_type_field = "smtp_authentication"
 
-    _OUTLOOK_SCOPE = "https://outlook.office.com/SMTP.Send"
+    _MAIL_MICROSOFT_SCOPE = "https://outlook.office.com/SMTP.Send"
 
     smtp_authentication = fields.Selection(
         selection_add=[("outlook", "Outlook OAuth Authentication")],
         ondelete={"outlook": "set default"},
     )
+
+    def _oauth2_provider(self):
+        if self.smtp_authentication == "outlook":
+            return OUTLOOK
+        return super()._oauth2_provider()
 
     def _compute_smtp_authentication_info(self) -> None:
         outlook_servers = self.filtered(
@@ -72,10 +80,6 @@ class IrMail_Server(models.Model):
             self.smtp_host = "smtp.outlook.com"
             self.smtp_encryption = "starttls_strict"
             self.smtp_port = 587
-        else:
-            self.microsoft_outlook_refresh_token = False
-            self.microsoft_outlook_access_token = False
-            self.microsoft_outlook_access_token_expiration = False
 
     @api.onchange("smtp_user", "smtp_authentication")
     def _on_change_smtp_user_outlook(self) -> None:
@@ -85,7 +89,7 @@ class IrMail_Server(models.Model):
 
     def _smtp_login__(self, connection, smtp_user, smtp_password) -> None:
         if len(self) == 1 and self.smtp_authentication == "outlook":
-            auth_string = self._generate_outlook_oauth2_string(smtp_user)
+            auth_string = self._mail_microsoft_auth_string(smtp_user)
             oauth_param = base64.b64encode(auth_string.encode()).decode()
             connection.ehlo()
             connection.docmd("AUTH", f"XOAUTH2 {oauth_param}")

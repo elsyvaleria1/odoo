@@ -1,19 +1,19 @@
 from unittest.mock import ANY, patch
 
 from odoo.addons.base.models.ir_cron import IrCron
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers
 from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
-    mock_get_token,
+    mock_get_connection,
     patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 
 
 @patch.object(IrCron, "_commit_progress", lambda self, *a, **kw: None)
-@patch.object(ResUsers, "_get_microsoft_calendar_token", mock_get_token)
+@patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestResetAccount(TestCommon):
     """The wizard cleared `microsoft_id` but kept `ms_universal_event_id`, the
     id `_filtered_synced` reads, so a reset event still counted as synced and
@@ -61,7 +61,7 @@ class TestResetAccount(TestCommon):
         self._reset("delete_microsoft", "new")
         self.call_post_commit_hooks()
 
-        mock_delete.assert_any_call("123", token=ANY, timeout=ANY)
+        mock_delete.assert_any_call("123", connection=ANY, timeout=ANY)
         self.assertTrue(self.simple_event.exists())
         self.assertFalse(self.simple_event.microsoft_id)
         self.assertFalse(self.simple_event.ms_universal_event_id)

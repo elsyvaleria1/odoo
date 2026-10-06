@@ -152,7 +152,7 @@ class OAuthController(http.Controller):
                 request.env._("OAuth Token URL not configured for service '%s'")
                 % service.name
             )
-        redirect_uri = self._get_redirect_uri(service)
+        redirect_uri = self._get_redirect_uri(connection)
         params = {
             "response_type": "code",
             "client_id": client_id,
@@ -235,11 +235,20 @@ class OAuthController(http.Controller):
                 if connection.service_id.oauth_use_pkce
                 else None,
             )
-            connection._oauth_store_tokens(tokens, redirect_uri)
-            if connection.res_model:
-                record = request.env[connection.res_model].browse(connection.res_id)
-                if hasattr(record, "_on_oauth_authorized"):
-                    record._on_oauth_authorized(connection)
+            # a record that refuses the account it was authorized with keeps
+            # none of the tokens
+            with request.env.cr.savepoint():
+                connection._oauth_store_tokens(tokens, redirect_uri)
+                if connection.res_model:
+                    # the authorizer was checked: the record hears of it whatever
+                    # the user may write of it
+                    record = (
+                        request.env[connection.res_model]
+                        .sudo()
+                        .browse(connection.res_id)
+                    )
+                    if hasattr(record, "_on_oauth_authorized"):
+                        record._on_oauth_authorized(connection, tokens)
             _logger.info(
                 "OAuth tokens obtained successfully: connection_id=%s, service=%s",
                 connection.id,
@@ -284,7 +293,13 @@ class OAuthController(http.Controller):
             max_age_seconds=_OAUTH_STATE_MAX_AGE_SECONDS,
         )
 
-    def _get_redirect_uri(self, service):
+    def _get_redirect_uri(self, connection):
+        """The service's callback, or the one this connection was last
+        authorized through: its provider's console lists that one for sure."""
+        service = connection.service_id
+        path = urlsplit(connection.oauth_redirect_uri or "").path
+        if path not in service._oauth_callback_paths():
+            path = service.oauth_redirect_path or OAUTH_CALLBACK_PATH
         base_url = request.env.registry.settings.get(
             request.env, "web.base.url", ""
         ).rstrip("/")
@@ -296,7 +311,7 @@ class OAuthController(http.Controller):
                     "Parameters before using OAuth.",
                 ),
             )
-        return f"{base_url}{service.oauth_redirect_path or OAUTH_CALLBACK_PATH}"
+        return f"{base_url}{path}"
 
     def _exchange_code_for_tokens(
         self, connection, code, redirect_uri, code_verifier=None

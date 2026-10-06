@@ -1,7 +1,6 @@
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.tools import str2bool
 
 
 class AppointmentType(models.Model):
@@ -29,7 +28,7 @@ class AppointmentType(models.Model):
             lambda apt: apt.event_videocall_source == "google_meet"
         ):
             users_not_synchronized = appointment_type.staff_user_ids.filtered(
-                lambda user: not user.is_google_calendar_synced()
+                lambda user: not user._calendar_sync_active("google")
             )
             if users_not_synchronized:
                 appointment_type.users_wo_google_calendar_msg = self.env._(
@@ -49,16 +48,13 @@ class AppointmentType(models.Model):
 
     def _get_calendars_already_setup(self):
         calendars = super()._get_calendars_already_setup()
-        if self.env.user.sudo().google_calendar_token:
+        if self.env.user._calendar_sync_connection("google"):
             calendars.append("google")
         return calendars
 
     def _get_calendars_possible_to_setup(self):
         calendars = super()._get_calendars_possible_to_setup()
-        if self.env["google.service"]._get_client_id("calendar") and not str2bool(
-            self.env.registry.settings.get(
-                self.env, "google_calendar_sync_paused", False
-            )
-        ):
+        Account = self.env["calendar.sync.account"]
+        if Account._has_client("google") and not Account._is_paused("google"):
             calendars.append("google")
         return calendars

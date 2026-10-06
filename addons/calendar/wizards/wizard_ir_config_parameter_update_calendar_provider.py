@@ -23,16 +23,11 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
     # Using same field names and strings as their respective res.config.settings
     cal_client_id = fields.Char(
         string="Google Client_id",
-        default=lambda self: self.env["ir.config_parameter"].get_param(
-            "google_calendar_client_id"
+        default=lambda self: self.env["res.users"]._calendar_provider_client_id(
+            "google"
         ),
     )
-    cal_client_secret = fields.Char(
-        string="Google Client_key",
-        default=lambda self: self.env["credential.credential"]._get_system_secret(
-            "google_calendar_client_secret"
-        ),
-    )
+    cal_client_secret = fields.Char(string="Google Client_key")
     cal_sync_paused = fields.Boolean(
         string="Google Synchronization Paused",
         default=lambda self: str2bool(
@@ -42,16 +37,11 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
     )
     microsoft_outlook_client_identifier = fields.Char(
         string="Outlook Client Id",
-        default=lambda self: self.env["ir.config_parameter"].get_param(
-            "microsoft_calendar_client_id"
+        default=lambda self: self.env["res.users"]._calendar_provider_client_id(
+            "microsoft"
         ),
     )
-    microsoft_outlook_client_secret = fields.Char(
-        string="Outlook Client Secret",
-        default=lambda self: self.env["credential.credential"]._get_system_secret(
-            "microsoft_calendar_client_secret"
-        ),
-    )
+    microsoft_outlook_client_secret = fields.Char(string="Outlook Client Secret")
     microsoft_outlook_sync_paused = fields.Boolean(
         string="Outlook Synchronization Paused",
         default=lambda self: str2bool(
@@ -91,22 +81,21 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
         if calendar_module.state != "installed":
             calendar_module.button_immediate_install()
 
+        # the install refreshed this environment's registry: the provider's
+        # module answers now
+        Users = self.env["res.users"]
         if self.external_calendar_provider == "google":
-            self.env["ir.config_parameter"].set_param(
-                "google_calendar_client_id", self.cal_client_id
-            )
-            self.env["credential.credential"]._set_system_secret(
-                "google_calendar_client_secret", self.cal_client_secret
+            Users._set_calendar_provider_client(
+                "google", self.cal_client_id, self.cal_client_secret
             )
             self.env["ir.config_parameter"].set_param(
                 "google_calendar_sync_paused", self.cal_sync_paused
             )
         elif self.external_calendar_provider == "microsoft":
-            self.env["ir.config_parameter"].set_param(
-                "microsoft_calendar_client_id", self.microsoft_outlook_client_identifier
-            )
-            self.env["credential.credential"]._set_system_secret(
-                "microsoft_calendar_client_secret", self.microsoft_outlook_client_secret
+            Users._set_calendar_provider_client(
+                "microsoft",
+                self.microsoft_outlook_client_identifier,
+                self.microsoft_outlook_client_secret,
             )
             self.env["ir.config_parameter"].set_param(
                 "microsoft_calendar_sync_paused", self.microsoft_outlook_sync_paused

@@ -19,7 +19,7 @@ class CalendarEvent(models.Model):
             lambda event: event.videocall_source == "google_meet"
         )
         for event in events_w_google_url:
-            if event.user_id.is_google_calendar_synced():
+            if event.user_id._calendar_sync_active("google"):
                 if not event.access_token:
                     event._update_access_token()
                 event.videocall_redirection = (

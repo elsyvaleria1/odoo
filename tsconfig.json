@@ -160,6 +160,7 @@
             "@geoengine/*": ["./addons/geoengine/static/src/*"],
             "@google_address_autocomplete/*": ["./addons/google_address_autocomplete/static/src/*"],
             "@calendar_google/*": ["./addons/calendar_google/static/src/*"],
+            "@calendar_sync/*": ["./addons/calendar_sync/static/src/*"],
             "@google_recaptcha/*": ["./addons/google_recaptcha/static/src/*"],
             "@helpdesk/*": ["./addons/helpdesk/static/src/*"],
             "@helpdesk_mail_plugin/*": ["./addons/helpdesk_mail_plugin/static/src/*"],

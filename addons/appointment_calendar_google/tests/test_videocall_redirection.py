@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 from odoo.tests import TransactionCase, new_test_user, tagged
 
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
+
 
 @tagged("post_install", "-at_install")
 class TestGoogleMeetRedirection(TransactionCase):
@@ -33,7 +35,7 @@ class TestGoogleMeetRedirection(TransactionCase):
 
         with (
             patch.object(
-                type(organizer), "is_google_calendar_synced", lambda user: True
+                CalendarSyncUsers, "_calendar_sync_active", lambda user, code: True
             ),
             patch.object(event_class, "_update_access_token", spy),
         ):

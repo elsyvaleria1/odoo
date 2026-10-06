@@ -1,24 +1,22 @@
-from datetime import timedelta
 from unittest.mock import ANY, call, patch
 
-from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tools.authority_keys import is_authority_key
 
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers
 from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
     _modified_date_in_the_future,
-    mock_get_token,
+    mock_get_connection,
     patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 
 
-@patch.object(ResUsers, "_get_microsoft_calendar_token", mock_get_token)
+@patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestDeleteEvents(TestCommon):
     @patch_api
     def setUp(self):
@@ -35,7 +33,7 @@ class TestDeleteEvents(TestCommon):
 
         self.assertFalse(self.simple_event.exists())
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "delete")
@@ -48,7 +46,7 @@ class TestDeleteEvents(TestCommon):
 
         self.assertFalse(self.simple_event.exists())
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "_get_single_event")
@@ -85,7 +83,7 @@ class TestDeleteEvents(TestCommon):
         self.assertTrue(self.simple_event.exists())
         self.assertFalse(self.simple_event.active)
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "delete")
@@ -99,7 +97,7 @@ class TestDeleteEvents(TestCommon):
         self.assertTrue(self.simple_event.exists())
         self.assertFalse(self.simple_event.active)
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "delete")
@@ -121,7 +119,7 @@ class TestDeleteEvents(TestCommon):
 
         mock_delete.assert_has_calls(
             [
-                call(e.microsoft_id, token=ANY, timeout=ANY)
+                call(e.microsoft_id, connection=ANY, timeout=ANY)
                 for e in several_simple_events
             ]
         )
@@ -174,7 +172,7 @@ class TestDeleteEvents(TestCommon):
             len(self.recurrence.calendar_event_ids), self.recurrent_events_count - 1
         )
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "delete")
@@ -196,7 +194,7 @@ class TestDeleteEvents(TestCommon):
         )
         self.assertEqual(self.recurrence.base_event_id, self.recurrent_events[1])
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "get_events")
@@ -362,7 +360,7 @@ class TestDeleteEvents(TestCommon):
             ]
         )
         mock_delete.assert_called_once_with(
-            event_id, token=mock_get_token(self.organizer_user), timeout=ANY
+            event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
     @patch.object(MicrosoftCalendarService, "delete")
@@ -371,8 +369,8 @@ class TestDeleteEvents(TestCommon):
         Deletes an event with the Outlook Calendar synchronization paused, the event must be archived completely.
         """
         # Set user synchronization configuration as active and pause it.
-        self.organizer_user.microsoft_synchronization_stopped = False
-        self.organizer_user.pause_microsoft_synchronization()
+        self.organizer_user._calendar_sync_account("microsoft").stopped = False
+        self.env["calendar.sync.account"]._set_paused("microsoft", True)
 
         # Try to delete a simple event in Odoo Calendar.
         self.simple_event.with_user(self.organizer_user).unlink()
@@ -380,9 +378,11 @@ class TestDeleteEvents(TestCommon):
         self.simple_event.invalidate_recordset()
 
         # Ensure that synchronization is paused, delete wasn't called and record doesn't exist anymore.
-        self.assertFalse(self.organizer_user.microsoft_synchronization_stopped)
+        self.assertFalse(
+            self.organizer_user._calendar_sync_account("microsoft").stopped
+        )
         self.assertEqual(
-            self.organizer_user._get_microsoft_sync_status(), "sync_paused"
+            self.organizer_user._calendar_sync_status("microsoft"), "sync_paused"
         )
         self.assertFalse(
             self.simple_event.exists(),
@@ -394,9 +394,6 @@ class TestDeleteEvents(TestCommon):
     def test_delete_recurrence_previously_synced(self, mock_delete):
         # Arrange: select recurrent event and update token validity to simulate an active sync environment.
         idx = 0
-        self.organizer_user.microsoft_calendar_token_validity = (
-            fields.Datetime.now() + timedelta(hours=1)
-        )
 
         # Act: try to delete a recurrent event that was already synced.
         with self.assertRaises(UserError):
@@ -438,7 +435,7 @@ class TestDeleteEvents(TestCommon):
         )
 
         # Allow unlinking recurrence when sync is off for the current user.
-        self.organizer_user.microsoft_synchronization_stopped = True
+        self.organizer_user._calendar_sync_account("microsoft").stopped = True
         self.assertFalse(
             self.env["calendar.event"]
             .with_user(self.organizer_user)

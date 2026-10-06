@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="calendar_sync.AttendeeCalendarController" t-inherit="calendar.AttendeeCalendarController" t-inherit-mode="extension">
+        <xpath expr="//div[@id='header_synchronization_settings']" position="inside">
+            <t t-set="activeProvider" t-value="this.activeSyncProvider"/>
+            <t t-set="pausedProvider" t-value="this.pausedSyncProvider"/>
+            <div t-if="activeProvider" t-att-id="activeProvider.code + '_calendar_sync'" class="o_calendar_sync mx-1 d-inline-flex">
+                <button class="btn text-nowrap" t-on-click="() => this.onStopSynchronization(activeProvider)">
+                    <div>
+                        <i id="check_symbol" class="fa-solid fa-check px-1 o_text_green o_calendar_check"/>
+                        <i id="stop_symbol" class="fa-solid fa-square px-1 o_text_red o_calendar_stop"/>
+                        <span id="check_text" class="o_calendar_check" t-out="activeProvider.label"/>
+                        <span id="stop_text" class="o_text_red o_calendar_stop">Stop synchro</span>
+                    </div>
+                </button>
+            </div>
+            <button t-elif="pausedProvider" class="btn text-nowrap" t-on-click="() => this.onStopSynchronization(pausedProvider)">
+                <div>
+                    <i id="pause_symbol" class="fa-solid fa-pause px-1 o_text_orange o_calendar_pause"/>
+                    <i id="stop_symbol" class="fa-solid fa-square px-1 o_text_red o_calendar_stop"/>
+                    <span id="pause_text" class="o_text_orange o_calendar_pause">Synchro is paused</span>
+                    <span id="stop_text" class="o_text_red o_calendar_stop">Stop synchro</span>
+                </div>
+            </button>
+            <t t-elif="this.anySyncProviderConfigured">
+                <h5 id="synchronize_with" class="d-inline-flex">Synchronize with</h5>
+                <t t-foreach="this.model.syncProviders" t-as="provider" t-key="provider.code">
+                    <div t-if="this.isSyncOffered(provider)" t-att-id="provider.code + '_calendar_sync'" class="mx-1 d-inline-flex">
+                        <button type="button" t-att-id="provider.code + '_sync_pending'" class="btn btn-primary text-nowrap" t-on-click="() => this.onSyncCalendar(provider)">
+                            <b t-out="provider.label"/>
+                        </button>
+                    </div>
+                </t>
+            </t>
+        </xpath>
+    </t>
+</templates>

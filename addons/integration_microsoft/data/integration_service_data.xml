@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_microsoft" model="integration.service">
+        <field name="name">Microsoft</field>
+        <field name="code">microsoft</field>
+        <field name="category">other</field>
+        <field name="provider">Microsoft Corporation</field>
+        <field name="website">https://entra.microsoft.com</field>
+        <field
+            name="documentation_url">https://learn.microsoft.com/entra/identity-platform/v2-oauth2-auth-code-flow</field>
+        <field name="environment">production</field>
+        <field name="endpoint_url">https://graph.microsoft.com</field>
+        <field name="auth_type">oauth2</field>
+        <field name="allow_user_credentials" eval="True" />
+        <field
+            name="oauth_auth_endpoint">https://login.microsoftonline.com/common/oauth2/v2.0/authorize</field>
+        <field
+            name="oauth_token_endpoint">https://login.microsoftonline.com/common/oauth2/v2.0/token</field>
+        <field name="oauth_scope" eval="False" />
+        <field name="oauth_token_sends_scope" eval="True" />
+    </record>
+
+</odoo>

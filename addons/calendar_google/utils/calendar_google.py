@@ -4,19 +4,19 @@ from uuid import uuid4
 import requests
 
 from odoo import fields
-from odoo.libs.json import dumps as json_dumps
 
 from odoo.addons.calendar_google.utils.google_event import GoogleEvent
-from odoo.addons.google_account.controllers.main import issue_oauth_state
-from odoo.addons.google_account.models.google_service import TIMEOUT
 
 _logger = logging.getLogger(__name__)
 
+TIMEOUT = 20
+CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar"
 
-def requires_auth_token(func):
+
+def requires_connection(func):
     def wrapped(self, *args, **kwargs):
-        if not kwargs.get("token"):
-            raise AttributeError("An authentication token is required")
+        if not kwargs.get("connection"):
+            raise AttributeError("An authorized Google connection is required")
         return func(self, *args, **kwargs)
 
     return wrapped
@@ -27,23 +27,38 @@ class InvalidSyncToken(Exception):
 
 
 class GoogleCalendarService:
-    def __init__(self, google_service) -> None:
-        self.google_service = google_service
+    def __init__(self, env) -> None:
+        self.env = env
 
-    @requires_auth_token
-    def get_events(self, sync_token=None, token=None, event_id=None, timeout=TIMEOUT):
+    def _request(self, connection, method, path, *, params=None, json=None, timeout):
+        """Google's answer, raising requests.HTTPError for a refusal; 204 and 404
+        answer nothing."""
+        response = connection._get_api_client().request(
+            method,
+            path,
+            raw=True,
+            raise_for_status=False,
+            params=params,
+            json=json,
+            timeout=timeout,
+        )
+        if response.status_code in (204, 404):
+            return False
+        response.raise_for_status()
+        return response.json()
+
+    @requires_connection
+    def get_events(self, sync_token=None, connection=None, timeout=TIMEOUT):
         url = "/calendar/v3/calendars/primary/events"
-        if event_id:
-            url += f"/{event_id}"
-        headers = {"Content-type": "application/json"}
-        params = {"access_token": token}
+        params = {}
         if sync_token:
             params["syncToken"] = sync_token
         else:
             # full sync, limit to a range of 1y in past to 1y in the futur by default
-            ICP = self.google_service.env["ir.config_parameter"].sudo()
             day_range = int(
-                ICP.get_param("calendar_google.sync.range_days", default=365)
+                self.env.registry.settings.get(
+                    self.env, "calendar_google.sync.range_days", 365
+                )
             )
             _logger.info("Full cal sync, restricting to %s days range", day_range)
             lower_bound = fields.Datetime.subtract(
@@ -53,9 +68,7 @@ class GoogleCalendarService:
             params["timeMin"] = lower_bound.isoformat() + "Z"  # Z = UTC (RFC3339)
             params["timeMax"] = upper_bound.isoformat() + "Z"  # Z = UTC (RFC3339)
         try:
-            _status, data, _time = self.google_service._do_request(
-                url, params, headers, method="GET", timeout=timeout
-            )
+            data = self._request(connection, "GET", url, params=params, timeout=timeout)
         except requests.HTTPError as e:
             if e.response.status_code == 410 and "fullSyncRequired" in str(
                 e.response.content
@@ -63,17 +76,15 @@ class GoogleCalendarService:
                 raise InvalidSyncToken("Invalid sync token. Full sync required") from e
             raise
 
-        if event_id:
-            next_sync_token = None
-            default_reminders = ()
-            return GoogleEvent([data]), next_sync_token, default_reminders
-
         events = data.get("items", [])
         next_page_token = data.get("nextPageToken")
         while next_page_token:
-            params = {"access_token": token, "pageToken": next_page_token}
-            _status, data, _time = self.google_service._do_request(
-                url, params, headers, method="GET", timeout=timeout
+            data = self._request(
+                connection,
+                "GET",
+                url,
+                params={"pageToken": next_page_token},
+                timeout=timeout,
             )
             next_page_token = data.get("nextPageToken")
             events += data.get("items", [])
@@ -83,85 +94,40 @@ class GoogleCalendarService:
 
         return GoogleEvent(events), next_sync_token, default_reminders
 
-    @requires_auth_token
-    def insert(self, values, token=None, timeout=TIMEOUT, need_video_call=True):
-        send_updates = self.google_service.env.context.get("send_updates", True)
+    @requires_connection
+    def insert(self, values, connection=None, timeout=TIMEOUT, need_video_call=True):
+        send_updates = self.env.context.get("send_updates", True)
         url = (
             "/calendar/v3/calendars/primary/events?conferenceDataVersion=%d&sendUpdates=%s"
             % (1 if need_video_call else 0, "all" if send_updates else "none")
         )
-        headers = {
-            "Content-type": "application/json",
-            "Authorization": "Bearer %s" % token,
-        }
         if not values.get("id"):
             values["id"] = uuid4().hex
-        _dummy, google_values, _dummy = self.google_service._do_request(
-            url, json_dumps(values), headers, method="POST", timeout=timeout
-        )
-        return google_values
+        return self._request(connection, "POST", url, json=values, timeout=timeout)
 
-    @requires_auth_token
-    def patch(self, event_id, values, token=None, timeout=TIMEOUT):
-        send_updates = self.google_service.env.context.get("send_updates", True)
+    @requires_connection
+    def patch(self, event_id, values, connection=None, timeout=TIMEOUT):
+        send_updates = self.env.context.get("send_updates", True)
         url = (
             "/calendar/v3/calendars/primary/events/%s?sendUpdates=%s&conferenceDataVersion=1"
             % (event_id, "all" if send_updates else "none")
         )
-        headers = {
-            "Content-type": "application/json",
-            "Authorization": "Bearer %s" % token,
-        }
-        self.google_service._do_request(
-            url, json_dumps(values), headers, method="PATCH", timeout=timeout
-        )
+        self._request(connection, "PATCH", url, json=values, timeout=timeout)
 
-    @requires_auth_token
-    def delete(self, event_id, token=None, timeout=TIMEOUT):
+    @requires_connection
+    def delete(self, event_id, connection=None, timeout=TIMEOUT):
         url = "/calendar/v3/calendars/primary/events/%s?sendUpdates=all" % event_id
-        headers = {"Content-type": "application/json"}
-        params = {"access_token": token}
+        params = {}
         # Delete all events from recurrence in a single request to Google and triggering a single mail.
         # The 'singleEvents' parameter is a trick that tells Google API to delete all recurrent events individually,
         # making the deletion be handled entirely on their side, and then we archive the events in Odoo.
-        is_recurrence = self.google_service.env.context.get("is_recurrence", True)
+        is_recurrence = self.env.context.get("is_recurrence", True)
         if is_recurrence:
             params["singleEvents"] = "true"
         try:
-            self.google_service._do_request(
-                url, params, headers=headers, method="DELETE", timeout=timeout
-            )
+            self._request(connection, "DELETE", url, params=params, timeout=timeout)
         except requests.HTTPError as e:
             # For some unknown reason Google can also return a 403 response when the event is already cancelled.
             if e.response.status_code not in (410, 403):
                 raise
             _logger.info("Google event %s was already deleted", event_id)
-
-    #################################
-    ##  MANAGE CONNEXION TO GMAIL  ##
-    #################################
-
-    def is_authorized(self, user) -> bool:
-        return bool(user.sudo().google_calendar_rtoken)
-
-    def _get_calendar_scope(self, RO=False) -> str:
-        readonly = ".readonly" if RO else ""
-        return "https://www.googleapis.com/auth/calendar%s" % (readonly)
-
-    def _google_authentication_url(self, from_url="http://www.odoo.com"):
-
-        base_url = (
-            self.google_service.env.context.get("base_url")
-            or self.google_service.get_base_url()
-        )
-        return self.google_service._get_authorize_uri(
-            "calendar",
-            self._get_calendar_scope(),
-            base_url + "/google_account/authentication",
-            state=issue_oauth_state(self.google_service.env, "calendar", from_url),
-            approval_prompt="force",
-            access_type="offline",
-        )
-
-    def _can_authorize_google(self, user) -> bool:
-        return bool(user.has_group("base.group_erp_manager"))

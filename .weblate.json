@@ -812,9 +812,9 @@
                 "new_base": "addons/geocoding/i18n/geocoding.pot"
             },
             {
-                "name": "google_account",
-                "filemask": "addons/google_account/i18n/*.po",
-                "new_base": "addons/google_account/i18n/google_account.pot"
+                "name": "integration_google",
+                "filemask": "addons/integration_google/i18n/*.po",
+                "new_base": "addons/integration_google/i18n/integration_google.pot"
             },
             {
                 "name": "google_address_autocomplete",
@@ -1457,9 +1457,9 @@
                 "new_base": "addons/mass_mailing_themes/i18n/mass_mailing_themes.pot"
             },
             {
-                "name": "microsoft_account",
-                "filemask": "addons/microsoft_account/i18n/*.po",
-                "new_base": "addons/microsoft_account/i18n/microsoft_account.pot"
+                "name": "integration_microsoft",
+                "filemask": "addons/integration_microsoft/i18n/*.po",
+                "new_base": "addons/integration_microsoft/i18n/integration_microsoft.pot"
             },
             {
                 "name": "calendar_microsoft",

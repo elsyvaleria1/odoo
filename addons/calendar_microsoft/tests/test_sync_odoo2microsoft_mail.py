@@ -5,11 +5,11 @@ from freezegun import freeze_time
 
 from odoo import Command
 
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers
 from odoo.addons.calendar_microsoft.tests.common import TestCommon
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 from odoo.addons.mail.tests.common import MailCase
 
 
@@ -24,29 +24,23 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
                     "name": f"user{n}",
                     "login": f"user{n}",
                     "email": f"user{n}@odoo.com",
-                    "microsoft_calendar_rtoken": f"abc{n}",
-                    "microsoft_calendar_token": f"abc{n}",
-                    "microsoft_calendar_token_validity": datetime(9999, 12, 31),
                 }
             )
-            user.res_users_settings_id.write(
-                {
-                    "microsoft_synchronization_stopped": False,
-                    "microsoft_calendar_sync_token": f"{n}_sync_token",
-                }
-            )
+            user._calendar_sync_account("microsoft").sync_token = f"{n}_sync_token"
             cls.users += [user]
 
     @freeze_time("2020-01-01")
     @patch.object(
-        ResUsers,
-        "_get_microsoft_calendar_token",
-        lambda user: user.microsoft_calendar_token,
+        CalendarSyncUsers,
+        "_calendar_sync_connection",
+        lambda user, code=None: (
+            user.login.startswith("user") and f"connection of {user.login}"
+        ),
     )
     def test_event_creation_for_user(self):
         """Check that either emails or synchronization happens correctly when creating an event for another user."""
         user_root = self.env.ref("base.user_root")
-        self.assertFalse(user_root.microsoft_calendar_token)
+        self.assertFalse(user_root._calendar_sync_connection("microsoft"))
         partner = self.env["res.partner"].create(
             {"name": "Jean-Luc", "email": "jean-luc@opoo.com"}
         )
@@ -60,12 +54,11 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
         paused_sync_user.write(
             {
                 "email": "ms.sync.paused@test.lan",
-                "microsoft_synchronization_stopped": True,
                 "name": "Paused Microsoft Sync User",
                 "login": "ms_sync_paused_user",
             }
         )
-        self.assertTrue(paused_sync_user.microsoft_synchronization_stopped)
+        paused_sync_user._calendar_sync_account("microsoft").stopped = True
         for create_user, organizer, mail_notified_partners, attendee in [
             (
                 user_root,
@@ -135,7 +128,7 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
         Test that changing organizer on a pure Odoo event (not synced with Microsoft)
         does not archive the event.
         """
-        self.organizer_user.microsoft_synchronization_stopped = True
+        self.organizer_user._calendar_sync_account("microsoft").stopped = True
         event = (
             self.env["calendar.event"]
             .with_user(self.organizer_user)

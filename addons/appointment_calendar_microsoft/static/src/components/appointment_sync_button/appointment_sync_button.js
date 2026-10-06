@@ -6,8 +6,8 @@ patch(AppointmentSyncButton.prototype, {
     _getCalendarSyncData(calendarName) {
         if (calendarName === "Outlook") {
             return {
-                noNewEventKey: "no_new_event_from_microsoft",
-                syncRoute: "/calendar_microsoft/sync_data",
+                noNewEventKey: "no_new_event",
+                syncRoute: "/calendar_sync/microsoft/sync_data",
             };
         }
         return super._getCalendarSyncData(...arguments);

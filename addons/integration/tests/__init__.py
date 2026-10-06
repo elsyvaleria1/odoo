@@ -43,3 +43,4 @@ from . import test_record_receiver
 from . import test_connection_gate
 from . import test_stream
 from . import test_oauth2_once
+from . import test_oauth_connections

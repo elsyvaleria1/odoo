@@ -1,6 +1,6 @@
 from collections import defaultdict
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC
 from unittest.mock import patch
 
 from freezegun import freeze_time
@@ -10,11 +10,10 @@ from odoo.tests.common import HttpCase
 
 from odoo.addons.calendar_google.models.mixin_google_calendar_sync import (
     MixinGoogleCalendarSync,
-    google_calendar_token,
+    google_calendar_connection,
 )
-from odoo.addons.calendar_google.models.res_users import ResUsers
 from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
-from odoo.addons.google_account.models.google_service import GoogleService
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 from odoo.addons.mail.tests.common import mail_new_test_user
 
 
@@ -26,12 +25,14 @@ def patch_api(func):
     return patched
 
 
-@patch.object(ResUsers, "_get_google_calendar_token", lambda user: "dummy-token")
+@patch.object(
+    CalendarSyncUsers, "_calendar_sync_connection", lambda user, code: "dummy-token"
+)
 class TestSyncGoogle(HttpCase):
     def setUp(self):
         super().setUp()
-        self.google_service = GoogleCalendarService(self.env["google.service"])
-        self.env.user.sudo().unpause_google_synchronization()
+        self.google_service = GoogleCalendarService(self.env)
+        self.env["calendar.sync.account"]._set_paused("google", False)
         self.organizer_user = mail_new_test_user(self.env, login="organizer_user")
         self.attendee_user = mail_new_test_user(self.env, login="attendee_user")
 
@@ -66,20 +67,26 @@ class TestSyncGoogle(HttpCase):
 
         # as these are normally post-commit hooks, we don't change any state here
         def _mock_delete(model, service, google_id, **kwargs):
-            with google_calendar_token(user_id or model.env.user.sudo()) as token:
-                if token:
+            with google_calendar_connection(
+                user_id or model.env.user.sudo()
+            ) as connection:
+                if connection:
                     self._gsync_deleted_ids.append(google_id)
 
         def _mock_insert(model, service, values, **kwargs):
             if not values:
                 return
-            with google_calendar_token(user_id or model.env.user.sudo()) as token:
-                if token:
+            with google_calendar_connection(
+                user_id or model.env.user.sudo()
+            ) as connection:
+                if connection:
                     self._gsync_insert_values.append((values, kwargs))
 
         def _mock_patch(model, service, google_id, values, **kwargs):
-            with google_calendar_token(user_id or model.env.user.sudo()) as token:
-                if token:
+            with google_calendar_connection(
+                user_id or model.env.user.sudo()
+            ) as connection:
+                if connection:
                     self._gsync_patch_values[google_id].append((values, kwargs))
 
         with (
@@ -112,16 +119,15 @@ class TestSyncGoogle(HttpCase):
     def mock_google_service(self):
         self._gservice_request_uris = []
 
-        def _mock_do_request(model, uri, *args, **kwargs):
-            self._gservice_request_uris.append(uri)
-            return (200, {}, datetime.now())
+        def _mock_request(service, connection, method, path, **kwargs):
+            self._gservice_request_uris.append(path)
+            return {}
 
         with patch.object(
-            GoogleService,
-            "_do_request",
+            GoogleCalendarService,
+            "_request",
             autospec=True,
-            wraps=GoogleService,
-            side_effect=_mock_do_request,
+            side_effect=_mock_request,
         ):
             yield
 

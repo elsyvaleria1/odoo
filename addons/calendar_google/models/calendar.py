@@ -165,11 +165,7 @@ class CalendarEvent(models.Model):
 
     def _skip_send_mail_status_update(self):
         """If a google calendar is not syncing with the user, don't send a mail."""
-        user_id = self._get_event_user()
-        if (
-            user_id.is_google_calendar_synced()
-            and user_id.res_users_settings_id._is_google_calendar_valid()
-        ):
+        if self._get_event_user()._calendar_sync_active("google"):
             return True
         return super()._skip_send_mail_status_update()
 
@@ -390,7 +386,7 @@ class CalendarEvent(models.Model):
     def action_mass_archive(self, recurrence_update_setting) -> None:
         """Delete recurrence in Odoo if in 'all' or in 'subsequent' edge case, triggering one mail."""
         self.check_singleton()
-        google_service = GoogleCalendarService(self.env["google.service"])
+        google_service = GoogleCalendarService(self.env)
         archive_future_events = (
             recurrence_update_setting == "subsequent"
             and self == self.recurrence_id.base_event_id
@@ -458,7 +454,7 @@ class CalendarEvent(models.Model):
         if (
             self.user_id
             and self.user_id != self.env.user
-            and not bool(self.user_id.sudo().google_calendar_token)
+            and not self.user_id._calendar_sync_connection("google")
         ):
             # The organizer is an Odoo user that do not sync his calendar
             values["extendedProperties"]["shared"][
@@ -543,7 +539,7 @@ class CalendarEvent(models.Model):
 
     def _get_event_user(self):
         self.check_singleton()
-        if self.user_id and self.user_id.sudo().google_calendar_token:
+        if self.user_id and self.user_id._calendar_sync_connection("google"):
             return self.user_id
         return self.env.user
 

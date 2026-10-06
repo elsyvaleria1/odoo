@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from freezegun import freeze_time
@@ -6,20 +5,21 @@ from freezegun import freeze_time
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import users
 
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers
 from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
     _modified_date_in_the_future,
-    mock_get_token,
+    authorize_microsoft_calendar,
+    mock_get_connection,
     patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 
 
-@patch.object(ResUsers, "_get_microsoft_calendar_token", mock_get_token)
+@patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestAnswerEvents(TestCommon):
     @patch_api
     def setUp(self):
@@ -41,9 +41,6 @@ class TestAnswerEvents(TestCommon):
                     )
                 )
             )
-        (self.organizer_user | self.attendee_user).microsoft_calendar_token_validity = (
-            datetime.now() + timedelta(hours=1)
-        )
 
     @patch.object(MicrosoftCalendarService, "_get_single_event")
     @patch.object(MicrosoftCalendarService, "answer")
@@ -69,7 +66,7 @@ class TestAnswerEvents(TestCommon):
             self.simple_event.microsoft_id,
             "accept",
             {"comment": "", "sendResponse": True},
-            token=mock_get_token(self.attendee_user),
+            connection=mock_get_connection(self.attendee_user),
             timeout=20,
         )
 
@@ -95,7 +92,7 @@ class TestAnswerEvents(TestCommon):
             self.simple_event.microsoft_id,
             "decline",
             {"comment": "", "sendResponse": True},
-            token=mock_get_token(self.attendee_user),
+            connection=mock_get_connection(self.attendee_user),
             timeout=20,
         )
 
@@ -250,17 +247,17 @@ class TestAnswerEvents(TestCommon):
     @users("admin")
     def test_sync_data_with_stopped_sync(self):
         self.authenticate(self.env.user.login, self.env.user.login)
-        self.env["ir.config_parameter"].sudo().set_param(
-            "microsoft_calendar_client_id", "test_microsoft_calendar_client_id"
+        self.env.ref(
+            "integration_microsoft.service_microsoft"
+        ).sudo()._set_oauth_client(
+            "test_microsoft_calendar_client_id", "a-secret", company=False
         )
-        self.env.user.sudo().microsoft_calendar_rtoken = (
-            "test_microsoft_calendar_rtoken"
-        )
-        self.env.user.stop_microsoft_synchronization()
+        authorize_microsoft_calendar(self.env.user)
+        self.env.user.calendar_sync_stop("microsoft")
         payload = {"params": {"model": "calendar.event"}}
         # Sending the request to the sync_data
         response = self.url_open(
-            "/calendar_microsoft/sync_data",
+            "/calendar_sync/microsoft/sync_data",
             data=json_dumps(payload),
             headers={"Content-Type": "application/json"},
         ).json()
@@ -290,7 +287,7 @@ class TestAnswerEvents(TestCommon):
             attendee_ms_organizer_event_id,
             "accept",
             {"comment": "", "sendResponse": True},
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=20,
         )
 
@@ -302,6 +299,6 @@ class TestAnswerEvents(TestCommon):
             attendee_ms_organizer_event_id,
             "decline",
             {"comment": "", "sendResponse": True},
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=20,
         )

@@ -3,17 +3,25 @@ import base64
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.mail_google.models.mixin_mail_google import GMAIL
+
 
 class IrMail_Server(models.Model):
     """Represents an SMTP server, able to send outgoing emails, with SSL and TLS capabilities."""
 
     _name = "ir.mail_server"
-    _inherit = ["ir.mail_server", "mixin.google.gmail"]
+    _inherit = ["ir.mail_server", "mixin.mail.google"]
+    _oauth2_type_field = "smtp_authentication"
 
     smtp_authentication = fields.Selection(
         selection_add=[("gmail", "Gmail OAuth Authentication")],
         ondelete={"gmail": "set default"},
     )
+
+    def _oauth2_provider(self):
+        if self.smtp_authentication == "gmail":
+            return GMAIL
+        return super()._oauth2_provider()
 
     def _compute_smtp_authentication_info(self) -> None:
         gmail_servers = self.filtered(
@@ -39,10 +47,6 @@ class IrMail_Server(models.Model):
             self.smtp_host = "smtp.gmail.com"
             self.smtp_encryption = "starttls_strict"
             self.smtp_port = 587
-        else:
-            self.google_gmail_refresh_token = False
-            self.google_gmail_access_token = False
-            self.google_gmail_access_token_expiration = False
 
     @api.onchange("smtp_user", "smtp_authentication")
     def _on_change_smtp_user_gmail(self) -> None:
@@ -90,9 +94,7 @@ class IrMail_Server(models.Model):
 
     def _smtp_login__(self, connection, smtp_user, smtp_password) -> None:
         if len(self) == 1 and self.smtp_authentication == "gmail":
-            auth_string = self._generate_oauth2_string(
-                smtp_user, self.google_gmail_refresh_token
-            )
+            auth_string = self._mail_google_auth_string(smtp_user)
             oauth_param = base64.b64encode(auth_string.encode()).decode()
             connection.ehlo()
             connection.docmd("AUTH", f"XOAUTH2 {oauth_param}")

@@ -1,7 +1,7 @@
 from odoo import fields, models
 
 from odoo.addons.calendar_google.models.mixin_google_calendar_sync import (
-    google_calendar_token,
+    google_calendar_connection,
 )
 from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 
@@ -37,7 +37,7 @@ class WizardResUsersResetGoogleCalendar(models.TransientModel):
     )
 
     def reset_account(self) -> None:
-        google = GoogleCalendarService(self.env["google.service"])
+        google = GoogleCalendarService(self.env)
 
         events = self.env["calendar.event"].search(
             [("user_id", "=", self.user_id.id), ("google_id", "!=", False)]
@@ -47,9 +47,9 @@ class WizardResUsersResetGoogleCalendar(models.TransientModel):
         )
 
         if self.delete_policy in ("delete_google", "delete_both"):
-            with google_calendar_token(self.user_id) as token:
+            with google_calendar_connection(self.user_id) as connection:
                 for event in events:
-                    google.delete(event.google_id, token=token)
+                    google.delete(event.google_id, connection=connection)
 
         # Delete events according to the selected policy. If the deletion is only in
         # Google, we won't keep track of the 'google_id' field for events and recurrences.
@@ -73,10 +73,7 @@ class WizardResUsersResetGoogleCalendar(models.TransientModel):
         if self.delete_policy not in ("delete_odoo", "delete_both"):
             events.with_context(skip_event_permission=True).write(next_sync_update)
 
-        self.user_id.res_users_settings_id._set_google_auth_tokens(False, False, 0)
-        self.user_id.write(
-            {
-                "google_calendar_sync_token": False,
-                "google_calendar_cal_id": False,
-            }
-        )
+        self.env["integration.connection"]._find_personal(
+            self.env.ref("integration_google.service_google"), self.user_id
+        )._forget_oauth_authorization()
+        self.user_id._calendar_sync_account("google").sync_token = False

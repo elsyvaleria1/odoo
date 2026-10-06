@@ -24,7 +24,7 @@ class CalendarRecurrence(models.Model):
             specific_values_creation, no_send_edit, generic_values_creation
         )
 
-        google_service = GoogleCalendarService(self.env["google.service"])
+        google_service = GoogleCalendarService(self.env)
 
         # If a synced event becomes a recurrence, the event needs to be deleted from
         # Google since it's now the recurrence which is synced.

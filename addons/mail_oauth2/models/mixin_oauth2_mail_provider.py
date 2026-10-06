@@ -1,348 +1,151 @@
-import logging
-import time
-from urllib.parse import urlencode as url_encode
+import base64
 
-import requests
+from odoo import fields, models
+from odoo.exceptions import UserError
+from odoo.libs.json import loads as json_loads
+from odoo.tools import email_normalize
 
-from odoo import api, fields, models, release
-from odoo.exceptions import AccessError, UserError
-from odoo.http import request
-from odoo.libs.web import urljoin as url_join
-from odoo.tools import consume_session_state, email_normalize, issue_session_state
+from odoo.addons.integration.tools.exceptions import CommError
 
-from odoo.addons.mail_oauth2.tools import get_iap_error_message
 
-OAUTH2_TOKEN_REQUEST_TIMEOUT = 5
-
-OAUTH2_TOKEN_VALIDITY_THRESHOLD = OAUTH2_TOKEN_REQUEST_TIMEOUT + 5
-
-OAUTH2_STATE_MAX_AGE_SECONDS = 1800
-
-_logger = logging.getLogger(__name__)
-
-_UNSET = object()
+def _id_token_claims(id_token) -> dict:
+    # from the code exchange itself, a TLS call to the provider's token
+    # endpoint: its signature needs no check (OpenID Connect Core 3.1.3.7)
+    try:
+        payload = id_token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        claims = json_loads(base64.urlsafe_b64decode(payload))
+    except AttributeError, IndexError, ValueError:
+        return {}
+    return claims if isinstance(claims, dict) else {}
 
 
 class MixinOauth2MailProvider(models.AbstractModel):
-    _name = "mixin.oauth2.mail.provider"
+    """A mail server authorized through its own connection to a vendor's
+    OAuth service: the connection holds the tokens, the server the XOAUTH2
+    login. A vendor's model answers `_oauth2_provider` for its server type."""
 
+    _name = "mixin.oauth2.mail.provider"
     _description = "OAuth2 Mail Provider Mixin"
 
-    active = fields.Boolean(default=True)
+    # the field naming the server's type, on the concrete model
+    _oauth2_type_field = None
 
-    oauth2_credential_id = fields.Many2one(
-        comodel_name="credential.credential",
-        string="OAuth2 Credential",
-        copy=False,
-        ondelete="restrict",
-        groups="base.group_system",
-        help="Holds this record's OAuth tokens.",
+    active = fields.Boolean(default=True)
+    oauth2_authorized = fields.Boolean(
+        string="Authorized",
+        compute="_compute_oauth2_authorized",
+        help="An account authorized this server, and its grant still holds.",
     )
 
-    def _oauth2_stored_tokens(self) -> tuple:
-        self.check_singleton()
-        credential = self.oauth2_credential_id.sudo()
-        tokens = (
-            credential._use_secret_payload("mail_oauth2:tokens") if credential else {}
-        )
-        return (
-            tokens.get("oauth_access_token") or False,
-            tokens.get("oauth_refresh_token") or False,
-        )
-
-    def _oauth2_store_tokens(self, access_token=_UNSET, refresh_token=_UNSET) -> None:
-        self.check_singleton()
-        values = {}
-        if access_token is not _UNSET:
-            values["oauth_access_token"] = access_token or False
-        if refresh_token is not _UNSET:
-            values["oauth_refresh_token"] = refresh_token or False
-
-        credential = self.oauth2_credential_id.sudo()
-        if credential:
-            if any(values.values()):
-                credential.write(values)
-            else:
-                self.oauth2_credential_id = False
-                credential.unlink()
-            return
-        if not any(values.values()):
-            return
-        self.oauth2_credential_id = (
-            self.env["credential.credential"]
-            .sudo()
-            .create(
-                {
-                    "name": self.env._(
-                        "%(model)s: %(record)s",
-                        model=self._description,
-                        record=self.display_name,
-                    ),
-                    "category_id": self.env.ref(
-                        "credential.credential_category_oauth2"
-                    ).id,
-                    **values,
-                }
+    def _compute_oauth2_authorized(self) -> None:
+        for record in self:
+            connection = record.id and record._oauth2_connection()
+            record.oauth2_authorized = bool(connection) and (
+                connection._is_oauth_authorized()
             )
-            .id
-        )
 
-    def _oauth2_credentials(self, provider) -> tuple:
-        Config = self.env["ir.config_parameter"].sudo()
-        return (
-            Config.get_param(provider.field("client_id")),
-            self.env["credential.credential"]._get_system_secret(
-                provider.field("client_secret")
-            ),
-        )
+    def _oauth2_provider(self):
+        """The vendor this record's server type authenticates with, if any."""
 
-    def _oauth2_redirect_uri(self, provider):
-        return url_join(self.get_base_url(), f"/{provider.route}/confirm")
-
-    def _oauth2_iap_endpoint(self, provider):
-        return self.env.registry.settings.get(
-            self.env, provider.iap_endpoint_param, provider.iap_endpoint_default
-        )
-
-    def _oauth2_authorize_uri(self, provider, client_id, state):
+    def _oauth2_connection(self):
         self.check_singleton()
-        return "%s?%s" % (
-            provider.resolve(provider.authorize_url, self),
-            url_encode(
-                {
-                    "client_id": client_id,
-                    "response_type": "code",
-                    "redirect_uri": self._oauth2_redirect_uri(provider),
-                    "scope": provider.resolve(provider.scope, self),
-                    **provider.authorize_extra_params,
-                    "state": state,
-                }
-            ),
+        return self.env["integration.connection"]._find_bound(self)
+
+    def write(self, vals):
+        result = super().write(vals)
+        if self._oauth2_type_field in vals:
+            # a server that stops using a vendor keeps none of its grant
+            for record in self.filtered(lambda record: not record._oauth2_provider()):
+                connection = record._oauth2_connection()
+                if connection.credential_id:
+                    connection._forget_oauth_authorization()
+        return result
+
+    def unlink(self):
+        connections = (
+            self.env["integration.connection"]
+            .sudo()
+            .search([("res_model", "=", self._name), ("res_id", "in", self.ids)])
         )
+        connections._forget_oauth_authorization()
+        connections.unlink()
+        return super().unlink()
 
     def _oauth2_open_uri(self, provider) -> dict:
         self.check_singleton()
-
-        if not self.env.is_admin():
-            raise AccessError(
-                self.env._(
-                    "Only the administrator can link a mail server to %s.",
-                    provider.label,
-                )
-            )
-
         if not email_normalize(self[self._email_field]):
             raise UserError(self.env._("Please enter a valid email address."))
-
-        client_id, client_secret = self._oauth2_credentials(provider)
-        state = self._oauth2_issue_state(provider)
-        if client_id and client_secret:
-            uri = self._oauth2_authorize_uri(provider, client_id, state)
-        else:
-            uri = self._oauth2_iap_authorize_uri(provider, state)
-
-        if not uri:
+        connection = self.env["integration.connection"]._bound(
+            self,
+            self.env.ref(provider.service),
+            provider.resolve(provider.scope, self),
+        )
+        if not all(connection._oauth_client()):
             raise UserError(
                 self.env._("Please configure your %s credentials.", provider.label)
             )
-
         return {
             "type": "ir.actions.act_url",
-            "url": uri,
+            "url": connection._oauth_authorize_url(self._oauth2_return_url()),
             "target": "self",
         }
 
-    def _oauth2_issue_state(self, provider):
+    def _oauth2_return_url(self) -> str:
+        """A personal server returns to its user's preferences, any other one
+        to its form, for an administrator."""
         self.check_singleton()
-        return issue_session_state(
-            self.env,
-            provider.csrf_scope,
-            request.session,
-            {"model": self._name, "id": self.id},
-            max_age_seconds=OAUTH2_STATE_MAX_AGE_SECONDS,
-        )
-
-    @api.model
-    def _oauth2_record_of_state(self, provider, state):
-        """The record, as superuser, that the session started the authorization
-        of ``state`` from: one of this mixin's models, or None."""
-        claims = consume_session_state(
-            self.env, provider.csrf_scope, request.session, state
-        )
-        if claims is None:
-            return None
-        model_name = claims.get("model")
-        if model_name not in self.env or not isinstance(
-            self.env[model_name], self.env.registry[self._name]
-        ):
-            return None
-        return self.env[model_name].browse(claims.get("id")).exists().sudo() or None
-
-    def _oauth2_iap_authorize_uri(self, provider, state):
-        if release.version_info[-1] != "e":
-            raise UserError(
-                self.env._("Please configure your %s credentials.", provider.label)
-            )
-
-        db_uuid = self.env.registry.settings.get(self.env, "database.uuid", False)
-        callback_params = url_encode({"state": state})
-        callback_url = url_join(
-            self.get_base_url(), f"/{provider.route}/iap_confirm?{callback_params}"
-        )
-
-        try:
-            response = self.env["ir.egress"].request(
-                "GET",
-                url_join(
-                    self._oauth2_iap_endpoint(provider),
-                    f"/api/mail_oauth/1/{provider.iap_service}",
-                ),
-                purpose="mail_oauth2",
-                policy="private",
-                params={"db_uuid": db_uuid, "callback_url": callback_url},
-                timeout=OAUTH2_TOKEN_REQUEST_TIMEOUT,
-            )
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            _logger.error("Can not contact IAP: %s.", e)
-            raise UserError(
-                self.env._(
-                    "Oops, we could not authenticate you. Please try again later."
-                )
-            ) from e
-
-        response = response.json()
-        if "error" in response:
-            self._raise_iap_error(response["error"])
-
-        return response["url"]
-
-    def _oauth2_get_refresh_token(self, provider, authorization_code) -> tuple:
-        response = self._oauth2_get_token(
-            provider, "authorization_code", code=authorization_code
-        )
-        return (
-            response["refresh_token"],
-            response["access_token"],
-            int(time.time()) + int(response["expires_in"]),
-        )
-
-    def _oauth2_refresh_access_token(self, provider) -> tuple:
-        self.check_singleton()
-        client_id, client_secret = self._oauth2_credentials(provider)
-        extra = {"redirect_uri": self._oauth2_redirect_uri(provider)}
-        if provider.token_sends_scope:
-            extra["scope"] = provider.resolve(provider.scope, self)
-        try:
-            access_token, seconds = self.oauth2_credential_id._oauth2_refresh(
-                provider.resolve(provider.token_url, self),
-                client_id,
-                client_secret,
-                purpose="mail_oauth2",
-                policy="private",
-                timeout=OAUTH2_TOKEN_REQUEST_TIMEOUT,
-                extra=extra,
-            )
-        except requests.HTTPError as error:
-            raise UserError(
-                self._oauth2_token_error(provider, error.response)
-            ) from error
-        self.invalidate_recordset()
-        return access_token, int(time.time()) + seconds
-
-    def _oauth2_get_token(self, provider, grant_type, **values):
-        client_id, client_secret = self._oauth2_credentials(provider)
-        data = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "grant_type": grant_type,
-            "redirect_uri": self._oauth2_redirect_uri(provider),
-            **values,
-        }
-        if provider.token_sends_scope:
-            data["scope"] = provider.resolve(provider.scope, self)
-
-        response = self.env["ir.egress"].request(
-            "POST",
-            provider.resolve(provider.token_url, self),
-            purpose="mail_oauth2",
-            policy="private",
-            data=data,
-            timeout=OAUTH2_TOKEN_REQUEST_TIMEOUT,
-        )
-
-        if not response.ok:
-            raise UserError(self._oauth2_token_error(provider, response))
-
-        return response.json()
-
-    def _oauth2_token_error(self, provider, response) -> str:
-        if not provider.token_error_detail:
-            return self.env._("An error occurred when fetching the access token.")
-        try:
-            detail = response.json()["error_description"]
-        except ValueError, KeyError, TypeError:
-            detail = self.env._("Unknown error.")
-        return self.env._(
-            "An error occurred when fetching the access token. %s", detail
-        )
-
-    def _oauth2_get_access_token_iap(self, provider, refresh_token):
-        db_uuid = self.env.registry.settings.get(self.env, "database.uuid", False)
-
-        response = self.env["ir.egress"].request(
-            "GET",
-            url_join(
-                self._oauth2_iap_endpoint(provider),
-                f"/api/mail_oauth/1/{provider.iap_service}_access_token",
-            ),
-            purpose="mail_oauth2",
-            policy="private",
-            params={"refresh_token": refresh_token, "db_uuid": db_uuid},
-            timeout=OAUTH2_TOKEN_REQUEST_TIMEOUT,
-        )
-
-        if not response.ok:
-            _logger.error("Can not contact IAP: %s.", response.text)
-            raise UserError(
-                self.env._(
-                    "Oops, we could not authenticate you. Please try again later."
-                )
-            )
-
-        response = response.json()
-        if "error" in response:
-            self._raise_iap_error(response["error"])
-
-        return response
-
-    def _raise_iap_error(self, error) -> None:
-        raise UserError(get_iap_error_message(self.env, error))
-
-    def _oauth2_generate_string(self, provider, login, renew) -> str:
-        self.check_singleton()
-        now_timestamp = int(time.time())
-        expiration = self[provider.field("access_token_expiration")]
-
+        user = self.env.user
         if (
-            not self[provider.field("access_token")]
-            or not expiration
-            or expiration - OAUTH2_TOKEN_VALIDITY_THRESHOLD < now_timestamp
-        ):
-            renew()
-            _logger.info(
-                "%s: fetch new access token. It expires in %i minutes",
-                provider.label,
-                (self[provider.field("access_token_expiration")] - now_timestamp) // 60,
-            )
-        else:
-            _logger.info(
-                "%s: reuse existing access token. It expires in %i minutes",
-                provider.label,
-                (expiration - now_timestamp) // 60,
-            )
+            self._name != "ir.mail_server" or self != user.outgoing_mail_server_id
+        ) and user.has_group("base.group_system"):
+            return f"/odoo/{self._name}/{self.id}"
+        return f"/odoo/my-preferences/{user.id}"
 
-        return "user=%s\1auth=Bearer %s\1\1" % (
-            login,
-            self[provider.field("access_token")],
-        )
+    def _oauth_authorization_allowed(self, user) -> bool:
+        self.check_singleton()
+        if "owner_user_id" in self._fields and self.owner_user_id == user:
+            return True
+        return self.with_user(user).has_access("write")
+
+    def _on_oauth_authorized(self, connection, tokens) -> None:
+        """A personal server, or one a non-administrator connects, sends as the
+        account that consented, read off the exchange's id_token."""
+        self.check_singleton()
+        if self._name == "ir.mail_server" and (
+            self.owner_user_id or not self.env.user.has_group("base.group_system")
+        ):
+            claims = _id_token_claims(tokens.get("id_token"))
+            email = claims.get("email")
+            if (
+                not email
+                or claims.get("email_verified") is False
+                or email_normalize(email) != email_normalize(self[self._email_field])
+            ):
+                raise UserError(
+                    self.env._(
+                        "Oops, you're creating an authorization to send from "
+                        "%(email_login)s but your address is %(email_server)s. Make "
+                        "sure your addresses match!",
+                        email_login=email,
+                        email_server=self[self._email_field],
+                    )
+                )
+        self.active = True
+
+    def _oauth2_generate_string(self, provider, login) -> str:
+        """The SASL argument of XOAUTH2 for `login`, with a current token."""
+        self.check_singleton()
+        connection = self._oauth2_connection()
+        try:
+            access_token = connection and connection._oauth2_access_token()
+        except CommError as error:
+            raise UserError(error.message) from None
+        if not access_token:
+            raise UserError(
+                self.env._(
+                    "Please connect with your %s account before using it.",
+                    provider.label,
+                )
+            )
+        return "user=%s\1auth=Bearer %s\1\1" % (login, access_token)

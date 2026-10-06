@@ -10,22 +10,22 @@
                 <div id="msg_module_google_gmail" position="replace">
                     <div class="row mt16" id="gmail_client_identifier">
                         <label
-                            for="google_gmail_client_identifier"
+                            for="google_oauth_client_id"
                             string="ID"
                             class="col-lg-3 o_light_label" />
                         <field
-                            name="google_gmail_client_identifier"
+                            name="google_oauth_client_id"
                             placeholder="ID of your Google app"
                             class="ms-2" />
                     </div>
                     <div class="row mt16" id="gmail_client_secret">
                         <label
-                            for="google_gmail_client_secret"
+                            for="google_oauth_client_secret"
                             string="Secret"
                             class="col-lg-3 o_light_label" />
                         <field
-                            name="google_gmail_client_secret"
-                            placeholder="Secret of your Google app"
+                            name="google_oauth_client_secret"
+                            placeholder="Kept when left empty"
                             password="True"
                             class="ms-2" />
                     </div>

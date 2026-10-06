@@ -265,14 +265,16 @@ class TestCallback(OAuthOnceCase):
         with patch.object(
             partner_class,
             "_on_oauth_authorized",
-            lambda record, connection: heard.append((record.id, connection.id)),
+            lambda record, connection, tokens: heard.append(
+                (record.id, connection.id, tokens["access_token"])
+            ),
             create=True,
         ):
             self.authenticate("once_alice", "once_alice")
             _location, query = self._authorize_query(self.bound)
             with self._provider():
                 self._callback(query)
-        self.assertEqual(heard, [(self.partner.id, self.bound.id)])
+        self.assertEqual(heard, [(self.partner.id, self.bound.id, "issued-access")])
 
     @mute_logger("odoo.addons.integration.controllers.oauth")
     def test_a_service_that_wants_the_scope_back_gets_it_with_the_code(self):

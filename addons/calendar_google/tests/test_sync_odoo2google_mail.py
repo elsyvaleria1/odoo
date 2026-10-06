@@ -5,24 +5,33 @@ from freezegun import freeze_time
 
 from odoo.tests import tagged
 
-from .test_token_access import TestTokenAccess
-from odoo.addons.calendar_google.models.res_users import ResUsers
 from odoo.addons.calendar_google.tests.test_sync_common import TestSyncGoogle
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 from odoo.addons.mail.tests.common import MailCommon
 
 
 @tagged("odoo2google")
-class TestSyncOdoo2GoogleMail(TestTokenAccess, TestSyncGoogle, MailCommon):
+class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.users = [
+            cls.env["res.users"].create(
+                {"name": login, "login": login, "email": f"{login}@odoo.com"}
+            )
+            for login in ("user1", "user2")
+        ]
+
     @patch.object(
-        ResUsers, "_get_google_calendar_token", lambda user: user.google_calendar_token
+        CalendarSyncUsers,
+        "_calendar_sync_connection",
+        lambda user, code=None: "a-connection" if user.login == "user1" else False,
     )
     @freeze_time("2020-01-01")
     def test_event_creation_for_user(self):
         organizer1 = self.users[0]
         organizer2 = self.users[1]
         user_root = self.env.ref("base.user_root")
-        organizer1.google_calendar_token = "abc"
-        organizer2.google_calendar_token = False
         event_values = {
             "name": "Event",
             "start": datetime(2020, 1, 15, 8, 0),

@@ -6,8 +6,8 @@ patch(AppointmentSyncButton.prototype, {
     _getCalendarSyncData(calendarName) {
         if (calendarName === "Google") {
             return {
-                noNewEventKey: "no_new_event_from_google",
-                syncRoute: "/calendar_google/sync_data",
+                noNewEventKey: "no_new_event",
+                syncRoute: "/calendar_sync/google/sync_data",
             };
         }
         return super._getCalendarSyncData(...arguments);

@@ -4,17 +4,13 @@ import requests
 
 from odoo import fields
 from odoo.libs.guarded_http import GuardedSession
-from odoo.libs.json import dumps as json_dumps
 from odoo.tests import TransactionCase
 
+from odoo.addons.calendar_microsoft.tests.common import authorize_microsoft_calendar
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
-from odoo.addons.microsoft_account.models.microsoft_service import (
-    DEFAULT_MICROSOFT_TOKEN_ENDPOINT,
-    MicrosoftService,
-)
 
 DEFAULT_TIMEOUT = 20
 
@@ -25,33 +21,34 @@ class _UnexpectedError(Exception):
 
 class TestMicrosoftService(TransactionCase):
     def _do_request_result(self, data):
-        """_do_request returns a tuple (status, data, time) but only the data part is used"""
-        return (None, data, None)
+        """_request answers (status, body)"""
+        return (200, data)
 
     def setUp(self):
         super().setUp()
 
-        self.service = MicrosoftCalendarService(self.env["microsoft.service"])
-        self.fake_token = "MY_TOKEN"
+        self.service = MicrosoftCalendarService(self.env)
+        self.fake_connection = "MY_CONNECTION"
         self.fake_sync_token = "MY_SYNC_TOKEN"
         self.fake_next_sync_token = "MY_NEXT_SYNC_TOKEN"
         self.fake_next_sync_token_url = f"https://graph.microsoft.com/v1.0/me/calendarView/delta?$deltatoken={self.fake_next_sync_token}"
 
-        self.header_prefer = 'outlook.body-content-type="html", odata.maxpagesize=50'
-        self.delete_header = {
-            "Authorization": "Bearer %s" % self.fake_token,
+        self.prefer = {
+            "Prefer": 'outlook.body-content-type="html", odata.maxpagesize=50'
         }
-        self.header = {"Content-type": "application/json", **self.delete_header}
         self.call_with_sync_token = call(
+            self.fake_connection,
+            "GET",
             "/v1.0/me/calendarView/delta",
-            {"$deltatoken": self.fake_sync_token},
-            {**self.header, "Prefer": self.header_prefer},
-            method="GET",
+            params={"$deltatoken": self.fake_sync_token},
+            headers=self.prefer,
             timeout=DEFAULT_TIMEOUT,
         )
         self.call_without_sync_token = call(
+            self.fake_connection,
+            "GET",
             "/v1.0/me/calendarView/delta",
-            {
+            params={
                 "startDateTime": fields.Datetime.subtract(
                     fields.Datetime.now(), days=365
                 ).strftime("%Y-%m-%dT00:00:00Z"),
@@ -59,8 +56,7 @@ class TestMicrosoftService(TransactionCase):
                     fields.Datetime.now(), days=365 * 2
                 ).strftime("%Y-%m-%dT00:00:00Z"),
             },
-            {**self.header, "Prefer": self.header_prefer},
-            method="GET",
+            headers=self.prefer,
             timeout=DEFAULT_TIMEOUT,
         )
 
@@ -71,7 +67,7 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service._get_events_delta()
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_unexpected_exception(self, mock_do_request):
         """
         When an unexpected exception is raised, just propagate it.
@@ -80,11 +76,11 @@ class TestMicrosoftService(TransactionCase):
 
         with self.assertRaises(_UnexpectedError):
             self.service._get_events_delta(
-                token=self.fake_token, timeout=DEFAULT_TIMEOUT
+                connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
             )
 
     @patch.object(MicrosoftCalendarService, "_check_full_sync_required")
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_token_error(
         self, mock_do_request, mock_check_full_sync_required
     ):
@@ -101,7 +97,7 @@ class TestMicrosoftService(TransactionCase):
         mock_check_full_sync_required.return_value = True
 
         events, next_token = self.service._get_events_delta(
-            token=self.fake_token,
+            connection=self.fake_connection,
             sync_token=self.fake_sync_token,
             timeout=DEFAULT_TIMEOUT,
         )
@@ -112,7 +108,7 @@ class TestMicrosoftService(TransactionCase):
             [self.call_with_sync_token, self.call_without_sync_token]
         )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_without_sync_token(self, mock_do_request):
         """
         when no sync token is provided, a full sync should be done
@@ -121,14 +117,14 @@ class TestMicrosoftService(TransactionCase):
         mock_do_request.return_value = self._do_request_result({"value": []})
 
         events, next_token = self.service._get_events_delta(
-            token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(next_token, None)
         self.assertFalse(events)
         mock_do_request.assert_has_calls([self.call_without_sync_token])
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_with_sync_token(self, mock_do_request):
         """
         when a sync token is provided, we should retrieve the sync token to use for the next sync.
@@ -139,7 +135,7 @@ class TestMicrosoftService(TransactionCase):
         )
 
         events, next_token = self.service._get_events_delta(
-            token=self.fake_token,
+            connection=self.fake_connection,
             sync_token=self.fake_sync_token,
             timeout=DEFAULT_TIMEOUT,
         )
@@ -148,7 +144,7 @@ class TestMicrosoftService(TransactionCase):
         self.assertFalse(events)
         mock_do_request.assert_has_calls([self.call_with_sync_token])
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_one_page(self, mock_do_request):
         """
         When all events are on one page, just get them.
@@ -163,7 +159,7 @@ class TestMicrosoftService(TransactionCase):
             }
         )
         events, _ = self.service._get_events_delta(
-            token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(
@@ -178,7 +174,7 @@ class TestMicrosoftService(TransactionCase):
         )
         mock_do_request.assert_has_calls([self.call_without_sync_token])
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_loop_over_pages(self, mock_do_request):
         """
         Loop over pages to retrieve all the events.
@@ -204,7 +200,7 @@ class TestMicrosoftService(TransactionCase):
         ]
 
         events, _ = self.service._get_events_delta(
-            token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(
@@ -221,25 +217,23 @@ class TestMicrosoftService(TransactionCase):
             [
                 self.call_without_sync_token,
                 call(
+                    self.fake_connection,
+                    "GET",
                     "link_1",
-                    {},
-                    {**self.header, "Prefer": self.header_prefer},
-                    preuri="",
-                    method="GET",
+                    headers=self.prefer,
                     timeout=DEFAULT_TIMEOUT,
                 ),
                 call(
+                    self.fake_connection,
+                    "GET",
                     "link_2",
-                    {},
-                    {**self.header, "Prefer": self.header_prefer},
-                    preuri="",
-                    method="GET",
+                    headers=self.prefer,
                     timeout=DEFAULT_TIMEOUT,
                 ),
             ]
         )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_filter_out_occurrences(self, mock_do_request):
         """
         When all events are on one page, just get them.
@@ -254,7 +248,7 @@ class TestMicrosoftService(TransactionCase):
             }
         )
         events, _ = self.service._get_events_delta(
-            token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(
@@ -275,7 +269,7 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service._get_occurrence_details(1)
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_occurrence_details(self, mock_do_request):
         mock_do_request.return_value = self._do_request_result(
             {
@@ -287,7 +281,7 @@ class TestMicrosoftService(TransactionCase):
             }
         )
         events = self.service._get_occurrence_details(
-            123, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            123, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(
@@ -302,8 +296,10 @@ class TestMicrosoftService(TransactionCase):
         )
 
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "GET",
             "/v1.0/me/events/123/instances",
-            {
+            params={
                 "startDateTime": fields.Datetime.subtract(
                     fields.Datetime.now(), days=365
                 ).strftime("%Y-%m-%dT00:00:00Z"),
@@ -311,8 +307,7 @@ class TestMicrosoftService(TransactionCase):
                     fields.Datetime.now(), days=365 * 2
                 ).strftime("%Y-%m-%dT00:00:00Z"),
             },
-            {**self.header, "Prefer": self.header_prefer},
-            method="GET",
+            headers=self.prefer,
             timeout=DEFAULT_TIMEOUT,
         )
 
@@ -323,7 +318,7 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service.get_events()
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_no_serie_master(self, mock_do_request):
         """
         When there is no serie master, just retrieve the list of events.
@@ -339,7 +334,7 @@ class TestMicrosoftService(TransactionCase):
         )
 
         events, _ = self.service.get_events(
-            token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(
@@ -353,7 +348,7 @@ class TestMicrosoftService(TransactionCase):
             ),
         )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_with_one_serie_master(self, mock_do_request):
         """
         When there is a serie master, retrieve the list of events and event occurrences linked to the serie master
@@ -377,7 +372,7 @@ class TestMicrosoftService(TransactionCase):
         ]
 
         events, _ = self.service.get_events(
-            token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(
@@ -398,22 +393,22 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service.insert({})
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_insert(self, mock_do_request):
 
         mock_do_request.return_value = self._do_request_result({"id": 1, "iCalUId": 2})
 
         instance_id, event_id = self.service.insert(
-            {"subject": "ev1"}, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            {"subject": "ev1"}, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertEqual(instance_id, 1)
         self.assertEqual(event_id, 2)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "POST",
             "/v1.0/me/calendar/events",
-            json_dumps({"subject": "ev1"}),
-            self.header,
-            method="POST",
+            json={"subject": "ev1"},
             timeout=DEFAULT_TIMEOUT,
         )
 
@@ -424,41 +419,41 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service.patch(123, {})
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_patch_returns_false_if_event_does_not_exist(self, mock_do_request):
         event_id = 123
         values = {"subject": "ev2"}
-        mock_do_request.return_value = (404, "", None)
+        mock_do_request.return_value = (404, {})
 
         res = self.service.patch(
-            event_id, values, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            event_id, values, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertFalse(res)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "PATCH",
             f"/v1.0/me/calendar/events/{event_id}",
-            json_dumps(values),
-            self.header,
-            method="PATCH",
+            json=values,
             timeout=DEFAULT_TIMEOUT,
         )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_patch_an_existing_event(self, mock_do_request):
         event_id = 123
         values = {"subject": "ev2"}
-        mock_do_request.return_value = (200, "", None)
+        mock_do_request.return_value = (200, {})
 
         res = self.service.patch(
-            event_id, values, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            event_id, values, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertTrue(res)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "PATCH",
             f"/v1.0/me/calendar/events/{event_id}",
-            json_dumps(values),
-            self.header,
-            method="PATCH",
+            json=values,
             timeout=DEFAULT_TIMEOUT,
         )
 
@@ -469,25 +464,24 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service.delete(123)
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_delete_returns_false_if_event_does_not_exist(self, mock_do_request):
         event_id = 123
-        mock_do_request.return_value = (404, "", None)
+        mock_do_request.return_value = (404, {})
 
         res = self.service.delete(
-            event_id, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            event_id, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertFalse(res)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "DELETE",
             f"/v1.0/me/calendar/events/{event_id}",
-            {},
-            headers=self.delete_header,
-            method="DELETE",
             timeout=DEFAULT_TIMEOUT,
         )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_delete_an_already_cancelled_event(self, mock_do_request):
         """
         When an event has already been cancelled, Outlook may return a status code equals to 403 or 410.
@@ -496,36 +490,34 @@ class TestMicrosoftService(TransactionCase):
         event_id = 123
 
         for status in (403, 410):
-            mock_do_request.return_value = (status, "", None)
+            mock_do_request.return_value = (status, {})
 
             res = self.service.delete(
-                event_id, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+                event_id, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
             )
 
             self.assertTrue(res)
             mock_do_request.assert_called_with(
+                self.fake_connection,
+                "DELETE",
                 f"/v1.0/me/calendar/events/{event_id}",
-                {},
-                headers=self.delete_header,
-                method="DELETE",
                 timeout=DEFAULT_TIMEOUT,
             )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_delete_an_existing_event(self, mock_do_request):
         event_id = 123
-        mock_do_request.return_value = (200, "", None)
+        mock_do_request.return_value = (200, {})
 
         res = self.service.delete(
-            event_id, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            event_id, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
         self.assertTrue(res)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "DELETE",
             f"/v1.0/me/calendar/events/{event_id}",
-            {},
-            headers=self.delete_header,
-            method="DELETE",
             timeout=DEFAULT_TIMEOUT,
         )
 
@@ -536,48 +528,56 @@ class TestMicrosoftService(TransactionCase):
         with self.assertRaises(AttributeError):
             self.service.answer(123, "ok", {})
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_answer_returns_false_if_event_does_not_exist(self, mock_do_request):
         event_id = 123
         answer = "accept"
         values = {"a": 1, "b": 2}
-        mock_do_request.return_value = (404, "", None)
+        mock_do_request.return_value = (404, {})
 
         res = self.service.answer(
-            event_id, answer, values, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            event_id,
+            answer,
+            values,
+            connection=self.fake_connection,
+            timeout=DEFAULT_TIMEOUT,
         )
 
         self.assertFalse(res)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "POST",
             f"/v1.0/me/calendar/events/{event_id}/{answer}",
-            json_dumps(values),
-            self.header,
-            method="POST",
+            json=values,
             timeout=DEFAULT_TIMEOUT,
         )
 
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_answer_to_an_existing_event(self, mock_do_request):
         event_id = 123
         answer = "decline"
         values = {"a": 1, "b": 2}
-        mock_do_request.return_value = (200, "", None)
+        mock_do_request.return_value = (200, {})
 
         res = self.service.answer(
-            event_id, answer, values, token=self.fake_token, timeout=DEFAULT_TIMEOUT
+            event_id,
+            answer,
+            values,
+            connection=self.fake_connection,
+            timeout=DEFAULT_TIMEOUT,
         )
 
         self.assertTrue(res)
         mock_do_request.assert_called_with(
+            self.fake_connection,
+            "POST",
             f"/v1.0/me/calendar/events/{event_id}/{answer}",
-            json_dumps(values),
-            self.header,
-            method="POST",
+            json=values,
             timeout=DEFAULT_TIMEOUT,
         )
 
     @patch.object(MicrosoftCalendarService, "_check_full_sync_required")
-    @patch.object(MicrosoftService, "_do_request")
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_with_outdated_sync_token(
         self, mock_do_request, mock_check_full_sync_required
     ):
@@ -593,9 +593,11 @@ class TestMicrosoftService(TransactionCase):
         mock_check_full_sync_required.return_value = True
 
         # Call the regular 'delta' get events with an outdated token for triggering the all events fetching.
-        self.env.user.microsoft_calendar_sync_token = self.fake_sync_token
+        self.env.user._calendar_sync_account(
+            "microsoft"
+        ).sync_token = self.fake_sync_token
         self.service._get_events_delta(
-            token=self.fake_token,
+            connection=self.fake_connection,
             sync_token=self.fake_sync_token,
             timeout=DEFAULT_TIMEOUT,
         )
@@ -605,42 +607,24 @@ class TestMicrosoftService(TransactionCase):
             [self.call_with_sync_token, self.call_without_sync_token]
         )
 
-    def test_refresh_microsoft_calendar_token_uses_correct_endpoint(self):
-        # Ensure we use the correct endpoint (useful for single/multi-tenant deployments).
-        response = MagicMock(ok=True)
-        response.json.return_value = {
-            "access_token": "dummy_access_token",
-            "token_type": "Bearer",
-            "expires_in": 3599,
-            "scope": "Mail.Read User.Read",
-            "refresh_token": "dummy_refresh_token",
-        }
-        IrParameter = self.env["ir.config_parameter"].sudo()
-        IrParameter.set_param("microsoft_calendar_client_id", "dummy_client_id")
-        self.env["credential.credential"]._set_system_secret(
-            "microsoft_calendar_client_secret", "dummy_client_secret"
+    def test_a_refresh_goes_to_the_services_token_endpoint(self):
+        # a single-tenant registration names its tenant in the service's URLs
+        service = self.env.ref("integration_microsoft.service_microsoft")
+        service._set_oauth_client("dummy_client_id", "dummy_secret", company=False)
+        tenant_endpoint = (
+            "https://login.microsoftonline.com/dummy_tenant_id/oauth2/v2.0/token"
         )
-        self.env.user._set_microsoft_auth_tokens("access", "refresh", 0)
+        service.oauth_token_endpoint = tenant_endpoint
+        connection = authorize_microsoft_calendar(self.env.user)
+        response = MagicMock(ok=True, status_code=200, headers={})
+        response.json.return_value = {
+            "access_token": "fresh_access_token",
+            "expires_in": 3599,
+        }
 
         with patch.object(GuardedSession, "request", return_value=response) as sent:
-            self.env.user._refresh_microsoft_calendar_token()
+            token = connection._oauth2_access_token(force=True)
 
-            custom_token_endpoint = (
-                "https://login.microsoftonline.com/dummy_tenant_id/oauth2/v2.0/token"
-            )
-            IrParameter.set_param(
-                "microsoft_account.token_endpoint", custom_token_endpoint
-            )
-            self.env.user.microsoft_calendar_credential_id.oauth_token_date_expiration = False
-            self.env.user._refresh_microsoft_calendar_token()
-
-        self.assertEqual(
-            [call.args[1] for call in sent.call_args_list],
-            [DEFAULT_MICROSOFT_TOKEN_ENDPOINT, custom_token_endpoint],
-        )
-        data = sent.call_args.kwargs["data"]
-        self.assertEqual(
-            (data["client_id"], data["client_secret"], data["grant_type"]),
-            ("dummy_client_id", "dummy_client_secret", "refresh_token"),
-        )
-        self.assertEqual(data["refresh_token"], "dummy_refresh_token")
+        self.assertEqual(token, "fresh_access_token")
+        self.assertEqual(sent.call_args.args[1], tenant_endpoint)
+        self.assertEqual(sent.call_args.kwargs["data"]["scope"], connection.oauth_scope)

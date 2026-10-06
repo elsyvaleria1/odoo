@@ -1,14 +1,14 @@
 {
-    "name": "Mail OAuth2 Infrastructure",
-    "version": "19.0.1.0.0",
+    "name": "Mail OAuth2",
+    "version": "19.0.2.0.0",
     "category": "Hidden",
-    "summary": "Provide reusable OAuth2 authorization and token handling for mail providers",
-    "description": "Defines a mail-provider mixin for authorization URLs, token exchange and refresh, state tokens and XOAUTH2 authentication strings. Concrete provider addons must supply endpoint settings, credential fields and integration hooks; installing this infrastructure alone does not configure a mail account.",
+    "summary": "Authorize mail servers with a vendor's OAuth service",
+    "description": "Binds each OAuth mail server to its own connection on a vendor's integration service, which authorizes it through the standard OAuth flow and keeps its tokens fresh; the server logs in to SMTP and IMAP with XOAUTH2. A personal server must be authorized by the account it sends as. Vendor addons supply the service, the scope and the server types; installing this infrastructure alone configures no mail account.",
     "author": "Odoo Community",
     "license": "LGPL-3",
     "depends": [
         "mail",
-        "credential",
+        "integration",
     ],
     "auto_install": True,
 }

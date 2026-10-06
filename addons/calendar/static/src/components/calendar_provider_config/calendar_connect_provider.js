@@ -6,17 +6,6 @@ import { user } from "@web/core/user";
 import { useService } from "@web/core/utils/hooks";
 import { standardWidgetProps } from "@web/views/widgets";
 
-const providerData = {
-    google: {
-        restart_sync_method: "restart_google_synchronization",
-        sync_route: "/calendar_google/sync_data",
-    },
-    microsoft: {
-        restart_sync_method: "restart_microsoft_synchronization",
-        sync_route: "/calendar_microsoft/sync_data",
-    },
-};
-
 export class CalendarConnectProvider extends Component {
     static props = { ...standardWidgetProps };
     static template = "calendar.CalendarConnectProvider";
@@ -44,15 +33,16 @@ export class CalendarConnectProvider extends Component {
             "action_calendar_prepare_external_provider_sync",
             [this.props.record.resId],
         );
-        // See google/calendar_microsoft for the origin of this shortened version
-        const provider =
-            providerData[this.props.record.data.external_calendar_provider];
+        // the provider's module, installed above, brings calendar_sync
+        const provider = this.props.record.data.external_calendar_provider;
         if (!provider) {
             return;
         }
-        const { restart_sync_method, sync_route } = provider;
-        await this.orm.call("res.users", restart_sync_method, [[user.userId]]);
-        const response = await rpc(sync_route, {
+        await this.orm.call("res.users", "calendar_sync_restart", [
+            [user.userId],
+            provider,
+        ]);
+        const response = await rpc(`/calendar_sync/${provider}/sync_data`, {
             model: "calendar.event",
             fromurl: window.location.href,
         });

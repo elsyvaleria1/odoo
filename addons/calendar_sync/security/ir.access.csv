@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_calendar_sync_account_system,calendar.sync.account system,model_calendar_sync_account,base.group_system,permission,crud,,,

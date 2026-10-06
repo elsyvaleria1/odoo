@@ -55,7 +55,9 @@ class WizardResUsersResetMicrosoftCalendar(models.TransientModel):
 
         # We commit to make sure the _microsoft_delete are called when we still have a token on the user.
         self.env["ir.cron"]._commit_progress()
-        self.user_id._set_microsoft_auth_tokens(False, False, 0)
-        self.user_id.res_users_settings_id.write(
-            {"microsoft_calendar_sync_token": False, "microsoft_last_sync_date": False}
+        self.env["integration.connection"]._find_personal(
+            self.env.ref("integration_microsoft.service_microsoft"), self.user_id
+        )._forget_oauth_authorization()
+        self.user_id._calendar_sync_account("microsoft").write(
+            {"sync_token": False, "last_sync_date": False}
         )

@@ -33,7 +33,7 @@ class CalendarAttendee(models.Model):
             lambda e: e.user_id and e.user_id.id != self.env.user.id
         )
         for user, user_events in other_events.grouped("user_id").items():
-            service = GoogleCalendarService(self.env["google.service"].with_user(user))
+            service = GoogleCalendarService(self.env(user=user))
             user_events.with_user(user)._sync_odoo2google(service)
-        google_service = GoogleCalendarService(self.env["google.service"])
+        google_service = GoogleCalendarService(self.env)
         (all_events - other_events)._sync_odoo2google(google_service)

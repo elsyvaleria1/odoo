@@ -2,15 +2,23 @@ from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import UserError
 
+from odoo.addons.mail_google.models.mixin_mail_google import GMAIL
+
 
 class FetchmailServer(models.Model):
     _name = "fetchmail.server"
-    _inherit = ["fetchmail.server", "mixin.google.gmail"]
+    _inherit = ["fetchmail.server", "mixin.mail.google"]
+    _oauth2_type_field = "server_type"
 
     server_type = fields.Selection(
         selection_add=[("gmail", "Gmail OAuth Authentication")],
         ondelete={"gmail": "set default"},
     )
+
+    def _oauth2_provider(self):
+        if self.server_type == "gmail":
+            return GMAIL
+        return super()._oauth2_provider()
 
     def _compute_server_type_info(self) -> None:
         gmail_servers = self.filtered(lambda server: server.server_type == "gmail")
@@ -66,12 +74,6 @@ class FetchmailServer(models.Model):
         vals = super()._prepare_server_type_defaults()
         if self.server_type == "gmail":
             vals.update(server="imap.gmail.com", encryption="ssl_strict", port=993)
-        else:
-            vals.update(
-                google_gmail_refresh_token=False,
-                google_gmail_access_token=False,
-                google_gmail_access_token_expiration=False,
-            )
         return vals
 
     def _imap_login__(self, connection) -> None:
@@ -81,9 +83,7 @@ class FetchmailServer(models.Model):
         """
         self.check_singleton()
         if self.server_type == "gmail":
-            auth_string = self._generate_oauth2_string(
-                self.user, self.google_gmail_refresh_token
-            )
+            auth_string = self._mail_google_auth_string(self.user)
             connection.authenticate("XOAUTH2", lambda x: auth_string)
         else:
             super()._imap_login__(connection)

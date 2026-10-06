@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_users_view_form" model="ir.ui.view">
+        <field name="name">res.users.form.inherit.calendar.sync</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="calendar.res_users_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='calendar']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <group name="calendar_accounts" position="before">
+                <field
+                    name="calendar_sync_account_ids"
+                    groups="base.group_system"
+                    invisible="share"
+                    readonly="1">
+                    <list>
+                        <field name="provider" />
+                        <field name="stopped" />
+                        <field name="last_sync_date" />
+                        <field name="sync_token" />
+                    </list>
+                </field>
+            </group>
+        </field>
+    </record>
+
+</odoo>

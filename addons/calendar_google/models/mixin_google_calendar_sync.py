@@ -15,9 +15,11 @@ from odoo.fields import Domain
 from odoo.modules.registry import Registry
 from odoo.tools import email_normalize
 
-from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
+from odoo.addons.calendar_google.utils.calendar_google import (
+    TIMEOUT,
+    GoogleCalendarService,
+)
 from odoo.addons.calendar_google.utils.google_event import GoogleEvent
-from odoo.addons.google_account.models.google_service import TIMEOUT
 
 _logger = logging.getLogger(__name__)
 
@@ -52,8 +54,8 @@ def after_commit(func):
 
 
 @contextmanager
-def google_calendar_token(user):
-    yield user._get_google_calendar_token()
+def google_calendar_connection(user):
+    yield user._calendar_sync_connection("google")
 
 
 class MixinGoogleCalendarSync(models.AbstractModel):
@@ -72,17 +74,17 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     active = fields.Boolean(default=True)
 
     def write(self, vals):
-        google_service = GoogleCalendarService(self.env["google.service"])
+        google_service = GoogleCalendarService(self.env)
         synced_fields = self._get_fields_google_synced()
         if (
             "need_sync" not in vals
             and vals.keys() & synced_fields
-            and not self.env.user.google_synchronization_stopped
+            and not self.env.user._calendar_sync_stopped("google")
         ):
             vals["need_sync"] = True
 
         result = super().write(vals)
-        if self.env.user._get_google_sync_status() != "sync_paused":
+        if self.env.user._calendar_sync_status("google") != "sync_paused":
             for record in self:
                 if record.need_sync and record.google_id:
                     record.with_user(record._get_event_user())._google_patch(
@@ -100,7 +102,7 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         users_with_sync = (
             self.env["res.users"]
             .browse(user_ids)
-            .filtered(lambda u: not u.sudo().google_synchronization_stopped)
+            .filtered(lambda u: not u._calendar_sync_stopped("google"))
         )
         users_with_sync_set = set(users_with_sync.ids)
 
@@ -113,8 +115,8 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         records = super().create(vals_list)
         self._handle_allday_recurrences_edge_case(records, vals_list)
 
-        google_service = GoogleCalendarService(self.env["google.service"])
-        if self.env.user._get_google_sync_status() != "sync_paused":
+        google_service = GoogleCalendarService(self.env)
+        if self.env.user._calendar_sync_status("google") != "sync_paused":
             for record in records:
                 if record.need_sync and record.active:
                     record.with_user(record._get_event_user())._google_insert(
@@ -171,7 +173,7 @@ class MixinGoogleCalendarSync(models.AbstractModel):
 
         updated_records = records_to_sync.filtered("google_id")
         new_records = records_to_sync - updated_records
-        if self.env.user._get_google_sync_status() != "sync_paused":
+        if self.env.user._calendar_sync_status("google") != "sync_paused":
             for record in cancelled_records:
                 if record.google_id and record.need_sync:
                     record.with_user(record._get_event_user())._google_delete(
@@ -351,15 +353,16 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     def _google_delete(
         self, google_service: GoogleCalendarService, google_id, timeout=TIMEOUT
     ) -> None:
-        with google_calendar_token(self.env.user.sudo()) as token:
-            if token:
+        with google_calendar_connection(self.env.user.sudo()) as connection:
+            if connection:
                 is_recurrence = self.env.context.get("is_recurrence", False)
-                google_service.google_service = (
-                    google_service.google_service.with_context(
-                        is_recurrence=is_recurrence
-                    )
+                google_service.env = google_service.env(
+                    context={
+                        **google_service.env.context,
+                        "is_recurrence": is_recurrence,
+                    }
                 )
-                google_service.delete(google_id, token=token, timeout=timeout)
+                google_service.delete(google_id, connection=connection, timeout=timeout)
                 # When the record has been deleted on our side, we need to delete it on google but we don't want
                 # to raise an error because the record don't exists anymore.
                 self.exists().with_context(
@@ -370,17 +373,18 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     def _google_patch(
         self, google_service: GoogleCalendarService, google_id, values, timeout=TIMEOUT
     ) -> None:
-        with google_calendar_token(self.env.user.sudo()) as token:
-            if token:
+        with google_calendar_connection(self.env.user.sudo()) as connection:
+            if connection:
                 try:
                     send_updates = not self._is_event_over()
-                    google_service.google_service = (
-                        google_service.google_service.with_context(
-                            send_updates=send_updates
-                        )
+                    google_service.env = google_service.env(
+                        context={
+                            **google_service.env.context,
+                            "send_updates": send_updates,
+                        }
                     )
                     google_service.patch(
-                        google_id, values, token=token, timeout=timeout
+                        google_id, values, connection=connection, timeout=timeout
                     )
                 except HTTPError as e:
                     if e.response.status_code in (400, 403):
@@ -410,21 +414,22 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     ) -> None:
         if not values:
             return
-        with google_calendar_token(self.env.user.sudo()) as token:
-            if token:
+        with google_calendar_connection(self.env.user.sudo()) as connection:
+            if connection:
                 try:
                     send_updates = (
                         self.env.context.get("send_updates", True)
                         and not self._is_event_over()
                     )
-                    google_service.google_service = (
-                        google_service.google_service.with_context(
-                            send_updates=send_updates
-                        )
+                    google_service.env = google_service.env(
+                        context={
+                            **google_service.env.context,
+                            "send_updates": send_updates,
+                        }
                     )
                     google_values = google_service.insert(
                         values,
-                        token=token,
+                        connection=connection,
                         timeout=timeout,
                         need_video_call=self._is_video_call_required(),
                     )

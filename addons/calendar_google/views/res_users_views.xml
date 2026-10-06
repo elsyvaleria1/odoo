@@ -11,14 +11,6 @@
             </xpath>
             <group name="calendar_accounts" position="inside">
                 <group string="Google Calendar" invisible="share" class="text-break">
-                    <field
-                        name="google_calendar_rtoken"
-                        groups="base.group_system"
-                        readonly="1" />
-                    <field name="google_calendar_token" readonly="1" />
-                    <field name="google_calendar_token_validity" readonly="1" />
-                    <field name="google_calendar_sync_token" readonly="1" />
-                    <field name="google_calendar_cal_id" readonly="1" />
                     <button
                         name="%(google_calendar_reset_account_action)d"
                         type="action"

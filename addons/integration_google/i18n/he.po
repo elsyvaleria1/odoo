@@ -1,0 +1,55 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * integration_google
+#
+# Translators:
+# Lilach Gilliam <lilach.gilliam@gmail.com>, 2022
+# ExcaliberX <excaliberx@gmail.com>, 2022
+# or balmas <or@laylinetech.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0beta\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:36+0000\n"
+"PO-Revision-Date: 2025-12-20 09:33+0000\n"
+"Last-Translator: or balmas <or@laylinetech.com>\n"
+"Language-Team: Hebrew <https://translate.odoo.com/projects/odoo-19/"
+"integration_google/he/>\n"
+"Language: he\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
+"n % 10 == 0) ? 2 : 3));\n"
+"X-Generator: Weblate 5.14.3\n"
+
+#. module: integration_google
+#: model:ir.model.fields,field_description:integration_google.field_google_service__display_name
+msgid "Display Name"
+msgstr "שם לתצוגה"
+
+#. module: integration_google
+#: model:ir.model,name:integration_google.model_google_service
+msgid "Google Service"
+msgstr "שירות Goggle"
+
+#. module: integration_google
+#: model:ir.model.fields,field_description:integration_google.field_google_service__id
+msgid "ID"
+msgstr "מזהה"
+
+#. module: integration_google
+#. odoo-python
+#: code:addons/integration_google/models/google_service.py:0
+msgid "Method not supported [%s] not in [GET, POST, PUT, PATCH or DELETE]!"
+msgstr ""
+"הפעולה [%s] לא נמצאת בפעולות האפשריות [GET, POST, PUT, PATCH or DELETE]!"
+
+#. module: integration_google
+#. odoo-python
+#: code:addons/integration_google/models/google_service.py:0
+msgid ""
+"Something went wrong during your token generation. Maybe your Authorization "
+"Code is invalid or already expired"
+msgstr "אירעה שגיאה במהלך יצירת הטוקן שלך. יתכן כי קוד האישור שלך פג תוקף"

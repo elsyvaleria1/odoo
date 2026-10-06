@@ -13,22 +13,22 @@
                     colspan="2"
                     groups="base.group_system">
                     <span
-                        invisible="smtp_authentication != 'gmail' or not google_gmail_refresh_token"
+                        invisible="smtp_authentication != 'gmail' or not oauth2_authorized"
                         class="badge text-bg-success">
                         Gmail Token Valid
                     </span>
                     <button
-                        name="open_google_gmail_uri"
+                        name="action_mail_google_authorize"
                         type="object"
-                        invisible="smtp_authentication != 'gmail' or google_gmail_refresh_token"
+                        invisible="smtp_authentication != 'gmail' or oauth2_authorized"
                         class="btn-link px-0">
                         <i class="oi oi-arrow-right" />
                         Connect your Gmail account
                     </button>
                     <button
-                        name="open_google_gmail_uri"
+                        name="action_mail_google_authorize"
                         type="object"
-                        invisible="smtp_authentication != 'gmail' or not google_gmail_refresh_token"
+                        invisible="smtp_authentication != 'gmail' or not oauth2_authorized"
                         class="btn-link px-0 ms-2">
                         <i class="fa-solid fa-cog" title="Edit Settings" />
                     </button>

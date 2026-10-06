@@ -11,22 +11,22 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.addons.calendar_microsoft.models.mixin_microsoft_calendar_sync import (
     MixinMicrosoftCalendarSync,
 )
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers
 from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
     _modified_date_in_the_future,
-    mock_get_token,
+    mock_get_connection,
     patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 
 _logger = logging.getLogger(__name__)
 
 
-@patch.object(ResUsers, "_get_microsoft_calendar_token", mock_get_token)
+@patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestUpdateEvents(TestCommon):
     @patch_api
     def setUp(self):
@@ -46,7 +46,7 @@ class TestUpdateEvents(TestCommon):
         """
 
         # arrange
-        self.organizer_user.microsoft_synchronization_stopped = True
+        self.organizer_user._calendar_sync_account("microsoft").stopped = True
         self.simple_event.need_sync_m = False
 
         # act
@@ -66,8 +66,8 @@ class TestUpdateEvents(TestCommon):
         a paused edit was neither sent nor marked, and the resumed sync never
         picked it up.
         """
-        self.organizer_user.microsoft_synchronization_stopped = False
-        self.organizer_user.pause_microsoft_synchronization()
+        self.organizer_user._calendar_sync_account("microsoft").stopped = False
+        self.env["calendar.sync.account"]._set_paused("microsoft", True)
         self.simple_event.need_sync_m = False
 
         self.simple_event.with_user(self.organizer_user).write(
@@ -100,7 +100,7 @@ class TestUpdateEvents(TestCommon):
         mock_patch.assert_called_once_with(
             self.simple_event.microsoft_id,
             {"subject": "my new simple event", "isOnlineMeeting": False},
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
         self.assertEqual(self.simple_event.name, "my new simple event")
@@ -126,7 +126,7 @@ class TestUpdateEvents(TestCommon):
         mock_patch.assert_called_once_with(
             self.simple_event.microsoft_id,
             {"subject": "my new simple event", "isOnlineMeeting": False},
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
         self.assertEqual(self.simple_event.name, "my new simple event")
@@ -163,7 +163,7 @@ class TestUpdateEvents(TestCommon):
         mock_patch.assert_called_once_with(
             self.recurrent_events[modified_event_id].microsoft_id,
             {"seriesMasterId": "REC123", "type": "exception", "subject": new_name},
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
         self.assertEqual(self.recurrent_events[modified_event_id].name, new_name)
@@ -219,7 +219,7 @@ class TestUpdateEvents(TestCommon):
                 },
                 "isAllDay": False,
             },
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
         self.assertEqual(self.recurrent_events[modified_event_id].start, new_date)
@@ -289,7 +289,7 @@ class TestUpdateEvents(TestCommon):
         mock_patch.assert_called_once_with(
             self.recurrent_events[modified_event_id].microsoft_id,
             {"seriesMasterId": "REC123", "type": "exception", "subject": new_name},
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
         self.assertEqual(self.recurrent_events[modified_event_id].name, new_name)
@@ -337,7 +337,7 @@ class TestUpdateEvents(TestCommon):
             mock_patch.assert_any_call(
                 self.recurrent_events[i].microsoft_id,
                 {"seriesMasterId": "REC123", "type": "exception", "subject": new_name},
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
         for i in range(modified_event_id, self.recurrent_events_count):
@@ -411,7 +411,7 @@ class TestUpdateEvents(TestCommon):
         for e_id in expected_deleted_event_ids:
             mock_delete.assert_any_call(
                 e_id,
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
 
@@ -433,7 +433,7 @@ class TestUpdateEvents(TestCommon):
                 },
                 "isAllDay": False,
             },
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
 
@@ -499,7 +499,7 @@ class TestUpdateEvents(TestCommon):
         for e_id in expected_deleted_event_ids:
             mock_delete.assert_any_call(
                 e_id,
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
 
@@ -521,7 +521,7 @@ class TestUpdateEvents(TestCommon):
                 },
                 "isAllDay": False,
             },
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
 
@@ -580,7 +580,7 @@ class TestUpdateEvents(TestCommon):
         for e_id in expected_deleted_event_ids:
             mock_delete.assert_any_call(
                 e_id,
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
 
@@ -602,7 +602,7 @@ class TestUpdateEvents(TestCommon):
                 },
                 "isAllDay": False,
             },
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
 
@@ -643,7 +643,7 @@ class TestUpdateEvents(TestCommon):
             mock_patch.assert_any_call(
                 self.recurrent_events[i].microsoft_id,
                 {"seriesMasterId": "REC123", "type": "exception", "subject": new_name},
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
             self.assertEqual(self.recurrent_events[i].name, new_name)
@@ -713,7 +713,7 @@ class TestUpdateEvents(TestCommon):
                 },
                 "isAllDay": False,
             },
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
 
@@ -721,7 +721,7 @@ class TestUpdateEvents(TestCommon):
         for e_id in expected_deleted_event_ids:
             mock_delete.assert_any_call(
                 e_id,
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
 
@@ -789,7 +789,7 @@ class TestUpdateEvents(TestCommon):
                 },
                 "isAllDay": False,
             },
-            token=mock_get_token(self.organizer_user),
+            connection=mock_get_connection(self.organizer_user),
             timeout=ANY,
         )
 
@@ -797,7 +797,7 @@ class TestUpdateEvents(TestCommon):
         for e_id in expected_deleted_event_ids:
             mock_delete.assert_any_call(
                 e_id,
-                token=mock_get_token(self.organizer_user),
+                connection=mock_get_connection(self.organizer_user),
                 timeout=ANY,
             )
 
@@ -1639,12 +1639,9 @@ class TestUpdateEvents(TestCommon):
         Forbid in Odoo simple event becoming a recurrence when Outlook Calendar sync is active.
         """
         # Set custom calendar token validity to simulate real scenario.
-        self.env.user.microsoft_calendar_token_validity = datetime.now() + timedelta(
-            minutes=5
-        )
 
         # Assert that synchronization with Outlook Calendar is active.
-        self.assertFalse(self.env.user.microsoft_synchronization_stopped)
+        self.assertFalse(self.env.user._calendar_sync_account("microsoft").stopped)
 
         # Simulate upgrade of a simple event to recurrent event (forbidden).
         simple_event = (
@@ -1679,8 +1676,8 @@ class TestUpdateEvents(TestCommon):
         for later synchronizing it with Outlook Calendar.
         """
         # Set user synchronization configuration as active and pause it.
-        self.organizer_user.microsoft_synchronization_stopped = False
-        self.organizer_user.pause_microsoft_synchronization()
+        self.organizer_user._calendar_sync_account("microsoft").stopped = False
+        self.env["calendar.sync.account"]._set_paused("microsoft", True)
 
         # Try to update a simple event in Odoo Calendar.
         self.simple_event.with_user(self.organizer_user).write(
@@ -1690,9 +1687,11 @@ class TestUpdateEvents(TestCommon):
         self.simple_event.invalidate_recordset()
 
         # Ensure that synchronization is paused, delete wasn't called and record is waiting to be synced again.
-        self.assertFalse(self.organizer_user.microsoft_synchronization_stopped)
+        self.assertFalse(
+            self.organizer_user._calendar_sync_account("microsoft").stopped
+        )
         self.assertEqual(
-            self.organizer_user._get_microsoft_sync_status(), "sync_paused"
+            self.organizer_user._calendar_sync_status("microsoft"), "sync_paused"
         )
         self.assertTrue(
             self.simple_event.need_sync_m,
@@ -1732,7 +1731,7 @@ class TestUpdateEvents(TestCommon):
 
         # Deactivate user B's calendar synchronization. Try changing the event organizer to user B.
         # A ValidationError must be thrown because user B's calendar is not synced.
-        self.attendee_user.microsoft_synchronization_stopped = True
+        self.attendee_user._calendar_sync_account("microsoft").stopped = True
         with self.assertRaises(ValidationError):
             event.with_user(self.organizer_user).write(
                 {"user_id": self.attendee_user.id}
@@ -1740,7 +1739,7 @@ class TestUpdateEvents(TestCommon):
 
         # Activate user B's calendar synchronization and try again without listing user B as an attendee.
         # Another ValidationError must be thrown.
-        self.attendee_user.microsoft_synchronization_stopped = False
+        self.attendee_user._calendar_sync_account("microsoft").stopped = False
         with self.assertRaises(ValidationError):
             event.with_user(self.organizer_user).write(
                 {"user_id": self.attendee_user.id}
@@ -1773,7 +1772,7 @@ class TestUpdateEvents(TestCommon):
         # Ensure that the event was deleted and recreated with the new organizer and the organizer listed as attendee.
         mock_delete.assert_any_call(
             event.microsoft_id,
-            token=mock_get_token(self.attendee_user),
+            connection=mock_get_connection(self.attendee_user),
             timeout=ANY,
         )
         self.assertEqual(
@@ -1796,7 +1795,7 @@ class TestUpdateEvents(TestCommon):
     def test_restart_sync_with_synced_recurrence(self, mock_patch):
         """Ensure that sync restart is not blocked when there are recurrence outliers in Odoo database."""
         # Stop synchronization, set recurrent events as outliers and restart sync with Outlook.
-        self.organizer_user.stop_microsoft_synchronization()
+        self.organizer_user.calendar_sync_stop("microsoft")
         self.recurrent_events.with_user(self.organizer_user).write(
             {
                 "microsoft_id": False,
@@ -1804,12 +1803,12 @@ class TestUpdateEvents(TestCommon):
                 "follow_recurrence": False,
             }
         )
-        self.attendee_user.with_user(
-            self.attendee_user
-        ).restart_microsoft_synchronization()
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).restart_microsoft_synchronization()
+        self.attendee_user.with_user(self.attendee_user).calendar_sync_restart(
+            "microsoft"
+        )
+        self.organizer_user.with_user(self.organizer_user).calendar_sync_restart(
+            "microsoft"
+        )
         self.assertTrue(all(ev.need_sync_m for ev in self.recurrent_events))
 
     @patch.object(MixinMicrosoftCalendarSync, "_write_from_microsoft")

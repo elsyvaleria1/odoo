@@ -2,19 +2,27 @@ from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import UserError
 
+from odoo.addons.mail_microsoft.models.mixin_mail_microsoft import OUTLOOK
+
 
 class FetchmailServer(models.Model):
     """Add the Outlook OAuth authentication on the incoming mail servers."""
 
     _name = "fetchmail.server"
-    _inherit = ["fetchmail.server", "mixin.microsoft.outlook"]
+    _inherit = ["fetchmail.server", "mixin.mail.microsoft"]
+    _oauth2_type_field = "server_type"
 
-    _OUTLOOK_SCOPE = "https://outlook.office.com/IMAP.AccessAsUser.All"
+    _MAIL_MICROSOFT_SCOPE = "https://outlook.office.com/IMAP.AccessAsUser.All"
 
     server_type = fields.Selection(
         selection_add=[("outlook", "Outlook OAuth Authentication")],
         ondelete={"outlook": "set default"},
     )
+
+    def _oauth2_provider(self):
+        if self.server_type == "outlook":
+            return OUTLOOK
+        return super()._oauth2_provider()
 
     def _compute_server_type_info(self) -> None:
         outlook_servers = self.filtered(lambda server: server.server_type == "outlook")
@@ -70,12 +78,6 @@ class FetchmailServer(models.Model):
         vals = super()._prepare_server_type_defaults()
         if self.server_type == "outlook":
             vals.update(server="imap.outlook.com", encryption="ssl_strict", port=993)
-        else:
-            vals.update(
-                microsoft_outlook_refresh_token=False,
-                microsoft_outlook_access_token=False,
-                microsoft_outlook_access_token_expiration=False,
-            )
         return vals
 
     def _imap_login__(self, connection) -> None:
@@ -85,7 +87,7 @@ class FetchmailServer(models.Model):
         """
         self.check_singleton()
         if self.server_type == "outlook":
-            auth_string = self._generate_outlook_oauth2_string(self.user)
+            auth_string = self._mail_microsoft_auth_string(self.user)
             connection.authenticate("XOAUTH2", lambda x: auth_string)
         else:
             super()._imap_login__(connection)

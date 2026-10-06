@@ -1,6 +1,6 @@
 {
     "name": "Outlook Calendar Synchronization",
-    "version": "1.2",
+    "version": "1.4",
     "oldest_upgradable_version": "1.2",
     "category": "Productivity",
     "summary": "Synchronize calendar events with authorized Microsoft accounts",
@@ -8,11 +8,10 @@
     "author": "Odoo S.A.",
     "license": "LGPL-3",
     "depends": [
-        "microsoft_account",
-        "calendar",
+        "calendar_sync",
+        "integration_microsoft",
     ],
     "data": [
-        "data/microsoft_calendar_data.xml",
         "security/ir.access.csv",
         "wizards/wizard_res_users_reset_microsoft_calendar_views.xml",
         "views/res_config_settings_views.xml",
@@ -22,9 +21,6 @@
     "assets": {
         "web.assets_backend": [
             "calendar_microsoft/static/src/views/**/*",
-        ],
-        "web.assets_unit_tests": [
-            "calendar_microsoft/static/tests/**/*",
         ],
     },
     "post_init_hook": "init_initiating_microsoft_uuid",

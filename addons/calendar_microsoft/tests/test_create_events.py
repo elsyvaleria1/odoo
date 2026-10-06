@@ -8,21 +8,21 @@ from odoo import Command, fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import tagged
 
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers
 from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
     _modified_date_in_the_future,
-    mock_get_token,
+    mock_get_connection,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 @tagged("post_install", "-at_install")
-@patch.object(ResUsers, "_get_microsoft_calendar_token", mock_get_token)
+@patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestCreateEvents(TestCommon):
     @patch.object(MicrosoftCalendarService, "insert")
     def test_create_simple_event_without_sync(self, mock_insert):
@@ -31,7 +31,7 @@ class TestCreateEvents(TestCommon):
         """
 
         # arrange
-        self.organizer_user.microsoft_synchronization_stopped = True
+        self.organizer_user._calendar_sync_account("microsoft").stopped = True
 
         # act
         record = (
@@ -204,7 +204,7 @@ class TestCreateEvents(TestCommon):
             return
 
         # arrange
-        self.organizer_user.microsoft_synchronization_stopped = True
+        self.organizer_user._calendar_sync_account("microsoft").stopped = True
 
         # act
         record = (
@@ -534,12 +534,9 @@ class TestCreateEvents(TestCommon):
         Forbids new recurrences creation in Odoo due to Outlook spam limitation of updating recurrent events.
         """
         # Set custom calendar token validity to simulate real scenario.
-        self.env.user.microsoft_calendar_token_validity = datetime.now() + timedelta(
-            minutes=5
-        )
 
         # Assert that synchronization with Outlook is active.
-        self.assertFalse(self.env.user.microsoft_synchronization_stopped)
+        self.assertFalse(self.env.user._calendar_sync_account("microsoft").stopped)
 
         with self.assertRaises(UserError):
             self.env["calendar.event"].create(self.recurrent_event_values)
@@ -553,8 +550,8 @@ class TestCreateEvents(TestCommon):
         for later synchronizing it with Outlook Calendar.
         """
         # Set user sync configuration as active and then pause the synchronization.
-        self.organizer_user.microsoft_synchronization_stopped = False
-        self.organizer_user.pause_microsoft_synchronization()
+        self.organizer_user._calendar_sync_account("microsoft").stopped = False
+        self.env["calendar.sync.account"]._set_paused("microsoft", True)
 
         # Try to create a simple event in Odoo Calendar.
         record = (
@@ -566,9 +563,11 @@ class TestCreateEvents(TestCommon):
         record.invalidate_recordset()
 
         # Ensure that synchronization is paused, insert wasn't called and record is waiting to be synced.
-        self.assertFalse(self.organizer_user.microsoft_synchronization_stopped)
+        self.assertFalse(
+            self.organizer_user._calendar_sync_account("microsoft").stopped
+        )
         self.assertEqual(
-            self.organizer_user._get_microsoft_sync_status(), "sync_paused"
+            self.organizer_user._calendar_sync_status("microsoft"), "sync_paused"
         )
         self.assertTrue(
             record.need_sync_m,
@@ -589,11 +588,11 @@ class TestCreateEvents(TestCommon):
         self.organizer_user._set_ICP_first_synchronization_date(fields.Datetime.now())
 
         # Stop the synchronization for clearing the last_sync_date.
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo().stop_microsoft_synchronization()
+        self.organizer_user.with_user(self.organizer_user).sudo().calendar_sync_stop(
+            "microsoft"
+        )
         self.assertEqual(
-            self.organizer_user.microsoft_last_sync_date,
+            self.organizer_user._calendar_sync_account("microsoft").last_sync_date,
             False,
             "Variable last_sync_date must be False due to sync stop.",
         )
@@ -619,7 +618,7 @@ class TestCreateEvents(TestCommon):
             # Restart the synchronization with Outlook Calendar.
             self.organizer_user.with_user(
                 self.organizer_user
-            ).sudo().restart_microsoft_synchronization()
+            ).sudo().calendar_sync_restart("microsoft")
             # Sync microsoft calendar, considering that ten minutes were passed after the event creation.
             self.organizer_user.with_user(
                 self.organizer_user
@@ -631,13 +630,13 @@ class TestCreateEvents(TestCommon):
             mock_insert.assert_not_called()
 
             self.assertNotEqual(
-                self.organizer_user.microsoft_last_sync_date,
+                self.organizer_user._calendar_sync_account("microsoft").last_sync_date,
                 False,
                 "Variable last_sync_date must not be empty after sync.",
             )
             self.assertLessEqual(
                 event.write_date,
-                self.organizer_user.microsoft_last_sync_date,
+                self.organizer_user._calendar_sync_account("microsoft").last_sync_date,
                 "Event creation must happen before last_sync_date",
             )
 
@@ -690,7 +689,7 @@ class TestCreateEvents(TestCommon):
             .with_user(self.organizer_user)
             ._check_microsoft_sync_status()
         )
-        self.attendee_user.microsoft_synchronization_stopped = True
+        self.attendee_user._calendar_sync_account("microsoft").stopped = True
 
         # Try creating an event with the organizer as the user B (self.attendee_user).
         # A ValidationError must be thrown because user B's calendar is not synced.
@@ -704,7 +703,7 @@ class TestCreateEvents(TestCommon):
             )
 
         # Activate the calendar synchronization of user B (self.attendee_user).
-        self.attendee_user.microsoft_synchronization_stopped = False
+        self.attendee_user._calendar_sync_account("microsoft").stopped = False
         self.assertTrue(
             self.env["calendar.event"]
             .with_user(self.attendee_user)
@@ -1067,15 +1066,12 @@ class TestCreateEvents(TestCommon):
         """
         with self.mock_datetime_and_now("2021-09-20 10:00:00"):
             # Ensure that the calendar synchronization of the attendee is active. Deactivate organizer's synchronization.
-            self.attendee_user.microsoft_calendar_token_validity = (
-                datetime.now() + timedelta(minutes=60)
-            )
             self.assertTrue(
                 self.env["calendar.event"]
                 .with_user(self.attendee_user)
                 ._check_microsoft_sync_status()
             )
-            self.organizer_user.microsoft_synchronization_stopped = True
+            self.organizer_user._calendar_sync_account("microsoft").stopped = True
 
             # Create an event with the organizer not synchronized and invite the synchronized attendee.
             self.simple_event_values["user_id"] = self.organizer_user.id
@@ -1107,13 +1103,10 @@ class TestCreateEvents(TestCommon):
             mock_insert.return_value = (event_id, event_iCalUId)
 
             # Activate the synchronization of the organizer and ensure that the event is now inserted.
-            self.organizer_user.microsoft_synchronization_stopped = False
-            self.organizer_user.microsoft_calendar_token_validity = (
-                datetime.now() + timedelta(minutes=60)
+            self.organizer_user._calendar_sync_account("microsoft").stopped = False
+            self.organizer_user.with_user(self.organizer_user).calendar_sync_restart(
+                "microsoft"
             )
-            self.organizer_user.with_user(
-                self.organizer_user
-            ).restart_microsoft_synchronization()
             event.with_user(self.organizer_user).sudo()._sync_odoo2microsoft()
             self.call_post_commit_hooks()
             mock_insert.assert_called()
@@ -1179,15 +1172,11 @@ class TestCreateEvents(TestCommon):
         # During preparation: ensure that no user ever synchronized with Outlook Calendar
         # and create a local event waiting to be synchronized (need_sync_m: True).
         with self.mock_datetime_and_now("2024-01-01 10:00:00"):
-            any_calendar_synchronized = (
-                self.env["res.users"]
-                .sudo()
-                .search_count(
-                    domain=[("microsoft_calendar_sync_token", "!=", False)], limit=1
-                )
+            any_calendar_synchronized = self.env["calendar.sync.account"].search_count(
+                [("provider", "=", "microsoft"), ("sync_token", "!=", False)], limit=1
             )
             self.assertFalse(any_calendar_synchronized)
-            self.organizer_user.microsoft_synchronization_stopped = True
+            self.organizer_user._calendar_sync_account("microsoft").stopped = True
             event = (
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
@@ -1214,10 +1203,7 @@ class TestCreateEvents(TestCommon):
         with self.mock_datetime_and_now("2024-01-02 10:00:10"):
             # Mock the return of 0 events from Outlook to Odoo, then activate the user's sync.
             mock_get_events.return_value = ([], None)
-            self.organizer_user.microsoft_synchronization_stopped = False
-            self.organizer_user.microsoft_calendar_token_validity = (
-                datetime.now() + timedelta(minutes=60)
-            )
+            self.organizer_user._calendar_sync_account("microsoft").stopped = False
             self.assertTrue(
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
@@ -1245,7 +1231,7 @@ class TestCreateEvents(TestCommon):
         # During preparation: ensure that the organizer is not synchronized with Outlook and
         # create a local event waiting to be synchronized (need_sync_m: True) without API calls.
         with self.mock_datetime_and_now("2024-01-01 10:00:00"):
-            self.organizer_user.microsoft_synchronization_stopped = True
+            self.organizer_user._calendar_sync_account("microsoft").stopped = True
             event = (
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
@@ -1262,15 +1248,14 @@ class TestCreateEvents(TestCommon):
             )
 
             # Assign a next sync token to ANY user to simulate a previous sync in the DB.
-            self.attendee_user.microsoft_calendar_sync_token = "OngoingToken"
+            self.attendee_user._calendar_sync_account(
+                "microsoft"
+            ).sync_token = "OngoingToken"
 
             # Mock the return of 0 events from Outlook to Odoo, then activate the user's sync.
             mock_get_events.return_value = ([], None)
             mock_insert.return_value = ("LocalEventSyncID", "event_iCalUId")
-            self.organizer_user.microsoft_synchronization_stopped = False
-            self.organizer_user.microsoft_calendar_token_validity = (
-                datetime.now() + timedelta(minutes=60)
-            )
+            self.organizer_user._calendar_sync_account("microsoft").stopped = False
             self.assertTrue(
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)

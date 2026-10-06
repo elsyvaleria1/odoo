@@ -1,6 +1,6 @@
 {
     "name": "Google Calendar Synchronization",
-    "version": "19.0.2.1.1",
+    "version": "19.0.2.3.0",
     "oldest_upgradable_version": "19.0.2.1.1",
     "category": "Productivity",
     "summary": "Synchronize calendar events with authorized Google accounts",
@@ -8,12 +8,10 @@
     "author": "Odoo S.A.",
     "license": "LGPL-3",
     "depends": [
-        "google_account",
-        "calendar",
-        "credential",
+        "calendar_sync",
+        "integration_google",
     ],
     "data": [
-        "data/google_calendar_data.xml",
         "security/ir.access.csv",
         "wizards/wizard_res_users_reset_google_calendar_views.xml",
         "views/res_config_settings_views.xml",
@@ -23,9 +21,6 @@
     "assets": {
         "web.assets_backend": [
             "calendar_google/static/src/views/**/*",
-        ],
-        "web.assets_unit_tests": [
-            "calendar_google/static/tests/**/*",
         ],
     },
 }

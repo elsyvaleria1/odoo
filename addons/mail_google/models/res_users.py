@@ -22,5 +22,5 @@ class ResUsers(models.Model):
     @api.model
     def _get_mail_server_setup_end_action(self, smtp_server):
         if smtp_server.smtp_authentication == "gmail":
-            return smtp_server.sudo().open_google_gmail_uri()
+            return smtp_server.sudo().action_mail_google_authorize()
         return super()._get_mail_server_setup_end_action(smtp_server)

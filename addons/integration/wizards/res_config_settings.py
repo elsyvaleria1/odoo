@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class ResConfigSettings(models.TransientModel):
@@ -16,3 +16,26 @@ class ResConfigSettings(models.TransientModel):
         config_parameter="integration.max_cache_entries",
         help="Maximum number of cached API responses to keep",
     )
+
+    @api.model
+    def _oauth_client_settings(self) -> dict[str, str]:
+        """{field prefix: service xmlid} of each vendor's OAuth client, shown as
+        `<prefix>_client_id` and the write-only `<prefix>_client_secret`."""
+        return {}
+
+    @api.model
+    def get_values(self):
+        res = super().get_values()
+        for prefix, xmlid in self._oauth_client_settings().items():
+            client_id = self.env.ref(xmlid)._oauth_client_id()
+            res[f"{prefix}_client_id"] = client_id or False
+        return res
+
+    def set_values(self):
+        super().set_values()
+        for prefix, xmlid in self._oauth_client_settings().items():
+            service = self.env.ref(xmlid)
+            client_id = self[f"{prefix}_client_id"] or ""
+            client_secret = self[f"{prefix}_client_secret"]
+            if client_secret or client_id != service._oauth_client_id():
+                service._set_oauth_client(client_id, client_secret)

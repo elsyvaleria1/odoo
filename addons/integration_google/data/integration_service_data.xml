@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_google" model="integration.service">
+        <field name="name">Google</field>
+        <field name="code">google</field>
+        <field name="category">other</field>
+        <field name="provider">Google LLC</field>
+        <field name="website">https://console.cloud.google.com</field>
+        <field
+            name="documentation_url">https://developers.google.com/identity/protocols/oauth2/web-server</field>
+        <field name="environment">production</field>
+        <field name="endpoint_url">https://www.googleapis.com</field>
+        <field name="auth_type">oauth2</field>
+        <field name="allow_user_credentials" eval="True" />
+        <field
+            name="oauth_auth_endpoint">https://accounts.google.com/o/oauth2/v2/auth</field>
+        <field name="oauth_token_endpoint">https://oauth2.googleapis.com/token</field>
+        <field name="oauth_scope" eval="False" />
+        <field
+            name="oauth_authorize_params">{"access_type": "offline", "prompt": "consent", "include_granted_scopes": "true"}</field>
+    </record>
+
+</odoo>

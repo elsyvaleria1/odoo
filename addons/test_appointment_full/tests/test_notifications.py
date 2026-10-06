@@ -6,13 +6,12 @@ from freezegun import freeze_time
 from odoo.tests import tagged, users
 
 from odoo.addons.calendar.tests.booking.common import AppointmentCommon
-from odoo.addons.calendar_google.models.res_users import ResUsers as GoogleUser
 from odoo.addons.calendar_google.tests.test_sync_common import TestSyncGoogle
-from odoo.addons.calendar_microsoft.models.res_users import ResUsers as MsftUser
 from odoo.addons.calendar_microsoft.tests.common import TestCommon as MsftTestCommon
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 from odoo.addons.mail.tests.common import mail_new_test_user
 
 
@@ -69,12 +68,13 @@ class TestAppointmentNotificationsMail(TestAppointmentNotificationCommon):
 @tagged("post_install", "-at_install", "mail_flow")
 class TestSyncOdoo2GoogleMail(TestSyncGoogle, TestAppointmentNotificationCommon):
     @freeze_time("2020-02-01 09:00:00")
-    @patch.object(GoogleUser, "_get_google_calendar_token", lambda user: "some-token")
+    @patch.object(
+        CalendarSyncUsers,
+        "_calendar_sync_connection",
+        lambda user, code: code == "google" and "a-connection",
+    )
     def test_appointment_cancel_notification_gcalendar(self):
         self.env["res.users.settings"].create({"user_id": self.env.user.id})
-        self.env.user.res_users_settings_id._set_google_auth_tokens(
-            "some-token", "123", 10000
-        )
         appointment = self.calendar_event
         appointment.google_id = "test_google_id"
         self.env.flush_all()
@@ -115,10 +115,14 @@ class TestAppointmentNotificationsMicrosoftCalendar(
                 "login": "ms_sync_paused_user",
             }
         )
-        sync_paused_attendee.microsoft_synchronization_stopped = True
+        sync_paused_attendee._calendar_sync_account("microsoft").stopped = True
 
     @freeze_time("2020-02-01 09:00:00")
-    @patch.object(MsftUser, "_get_microsoft_calendar_token", lambda user: "some-token")
+    @patch.object(
+        CalendarSyncUsers,
+        "_calendar_sync_connection",
+        lambda user, code: code == "microsoft" and "a-connection",
+    )
     def test_appointment_cancel_notification_msftcalendar(self):
         appointment = self.calendar_event
         appointment.microsoft_id = "test_msft_id"
@@ -131,7 +135,7 @@ class TestAppointmentNotificationsMicrosoftCalendar(
             self.cr.precommit.run()
             self.env.cr.postcommit.run()
         mock_delete.assert_called_once_with(
-            "test_msft_id", token="some-token", timeout=5
+            "test_msft_id", connection="a-connection", timeout=5
         )
         self.assertNotSentEmail()
 
@@ -140,10 +144,12 @@ class TestAppointmentNotificationsMicrosoftCalendar(
         "mike@organizer.com", "john@attendee.com", "ms_sync_paused_user", "user_public"
     )
     @patch.object(
-        MsftUser,
-        "_get_microsoft_calendar_token",
-        lambda user: (
-            user.login not in ["user_public", "john@attendee.com"] and "some-token"
+        CalendarSyncUsers,
+        "_calendar_sync_connection",
+        lambda user, code=None: (
+            code == "microsoft"
+            and user.login not in ["user_public", "john@attendee.com"]
+            and "some-token"
         ),
     )
     def test_sync_or_email_resource_appointment(self):
@@ -187,7 +193,8 @@ class TestAppointmentNotificationsMicrosoftCalendar(
                 # synced with the organizer (who can always sync in this test), but checked against the create user
                 if (
                     meeting._check_microsoft_sync_status()
-                    and self.env.user._get_microsoft_sync_status() == "sync_active"
+                    and self.env.user._calendar_sync_status("microsoft")
+                    == "sync_active"
                 ):
                     mock_insert.assert_called_once()
                     self.assertNotSentEmail()

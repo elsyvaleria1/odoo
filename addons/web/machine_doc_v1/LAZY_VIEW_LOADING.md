@@ -72,7 +72,8 @@ page load). A single unrelated eager file (`odoo_sfu.js`, WebRTC, rarely used) i
    `undefined` until the lazy bundle loads.
 
    The error string discriminates the two forms.
-   `google_calendar_controller.js` uses `patch(...prototype)` →
+   The calendar providers' patch, `calendar_sync_controller.js` since they share it,
+   uses `patch(...prototype)` →
    `undefined.prototype`. An `extends` consumer throws
    `Class extends value undefined is not a constructor or null` instead. Both
    boot-fatal.

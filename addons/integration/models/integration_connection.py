@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import timedelta
 from typing import Any, Self
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import requests
 
@@ -432,6 +432,14 @@ class IntegrationConnection(models.Model):
             )
             if not record:
                 raise UserError(self.env._("This connection's record is gone."))
+            # a record may say who authorizes it, read whatever the user may
+            # read of it; by default, whoever may write it
+            if hasattr(record, "_oauth_authorization_allowed"):
+                if not record.sudo()._oauth_authorization_allowed(user):
+                    raise AccessError(
+                        self.env._("You are not allowed to authorize this connection.")
+                    )
+                return
             record.check_access("write")
             return
         if not user.has_group("credential.group_credential_admin"):
@@ -447,18 +455,7 @@ class IntegrationConnection(models.Model):
         self.check_singleton()
         if self.credential_id and not self.user_id and not self.res_model:
             return self
-        candidates = self.search(
-            [
-                ("service_id", "=", self.service_id.id),
-                ("active", "=", True),
-                ("user_id", "=", False),
-                ("res_model", "=", False),
-                ("credential_id", "!=", False),
-                ("company_id", "in", [self.company_id.id, False]),
-            ],
-            order="company_id, sequence, id",
-        )
-        return candidates[:1]
+        return self.service_id._oauth_app_connection(self.company_id)
 
     def _oauth_client(self) -> tuple[str, str | None]:
         self.check_singleton()
@@ -562,13 +559,133 @@ class IntegrationConnection(models.Model):
             ) from None
         return access_token
 
+    def _is_oauth_authorized(self) -> bool:
+        self.check_singleton()
+        return bool(self.credential_id) and not self.needs_reauthorization
+
+    def _oauth_authorize_url(self, return_url: str | None = None) -> str:
+        self.check_singleton()
+        url = f"/integration/oauth/authorize/{self.id}"
+        return f"{url}?return_url={quote(return_url, safe='')}" if return_url else url
+
+    def _forget_oauth_authorization(self) -> None:
+        # the vault: a token credential is removed by no user's rights
+        for connection in self.sudo():
+            credential = connection.credential_id
+            connection.write(
+                {
+                    "credential_id": False,
+                    "oauth_redirect_uri": False,
+                    "needs_reauthorization": False,
+                }
+            )
+            credential.unlink()
+
     def action_oauth_authorize(self) -> dict[str, Any]:
         self.check_singleton()
         return {
             "type": "ir.actions.act_url",
-            "url": f"/integration/oauth/authorize/{self.id}",
+            "url": self._oauth_authorize_url(),
             "target": "self",
         }
+
+    @api.model
+    def _find_bound(self, record) -> Self:
+        record.check_singleton()
+        return self.sudo().search(
+            [("res_model", "=", record._name), ("res_id", "=", record.id)], limit=1
+        )
+
+    @api.model
+    def _bound(self, record, service, scope: str = "") -> Self:
+        """`record`'s own connection to `service`, created on first use."""
+        connection = self._find_bound(record)
+        if not connection:
+            company = record["company_id"] if "company_id" in record._fields else None
+            connection = connection.create(
+                {
+                    "name": record.display_name,
+                    "service_id": service.id,
+                    "company_id": company.id if company else False,
+                    "environment": service.environment,
+                    "res_model": record._name,
+                    "res_id": record.id,
+                    "oauth_scope": scope or False,
+                }
+            )
+        elif scope and connection.oauth_scope != scope:
+            connection.write(
+                {
+                    "oauth_scope": scope,
+                    "needs_reauthorization": bool(connection.credential_id),
+                }
+            )
+        return connection
+
+    @api.model
+    def _find_personal(self, service, user=None) -> Self:
+        user = user or self.env.user
+        return self.sudo().search(
+            [
+                ("service_id", "=", service.id),
+                ("user_id", "=", user.id),
+                ("environment", "=", service.environment),
+                ("res_model", "=", False),
+                ("active", "=", True),
+            ],
+            order="sequence, id",
+            limit=1,
+        )
+
+    def _adopt_credential(
+        self, credential, expires=None, client=None, redirect_path=None
+    ) -> None:
+        """Bind tokens authorized before connections existed to this
+        connection, so the authorization carries over; `client` puts an OAuth
+        client of its own beside them, `redirect_path` names the callback they
+        were authorized through when it is not the service's."""
+        self.check_singleton()
+        values = dict(client or {})
+        if self.user_id:
+            values["owner_user_id"] = self.user_id.id
+        if expires and not credential.oauth_token_date_expiration:
+            values["oauth_token_date_expiration"] = expires
+        credential.write(values)
+        base_url = self.env.registry.settings.get(self.env, "web.base.url", "")
+        self.write(
+            {
+                "credential_id": credential.id,
+                "oauth_redirect_uri": base_url.rstrip("/")
+                + (redirect_path or self.service_id.oauth_redirect_path),
+            }
+        )
+
+    @api.model
+    def _personal(self, service, user=None, scope: str = "") -> Self:
+        user = user or self.env.user
+        connection = self._find_personal(service, user)
+        if not connection:
+            connection = connection.create(
+                {
+                    "name": f"{service.name} · {user.name}",
+                    "service_id": service.id,
+                    "user_id": user.id,
+                    "company_id": user.company_id.id,
+                    "environment": service.environment,
+                    "oauth_scope": scope or False,
+                }
+            )
+        granted = (connection.oauth_scope or "").split()
+        missing = [word for word in scope.split() if word not in granted]
+        if missing:
+            # an added scope is a new consent: the tokens held do not carry it
+            connection.write(
+                {
+                    "oauth_scope": " ".join(granted + missing),
+                    "needs_reauthorization": bool(connection.credential_id),
+                }
+            )
+        return connection
 
     @api.model
     def _shared(self, service, company=None) -> Self:

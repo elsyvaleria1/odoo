@@ -1,4 +1,3 @@
-import time
 from unittest.mock import ANY, Mock, patch
 
 from odoo.exceptions import UserError
@@ -21,11 +20,20 @@ class TestFetchmailOutlook(FakedDialCase, TransactionCase):
                 "name": "Test server",
                 "server_type": "outlook",
                 "user": "test@example.com",
-                "microsoft_outlook_access_token": "test_access_token",
-                "microsoft_outlook_access_token_expiration": time.time() + 1000000,
                 "password": "",
                 "encryption": "ssl_strict",
             }
+        )
+
+        self.env["integration.connection"]._bound(
+            mail_server, self.env.ref("integration_microsoft.service_microsoft")
+        )._oauth_store_tokens(
+            {
+                "access_token": "test_access_token",
+                "refresh_token": "r",
+                "expires_in": 3600,
+            },
+            "",
         )
 
         mail_server._connect__()
