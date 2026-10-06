@@ -1232,9 +1232,12 @@ function onWriteItems(target) {
     onWriteAtom(atom);
   }
 }
+function isPlainArray(raw) {
+  return Object.getPrototypeOf(raw) === Array.prototype;
+}
 function readArrayItems(array) {
   const raw = targets.get(array);
-  if (raw === void 0 || deepProxies.get(raw) !== array) {
+  if (raw === void 0 || deepProxies.get(raw) !== array || !isPlainArray(raw)) {
     return array;
   }
   if (isObserving()) {
@@ -6919,8 +6922,8 @@ var blockDom = {
 };
 var __info__ = {
   version: App.version,
-  date: "2026-10-06T05:41:40.861Z",
-  hash: "80dd04cc",
+  date: "2026-10-06T10:20:04.177Z",
+  hash: "cb976f64",
   url: "https://github.com/odoo/owl"
 };
 
