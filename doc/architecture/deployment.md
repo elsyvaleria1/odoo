@@ -341,7 +341,7 @@ Knobs, read from the environment:
 
 | Variable | Default | Bounds |
 |---|---|---|
-| `ODOO_MAX_HTTP_THREADS` | `(db_maxconn - max_cron_threads - job_workers - stream_workers) // 2`, floor `1`; a `--stop-after-init` run spawns no listener and uses `db_maxconn // 2` | concurrent requests on the threaded server; `0` is unbounded. Each cron, job and stream listener holds one `db_maxconn` permit (its `LISTEN` session) for the life of the server: `--db_maxconn=6` with the defaults serves **1** request at a time |
+| `ODOO_MAX_HTTP_THREADS` | `(db_maxconn - max_cron_threads - job_workers - stream_workers) // 2`, floor `1`; a `--stop-after-init` run spawns no listener and uses `db_maxconn // 2`; prefork's evented child holds no listener and uses `(db_maxconn_gevent or db_maxconn) // 2` | concurrent requests on the threaded server; `0` is unbounded. Each cron, job and stream listener holds one `db_maxconn` permit (its `LISTEN` session) for the life of the server: `--db_maxconn=6` with the defaults serves **1** request at a time |
 | `ODOO_HTTP_SOCKET_TIMEOUT` | `2 s` (`5 s` under `test_enable`) | each blocking read or write of a body or a response; a pause inside the head is bounded by `ODOO_HTTP_HEAD_TIMEOUT` instead, on both servers |
 | `ODOO_HTTP_HEAD_TIMEOUT` | `10 s` | from the first byte of a request head to its end; a partial head past it gets `408` |
 | `ODOO_HTTP_KEEPALIVE_TIMEOUT` | `75 s` | an idle kept-alive connection is closed after this |

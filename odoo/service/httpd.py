@@ -51,18 +51,28 @@ def count_listener_permits(settings: ServerSettings, *, listeners_spawned: bool)
     return settings.max_cron_threads + settings.job_workers + settings.stream_workers
 
 
+def get_http_pool_size(settings: ServerSettings, *, evented: bool = False) -> int:
+    # the evented child's pool is db_maxconn_gevent (odoo/db/settings.py)
+    return (settings.db_maxconn_gevent if evented else 0) or settings.db_maxconn
+
+
 def compute_http_thread_limit(
-    settings: ServerSettings, *, listeners_spawned: bool = True
+    settings: ServerSettings,
+    *,
+    listeners_spawned: bool = True,
+    evented: bool = False,
 ) -> tuple[int, int]:
     listeners = count_listener_permits(settings, listeners_spawned=listeners_spawned)
-    auto_limit = max((settings.db_maxconn - listeners) // 2, 1)
+    pool = get_http_pool_size(settings, evented=evented)
+    auto_limit = max((pool - listeners) // 2, 1)
     limit = get_env_int("ODOO_MAX_HTTP_THREADS", auto_limit, minimum=0, logger=_logger)
     _debug.logic(
         "httpd.thread_limit",
         limit=limit,
         auto_limit=auto_limit,
-        source="env" if limit != auto_limit else "db_maxconn",
-        db_maxconn=settings.db_maxconn,
+        source="env" if limit != auto_limit else "pool",
+        pool=pool,
+        evented=evented,
         listeners=listeners,
         listeners_spawned=listeners_spawned,
         max_cron_threads=settings.max_cron_threads,
@@ -78,30 +88,35 @@ def announce_thread_budget(
     auto_limit: int,
     *,
     listeners_spawned: bool = True,
+    evented: bool = False,
 ) -> None:
+    pool_name = (
+        "db_maxconn_gevent" if evented and settings.db_maxconn_gevent else "db_maxconn"
+    )
+    pool = get_http_pool_size(settings, evented=evented)
     if not limit:
         _logger.info(
             "HTTP concurrency is unbounded (ODOO_MAX_HTTP_THREADS=0); "
-            "in-flight requests are limited only by db_maxconn=%s",
-            settings.db_maxconn,
+            "in-flight requests are limited only by %s=%s",
+            pool_name,
+            pool,
         )
         return
     if limit != auto_limit:
         source = "ODOO_MAX_HTTP_THREADS"
     elif listeners_spawned:
         source = (
-            "(db_maxconn %s - max_cron_threads %s - job_workers %s - stream_workers %s) // 2"
+            "(%s %s - max_cron_threads %s - job_workers %s - stream_workers %s) // 2"
             % (
-                settings.db_maxconn,
+                pool_name,
+                pool,
                 settings.max_cron_threads,
                 settings.job_workers,
                 settings.stream_workers,
             )
         )
     else:
-        source = (
-            "db_maxconn %s // 2 (no listener thread is spawned)" % settings.db_maxconn
-        )
+        source = "%s %s // 2 (no listener thread is spawned)" % (pool_name, pool)
     log = _logger.warning if limit < 4 else _logger.info
     log(
         "At most %d HTTP request(s) will be served concurrently, from %s. "
@@ -271,18 +286,20 @@ class ThreadedHTTPServer:
         *,
         announce: bool = True,
         listeners_spawned: bool = True,
+        evented: bool = False,
     ) -> None:
         self.settings = current()
         self.app = app
         self.limits = TransportLimits.from_environment()
         self.max_http_threads, auto_limit = compute_http_thread_limit(
-            self.settings, listeners_spawned=listeners_spawned
+            self.settings, listeners_spawned=listeners_spawned, evented=evented
         )
         announce_thread_budget(
             self.settings,
             self.max_http_threads,
             auto_limit,
             listeners_spawned=listeners_spawned,
+            evented=evented,
         )
         self.socket, self.listener_outlives_exec = self._bind(
             host, port, announce=announce

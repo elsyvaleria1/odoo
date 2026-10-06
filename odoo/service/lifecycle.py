@@ -538,12 +538,18 @@ def _get_descriptor_budget_demand() -> int:
     from .httpd import compute_http_thread_limit, count_listener_permits
 
     settings = current()
+    idle = TransportLimits.from_environment().max_idle_connections
     threads, _ = compute_http_thread_limit(settings)
-    http = threads + TransportLimits.from_environment().max_idle_connections
+    http = threads + idle
     listeners = count_listener_permits(settings, listeners_spawned=True)
     if settings.workers:
         worker = settings.db_maxconn + 1
-        evented = (settings.db_maxconn_gevent or settings.db_maxconn) + http
+        evented_threads, _ = compute_http_thread_limit(
+            settings, listeners_spawned=False, evented=True
+        )
+        evented = (
+            (settings.db_maxconn_gevent or settings.db_maxconn) + evented_threads + idle
+        )
         return max(worker, evented) + DESCRIPTOR_HEADROOM
     return settings.db_maxconn + http + listeners + DESCRIPTOR_HEADROOM
 

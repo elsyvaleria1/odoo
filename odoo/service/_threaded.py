@@ -824,8 +824,15 @@ class WebsocketServer(CommonServer):
             signal.signal(signal.SIGUSR2, log_ormcache_stats)
 
         try:
+            # prefork runs the cron, job and stream listeners as children
+            # of their own: this process holds none of their permits
             self.httpd = ThreadedHTTPServer(
-                self.interface, self.port, self.app, announce=False
+                self.interface,
+                self.port,
+                self.app,
+                announce=False,
+                listeners_spawned=False,
+                evented=True,
             )
             self.logger.info(
                 "Evented/WebSocket service running on %s:%s",
