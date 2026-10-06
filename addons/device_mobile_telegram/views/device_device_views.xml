@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_device_view_form" model="ir.ui.view">
+        <field name="name">device.device.view.form.telegram</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device_mobile.device_device_view_form" />
+        <field name="arch" type="xml">
+            <field name="line_number" position="after">
+                <field
+                    name="telegram_account_id"
+                    groups="base.group_system"
+                    invisible="not telegram_account_id" />
+                <field
+                    name="telegram_user_id"
+                    widget="many2one_avatar_user"
+                    groups="base.group_system"
+                    invisible="not telegram_account_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

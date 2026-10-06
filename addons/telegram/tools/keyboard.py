@@ -17,6 +17,16 @@ def keyboard(*rows) -> dict:
     return {"inline_keyboard": [list(row) for row in rows if row]}
 
 
+def share_phone(text) -> dict:
+    """A reply keyboard whose one button shares the person's own contact:
+    Telegram fills in the number their account is registered with."""
+    return {
+        "keyboard": [[{"text": text, "request_contact": True}]],
+        "one_time_keyboard": True,
+        "resize_keyboard": True,
+    }
+
+
 def single(text, data):
     return keyboard([button(text, data)])
 

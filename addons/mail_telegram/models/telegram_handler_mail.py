@@ -71,6 +71,10 @@ class TelegramHandlerMail(models.AbstractModel):
         on."""
         if not bot.notify_mail:
             return
+        refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
+        if refusal:
+            self._explain_mail_refusal(bot, chat, internal_user, refusal)
+            return
         tr = translation_env(bot, chat)
         url = bot._mini_app_url(f"/telegram/inbox/{bot.id}")
         if not url:
@@ -120,7 +124,25 @@ class TelegramHandlerMail(models.AbstractModel):
         replied = (message.get("reply_to_message") or {}).get("message_id")
         return bool(self._delivered(bot, chat, replied))
 
+    def _get_chat_mail_refusal(self, bot, chat, user) -> str | None:
+        """Why this chat's Telegram account may not carry `user`'s Odoo mail
+        now, in the person's words; None when it may."""
+        tr = self._tr(bot, chat)
+        if not user or not chat.account_id:
+            return tr._("Connect Telegram to Odoo first.")
+        return bot.with_env(tr)._get_mail_refusal(chat.account_id, user)
+
+    def _explain_mail_refusal(self, bot, chat, user, refusal) -> None:
+        if user and bot._is_phone_needed_for_mail(chat.account_id, user):
+            bot._queue_phone_request(chat, refusal)
+            return
+        bot._queue_text(chat, refusal, html=False)
+
     def _on_message(self, bot, chat, message, partner, internal_user):
+        refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
+        if refusal:
+            self._explain_mail_refusal(bot, chat, internal_user, refusal)
+            return True
         replied = (message.get("reply_to_message") or {}).get("message_id")
         parent = self._delivered(bot, chat, replied)
         if parent:
@@ -248,6 +270,7 @@ class TelegramHandlerMail(models.AbstractModel):
             not posted
             or not internal_user
             or posted.author_id != internal_user.partner_id
+            or self._get_chat_mail_refusal(bot, chat, internal_user)
         ):
             return False
         thread = self._thread_of(posted, internal_user)
@@ -276,6 +299,8 @@ class TelegramHandlerMail(models.AbstractModel):
         user = account._acting_user("internal")
         if chat.chat_type != "private" or not posted or not user:
             return False
+        if self._get_chat_mail_refusal(bot, chat, user):
+            return False
         thread = self._thread_of(posted, user)
         if thread is None:
             return False
@@ -290,6 +315,7 @@ class TelegramHandlerMail(models.AbstractModel):
             and bool(internal_user)
             and chat.chat_type == "private"
             and bool(self._recent_threads(bot, chat))
+            and not self._get_chat_mail_refusal(bot, chat, internal_user)
         )
 
     def _recent_threads(self, bot, chat):
@@ -344,6 +370,11 @@ class TelegramHandlerMail(models.AbstractModel):
                 callback_query.get("id"), tr._("Connect Telegram to Odoo first.")
             )
             return True
+        refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
+        if refusal:
+            # a button's answer holds 200 characters at most
+            bot.answer_callback_query(callback_query.get("id"), refusal[:200])
+            return True
         _prefix, action, argument = (data.split(":", 2) + ["", ""])[:3]
         if action == "read":
             self._mark_read(internal_user, int(argument or 0))
@@ -392,6 +423,86 @@ class TelegramHandlerMail(models.AbstractModel):
                 member._mark_as_read(message.id)
             return
         message.with_user(user).set_message_done()
+
+    # -- connecting -----------------------------------------------------------
+
+    def _on_account_bound(self, bot, chat, binding) -> None:
+        """Whoever just connected learns where their notifications go: here,
+        when this bot delivers them to this account, and then here from now
+        on; else what is missing."""
+        user = chat.account_id._acting_user("internal")
+        if not user:
+            return
+        tr = self._tr(bot, chat)
+        if bot.notify_mail:
+            refusal = self._get_chat_mail_refusal(bot, chat, user)
+            if refusal:
+                self._explain_mail_refusal(bot, chat, user, refusal)
+                return
+            user._update_telegram_notify_chat(chat)
+            bot._queue_text(
+                chat,
+                tr._(
+                    "Your Odoo notifications will arrive here. Reply to one to "
+                    "answer it in Odoo."
+                ),
+                html=False,
+            )
+            return
+        notifying = bot.env["telegram.bot"]._get_notifying_bots(user)
+        reached = (
+            bot.env["telegram.chat"]
+            ._for_user(user, notifying)
+            .filtered(lambda own: own.account_id == chat.account_id)
+        )
+        if not notifying or reached:
+            return
+        link = notifying[:1]._deep_link()
+        if link:
+            bot._queue_text(
+                chat,
+                tr._(
+                    "Your Odoo notifications come from another bot: open "
+                    "%(link)s and press Start."
+                )
+                % {"link": link},
+                html=False,
+            )
+
+    def _on_phone_verified(self, bot, chat, account) -> None:
+        """A number Telegram vouched for may be what the notifications were
+        waiting for."""
+        user = account._acting_user("internal")
+        if not user or not bot.notify_mail:
+            return
+        refusal = self._get_chat_mail_refusal(bot, chat, user)
+        if refusal:
+            bot._queue_text(chat, refusal, html=False)
+            return
+        user._update_telegram_notify_chat(chat)
+        bot._queue_text(
+            chat,
+            self._tr(bot, chat)._("Your Odoo notifications will arrive here."),
+            html=False,
+        )
+
+    def _on_bot_membership(self, bot, chat, status):
+        """Blocking the bot that delivers someone's notifications stops them:
+        Odoo tells them, unless another chat of theirs takes over."""
+        if status != "kicked" or chat.chat_type != "private" or not bot.notify_mail:
+            return
+        user = chat.account_id._acting_user("internal") if chat.account_id else None
+        if not user:
+            return
+        target = user._get_telegram_notify_chat()
+        if target and target != chat:
+            return
+        if not target and chat not in user._get_telegram_notify_chats():
+            return
+        user._notify_telegram_unreachable(
+            chat,
+            user.with_context(lang=user.lang).env._("you blocked the bot."),
+        )
 
     # -- content --------------------------------------------------------------
 

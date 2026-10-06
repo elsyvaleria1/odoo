@@ -138,6 +138,16 @@ class MixinTelegramHandler(models.AbstractModel):
         """The bot's own status in the chat changed: member, administrator,
         left, kicked."""
 
+    def _on_account_bound(self, bot, chat, binding) -> None:
+        """The person of the private chat `chat` just proved who they are in
+        Odoo through `bot`: `binding` is who their account is now. Every
+        handler hears it, enabled on the bot or not."""
+
+    def _on_phone_verified(self, bot, chat, account) -> None:
+        """The person of the private chat `chat` shared their own number,
+        which Telegram vouched for: `account.phone` is it now. Every handler
+        hears it, enabled on the bot or not."""
+
     def _on_business_message(
         self, bot, connection, chat, message, from_owner, edited
     ) -> bool:

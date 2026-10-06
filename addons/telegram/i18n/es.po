@@ -446,6 +446,11 @@ msgid "Commands must start with \"/\" (e.g., /pago, /ayuda, /start)"
 msgstr "Los comandos deben empezar con \"/\" (p. ej., /pago, /ayuda, /start)"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_message__display_name
 msgid "Computed display name with message preview"
 msgstr "Nombre calculado con vista previa del mensaje"
@@ -728,6 +733,22 @@ msgid "Event"
 msgstr "Evento"
 
 #. module: telegram
+#: model:ir.model.fields,help:telegram.field_res_users__telegram_binding_ids
+msgid "Every binding of a Telegram account straight to this user."
+msgstr ""
+"Cada vinculación de una cuenta de Telegram directamente con este usuario."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_res_bank__telegram_binding_ids
+#: model:ir.model.fields,help:telegram.field_res_company__telegram_binding_ids
+#: model:ir.model.fields,help:telegram.field_res_partner__telegram_binding_ids
+msgid ""
+"Every binding of a Telegram account to this contact, past ones included."
+msgstr ""
+"Cada vinculación de una cuenta de Telegram con este contacto, incluidas las "
+"anteriores."
+
+#. module: telegram
 #: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__revoked_reason__expired
 #: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__reason__expired
 msgid "Expired unconfirmed"
@@ -748,6 +769,11 @@ msgstr "Fallido"
 #: model:ir.model.fields,field_description:telegram.field_telegram_chat__failed_command_count
 msgid "Failed Command Count"
 msgstr "Comandos fallidos"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__delivery_failed_at
+msgid "Failing Since"
+msgstr "Fallando desde"
 
 #. module: telegram
 #. odoo-python
@@ -819,6 +845,22 @@ msgstr "Va, sigue donde te quedaste. Responde el último mensaje que te mandé."
 #: model_terms:ir.ui.view,arch_db:telegram.view_telegram_message_search
 msgid "Has Media"
 msgstr "Tiene archivos multimedia"
+
+#. module: telegram
+#: model:res.groups,comment:telegram.privilege_operate_bot
+msgid ""
+"Held by every Telegram update and every hook that queues a Telegram message,"
+" whoever it runs as: the bot's chats, its message ledger, the accounts and "
+"bindings of the people it talks to, its link tokens, its receivers and "
+"token, the stand-in contact of a new sender. It reads no business data: what"
+" an update does in Odoo is its sender's own right."
+msgstr ""
+"La tiene cada actualización de Telegram y cada proceso que encola un mensaje"
+" de Telegram, se ejecute como quien se ejecute: los chats del bot, su "
+"registro de mensajes, las cuentas y vinculaciones de las personas con las "
+"que habla, sus tokens de enlace, sus receptores y su token, y el contacto "
+"provisional de un remitente nuevo. No lee datos de negocio: lo que una "
+"actualización hace en Odoo es derecho propio de su remitente."
 
 #. module: telegram
 #. odoo-python
@@ -926,6 +968,11 @@ msgstr ""
 "Idioma en que responde el bot cuando el chat no tiene un contacto vinculado "
 "con idioma propio, o siempre si está activado Responder siempre en el idioma"
 " del bot."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__delivery_error
+msgid "Last Delivery Error"
+msgstr "Último error de entrega"
 
 #. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_chat__last_error
@@ -1191,6 +1238,16 @@ msgid "Per Minute"
 msgstr "Por minuto"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__phone
+msgid "Phone"
+msgstr "Teléfono"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_account__phone_verified_at
+msgid "Phone Verified On"
+msgstr "Teléfono verificado el"
+
+#. module: telegram
 #: model:ir.model.fields.selection,name:telegram.selection__telegram_message__media_type__photo
 msgid "Photo"
 msgstr "Foto"
@@ -1205,6 +1262,11 @@ msgstr "Fotos"
 msgid "Prevent spam with rate limiting (token bucket algorithm)"
 msgstr ""
 "Evita el spam con límite de frecuencia (algoritmo de cubeta de tokens)"
+
+#. module: telegram
+#: model:res.groups,name:telegram.privilege_operate_bot
+msgid "Privilege: the bot keeps the records of what it serves"
+msgstr "Privilegio: el bot conserva los registros de lo que atiende"
 
 #. module: telegram
 #: model:res.groups,name:telegram.privilege_chat_conversation
@@ -1449,6 +1511,14 @@ msgid "Telegram Binding Event"
 msgstr "Evento de vínculo de Telegram"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_res_bank__telegram_binding_ids
+#: model:ir.model.fields,field_description:telegram.field_res_company__telegram_binding_ids
+#: model:ir.model.fields,field_description:telegram.field_res_partner__telegram_binding_ids
+#: model:ir.model.fields,field_description:telegram.field_res_users__telegram_binding_ids
+msgid "Telegram Bindings"
+msgstr "Vinculaciones de Telegram"
+
+#. module: telegram
 #: model_terms:ir.ui.view,arch_db:telegram.view_telegram_bot_form
 msgid "Telegram Bot"
 msgstr "Bot de Telegram"
@@ -1602,6 +1672,16 @@ msgid "Text"
 msgstr "Texto"
 
 #. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid ""
+"That is not your own number. To share yours, press the button that shares "
+"your phone number."
+msgstr ""
+"Ese no es tu propio número. Para compartir el tuyo, pulsa el botón que "
+"comparte tu número de teléfono."
+
+#. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_message__api_method
 msgid "The Bot API method a queued message is sent with."
 msgstr "El método de la API de bots con que se envía un mensaje en cola."
@@ -1657,17 +1737,26 @@ msgstr ""
 
 #. module: telegram
 #. odoo-python
-#: code:addons/telegram/models/telegram_chat.py:0
-msgid "The chat has no flow to move."
-msgstr "El chat no tiene ningún flujo que mover."
-
-#. module: telegram
-#. odoo-python
 #: code:addons/telegram/models/telegram_router.py:0
 msgid ""
 "The channel %(title)s was not connected: post the link there as one of its "
 "administrators, from this Telegram account."
 msgstr "El canal %(title)s no se conectó: publica el enlace ahí como uno de sus administradores, desde esta cuenta de Telegram."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_chat.py:0
+msgid "The chat has no flow to move."
+msgstr "El chat no tiene ningún flujo que mover."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__company_id
+msgid ""
+"The company this bot speaks for: what it reads and files is that company's, "
+"whoever the update runs as."
+msgstr ""
+"La empresa en nombre de la que habla este bot: lo que lee y registra es de "
+"esa empresa, se ejecute la actualización como quien se ejecute."
 
 #. module: telegram
 #. odoo-python
@@ -1729,6 +1818,17 @@ msgstr ""
 #: model:ir.model.fields,help:telegram.field_telegram_message__target_id
 msgid "The message an edit or a deletion applies to."
 msgstr "El mensaje al que se aplica una edición o un borrado."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_account__phone
+msgid ""
+"The number this Telegram account is registered with, as Telegram gave it "
+"when its owner shared their own contact with a bot. Telegram never says when"
+" it changes: the owner shares it again."
+msgstr ""
+"El número con el que está registrada esta cuenta de Telegram, tal como "
+"Telegram lo dio cuando su dueño compartió su propio contacto con un bot. "
+"Telegram nunca avisa cuando cambia: el dueño lo vuelve a compartir."
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_chat__account_id
@@ -1988,6 +2088,15 @@ msgid "What the failure meant: the tools.errors class it was raised as."
 msgstr "Qué significó el fallo: la clase de tools.errors con que se lanzó."
 
 #. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__delivery_failed_at
+msgid ""
+"When Telegram started refusing what the bot sends here: set by the first "
+"failed message, cleared by the next one sent."
+msgstr ""
+"Cuándo empezó Telegram a rechazar lo que el bot envía aquí: lo fija el "
+"primer mensaje fallido y lo borra el siguiente que se envía."
+
+#. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_chat__partner_id
 msgid "Who the private chat's person is in Odoo, by their active binding."
 msgstr ""
@@ -2073,6 +2182,18 @@ msgstr "▶️ Continuar con lo que traigo"
 #, python-format
 msgid "⚠️ You already have %(flow)s in progress."
 msgstr "⚠️ Ya tienes %(flow)s en proceso."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "✓ Your number %(phone)s is recorded."
+msgstr "✓ Tu número %(phone)s quedó registrado."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot.py:0
+msgid "📱 Share my phone number"
+msgstr "📱 Compartir mi número de teléfono"
 
 #. module: telegram
 #. odoo-python

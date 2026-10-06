@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_bot_view_form_company_phones" model="ir.ui.view">
+        <field name="name">telegram.bot.form.company.phones</field>
+        <field name="model">telegram.bot</field>
+        <field name="inherit_id" ref="mail_telegram.telegram_bot_view_form_mail" />
+        <field name="arch" type="xml">
+            <field name="notify_mail" position="after">
+                <field name="notify_company_phones_only" invisible="not notify_mail" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_phone_telegram" model="ir.access.class">
+        <field name="name">device_mobile_telegram.phone_telegram</field>
+        <field
+            name="description">The Telegram account a company phone's number belongs to, and who it acts as in Odoo: which person is behind which phone. Administrators read it.</field>
+    </record>
+
+    <record id="access_phone_telegram_system" model="ir.access">
+        <field name="name">device_mobile_telegram.phone_telegram: administrators</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_phone_telegram" />
+    </record>
+
+</odoo>

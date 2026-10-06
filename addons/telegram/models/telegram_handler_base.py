@@ -96,6 +96,8 @@ class TelegramHandlerBase(models.AbstractModel):
             % {"name": binding.partner_id.name},
             parse_mode=None,
         )
+        for handler in self.env["telegram.router"]._handlers():
+            handler._on_account_bound(bot, chat, binding)
 
     @log_command_execution
     def _handle_disconnect_command(
@@ -204,6 +206,39 @@ class TelegramHandlerBase(models.AbstractModel):
         self, bot, chat, message, partner, internal_user
     ) -> None:
         tr_env = translation_env(bot, chat)
+        account = chat.account_id
+        contact = message.get("contact") or {}
+        sender_id = str((message.get("from") or {}).get("id") or "")
+        # Telegram sets a shared contact's user_id to the account its number
+        # belongs to: only the sender's own vouches for their number
+        own = (
+            chat.chat_type == "private"
+            and account
+            and sender_id == account.tg_user_id
+            and str(contact.get("user_id") or "") == sender_id
+        )
+        if own:
+            account._update_phone(contact.get("phone_number"))
+            bot.send_message(
+                chat.chat_id,
+                tr_env._("✓ Your number %(phone)s is recorded.")
+                % {"phone": tg.escape(account.phone)},
+                reply_markup={"remove_keyboard": True},
+            )
+            for handler in self.env["telegram.router"]._handlers():
+                handler._on_phone_verified(bot, chat, account)
+            if partner:
+                return
+        elif contact.get("user_id") and chat.chat_type == "private":
+            bot.send_message(
+                chat.chat_id,
+                tr_env._(
+                    "That is not your own number. To share yours, press the "
+                    "button that shares your phone number."
+                ),
+                parse_mode=None,
+            )
+            return
         if partner:
             bot.send_message(
                 chat.chat_id,

@@ -146,3 +146,48 @@ class TestAPhoneIsNeverDialled(DeviceTransactionCase):
             self.env["device.device"]._cron_auto_reconnect()
             self.env["device.device"]._cron_poll_devices()
         get.assert_not_called()
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneNumber(DeviceTransactionCase):
+    """A company phone records its SIM's number, keyed as calls and Telegram
+    accounts are matched to it, and no two active phones share one."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.env["device.profile"].create(
+            {"name": "Phone Config", "auth_type": "bearer", "auth_token": "phone_tok"}
+        )
+
+    def _phone(self, identifier, number):
+        return self.env["device.device"].create(
+            {
+                "name": identifier,
+                "identifier": identifier,
+                "config_id": self.config.id,
+                "comm_protocol": "https",
+                "endpoint": "x",
+                "device_category_id": self.env.ref(
+                    "device_mobile.device_category_mobile_phone"
+                ).id,
+                "line_number": number,
+            }
+        )
+
+    def test_a_phone_number_is_keyed_by_its_last_digits(self):
+        phone = self._phone("MOB-NUM-1", "+52 1 55 1234 5678")
+
+        self.assertEqual(phone.line_number_digits, "5512345678")
+
+    def test_two_phones_cannot_share_a_number(self):
+        self._phone("MOB-NUM-2", "55 1234 5678")
+
+        with self.assertRaises(ValidationError):
+            self._phone("MOB-NUM-3", "+52 55 1234 5678")
+
+    def test_an_archived_phone_releases_its_number(self):
+        old = self._phone("MOB-NUM-4", "55 8765 4321")
+        old.active = False
+
+        self._phone("MOB-NUM-5", "55 8765 4321")

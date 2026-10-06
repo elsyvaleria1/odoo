@@ -1,5 +1,7 @@
 from odoo import api, fields, models, tools
 
+from odoo.addons.telegram.tools.authority import keeping, operating
+
 
 class TelegramBot(models.Model):
     _inherit = "telegram.bot"
@@ -27,6 +29,41 @@ class TelegramBot(models.Model):
     @api.model
     @tools.ormcache(cache="mail")
     def _get_notifying_bot_ids(self) -> tuple[int, ...]:
-        # the cache is shared by every user: the caller looks up as sudo
-        bots = self.with_context(active_test=True)
+        # one answer for every caller, so read past the company guard that
+        # would make it the first caller's: which bots deliver is the bots'
+        # own configuration
+        bots = keeping(self).with_context(active_test=True)
         return tuple(bots.search([("notify_mail", "=", True)]).ids)
+
+    @api.model
+    def _get_notifying_bots(self, user):
+        """The bots delivering `user`'s notifications: those that deliver any
+        and speak for a company of theirs, where their replies are heard.
+        Read as `user`, in their companies: the answer is theirs, whoever
+        asks -- a poster of another company, the outbox, the webhook."""
+        bots = operating(
+            self.with_user(user).with_context(allowed_company_ids=user.company_ids.ids)
+        )
+        bots = bots.browse(self._get_notifying_bot_ids()).exists()
+        return bots.filtered(lambda bot: bot._admits_user(user))
+
+    def _get_mail_refusal(self, account, user) -> str | None:
+        """Why this bot may not carry `user`'s Odoo mail to the Telegram
+        `account`, in words for that user; None when it may."""
+        self.check_singleton()
+        if not self._admits_user(user):
+            return self.env._(
+                "This bot speaks for %(company)s, a company you do not belong to.",
+                company=self.company_id.name,
+            )
+        if not account or account._acting_user("internal") != user:
+            return self.env._("This Telegram account is not connected to you.")
+        return None
+
+    def _can_deliver_mail(self, account, user) -> bool:
+        return self._get_mail_refusal(account, user) is None
+
+    def _is_phone_needed_for_mail(self, account, user) -> bool:
+        """Whether sharing the account's phone number is what stands between
+        it and `user`'s Odoo mail."""
+        return False

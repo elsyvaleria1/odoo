@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_device_view_form" model="ir.ui.view">
+        <field name="name">device.device.view.form.mobile</field>
+        <field name="model">device.device</field>
+        <field name="inherit_id" ref="device.view_device_device_form" />
+        <field name="arch" type="xml">
+            <field name="device_category_id" position="after">
+                <field name="device_category_code" invisible="1" />
+                <field
+                    name="line_number"
+                    widget="phone"
+                    invisible="device_category_code != 'mobile_phone'" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -3,7 +3,7 @@ from datetime import timedelta
 from odoo import fields, models
 
 from odoo.addons.telegram.tools import format as tg
-from odoo.addons.telegram.tools.authority import keeping, operating
+from odoo.addons.telegram.tools.authority import operating
 
 _ATTACHMENT_LIMIT = 20 * 1024 * 1024
 _CHAT_TYPES = ("chat", "group")
@@ -58,7 +58,9 @@ class MixinMailThread(models.AbstractModel):
 
     def _notify_thread_by_telegram(self, message, recipients_data) -> None:
         """Queue the message for every recipient whose preferences ask for it
-        on Telegram and whose Telegram is connected to a notifying bot."""
+        on Telegram, in the one chat their notifications go to."""
+        if self.env.context.get("mail_telegram_skip"):
+            return
         candidates = [
             (recipient, kind)
             for recipient in recipients_data
@@ -67,16 +69,9 @@ class MixinMailThread(models.AbstractModel):
         ]
         if not candidates:
             return
-        telegram_bots = operating(self.env["telegram.bot"])
-        bots = telegram_bots.browse(telegram_bots._get_notifying_bot_ids()).exists()
-        if not bots:
+        if not operating(self.env["telegram.bot"])._get_notifying_bot_ids():
             return
-        # a bot speaks for one company: the record's, when it has one, and one
-        # the recipient belongs to, or their reply lands where the bot does
-        # not act
-        bots = keeping(bots)
-        if company := self[:1]._mail_get_companies().get(self[:1].id):
-            bots = bots.filtered(lambda bot: bot.company_id == company)
+        company = self[:1]._mail_get_companies().get(self[:1].id)
         users = operating(self.env["res.users"])
         for recipient, kind in candidates:
             # a channel member is tagged by partner, without its user; the bot
@@ -90,8 +85,15 @@ class MixinMailThread(models.AbstractModel):
             when = self._telegram_preference(user, kind)
             if when == "never":
                 continue
-            serving = bots.filtered(lambda bot, user=user: bot._admits_user(user))
-            chat = self.env["telegram.chat"]._for_user(user, serving)[:1]
+            chat = user._get_telegram_notify_chat()
+            # a bot speaks for one company: the record's, when it has one, or
+            # the reply lands where the bot does not act
+            if company and chat.bot_id.company_id != company:
+                chat = user._get_telegram_notify_chats().filtered(
+                    lambda chat: (
+                        chat.bot_id.company_id == company and not chat.bot_blocked
+                    )
+                )[:1]
             if not chat or chat.bot_blocked:
                 continue
             self._telegram_queue(message, user, chat, away_only=when == "away")

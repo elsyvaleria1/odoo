@@ -8,6 +8,7 @@
             <list create="False">
                 <field name="name" />
                 <field name="username" />
+                <field name="phone" optional="show" />
                 <field name="tg_user_id" optional="hide" />
                 <field name="partner_id" />
                 <field name="binding_id" optional="hide" />
@@ -36,6 +37,8 @@
                             <field name="username" />
                             <field name="tg_user_id" />
                             <field name="language_code" />
+                            <field name="phone" />
+                            <field name="phone_verified_at" invisible="not phone" />
                         </group>
                         <group>
                             <field name="partner_id" />
@@ -63,6 +66,9 @@
                                     <field name="bot_id" />
                                     <field name="chat_id" />
                                     <field name="last_message_time" />
+                                    <field name="bot_blocked" optional="show" />
+                                    <field name="delivery_failed_at" optional="show" />
+                                    <field name="delivery_error" optional="hide" />
                                 </list>
                             </field>
                         </page>
@@ -79,6 +85,7 @@
             <search>
                 <field name="name" />
                 <field name="username" />
+                <field name="phone" />
                 <field name="partner_id" />
                 <filter
                     name="bound"

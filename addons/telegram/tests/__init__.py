@@ -31,3 +31,4 @@ from . import test_groups
 from . import test_authority
 from . import test_access_matrix
 from . import test_bot_company
+from . import test_phone_and_delivery_health

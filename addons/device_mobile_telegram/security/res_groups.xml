@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_company_phones" model="res.groups">
+        <field
+            name="name">Privilege: a bot learns which company phones a user carries</field>
+        <field
+            name="comment">Held while a bot decides whether a Telegram account may carry a user's Odoo notifications: read the Mobile Phone devices, to compare their numbers with the account's. Whoever triggered the delivery (a poster, the outbox job, the user's own Telegram) need not read devices.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

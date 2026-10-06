@@ -35,6 +35,22 @@ class MailTelegramCase(TelegramBotTestCase):
         )
         cls.record = cls._create_partner({"name": "Followed Record"})
 
+    def _run_alert_jobs(self) -> None:
+        """Run the queued notices that Telegram stopped delivering, each as
+        the job's own user."""
+        jobs = (
+            self.env["ir.job"]
+            .sudo()
+            .search(
+                [
+                    ("identity_key", "=like", "mail_telegram.unreachable:%"),
+                    ("state", "in", ["scheduled", "pending"]),
+                ]
+            )
+        )
+        for job in jobs:
+            job.action_run_now()
+
     def _queued(self):
         return self.env["telegram.message"].search(
             [("chat_id", "=", self.test_chat.id), ("message_type", "=", "outbound")]

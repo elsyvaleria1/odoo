@@ -1,0 +1,144 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* device_mobile_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 07:30+0000\n"
+"PO-Revision-Date: 2026-10-06 07:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: device_mobile_telegram
+#. odoo-python
+#: code:addons/device_mobile_telegram/models/telegram_bot.py:0
+msgid ""
+"%(phone)s is not the number of a company phone assigned to you. Ask an "
+"administrator to record your phone in Devices."
+msgstr ""
+"%(phone)s no es el número de un teléfono de la empresa asignado a ti. Pide a"
+" un administrador que registre tu teléfono en Dispositivos."
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_device_device__display_name
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_account__display_name
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_bot__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: device_mobile_telegram
+#: model:res.groups,comment:device_mobile_telegram.privilege_read_company_phones
+msgid ""
+"Held while a bot decides whether a Telegram account may carry a user's Odoo "
+"notifications: read the Mobile Phone devices, to compare their numbers with "
+"the account's. Whoever triggered the delivery (a poster, the outbox job, the"
+" user's own Telegram) need not read devices."
+msgstr ""
+"Se tiene mientras un bot decide si una cuenta de Telegram puede recibir las "
+"notificaciones de Odoo de un usuario: leer los dispositivos Teléfono móvil "
+"para comparar sus números con el de la cuenta. Quien desencadenó la entrega "
+"(quien publicó, el trabajo de la bandeja de salida, el propio Telegram del "
+"usuario) no necesita leer dispositivos."
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_device_device__id
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_account__id
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_bot__id
+msgid "ID"
+msgstr "ID"
+
+#. module: device_mobile_telegram
+#: model:ir.model,name:device_mobile_telegram.model_device_device
+msgid "IoT Remote Device"
+msgstr "Dispositivo remoto IoT"
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,help:device_mobile_telegram.field_telegram_bot__notify_company_phones_only
+msgid ""
+"Odoo notifications reach a user only on the Telegram account of a company "
+"phone assigned to them: one whose shared number is the number of an active "
+"Mobile Phone device whose phone user they are. Replies and the inbox follow "
+"the same rule."
+msgstr ""
+"Las notificaciones de Odoo llegan a un usuario solo en la cuenta de Telegram"
+" de un teléfono de la empresa asignado a él: aquella cuyo número compartido "
+"es el de un dispositivo Teléfono móvil activo del que es usuario. Las "
+"respuestas y la bandeja siguen la misma regla."
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_bot__notify_company_phones_only
+msgid "Only to Company Phones"
+msgstr "Solo a teléfonos de la empresa"
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_account__phone_digits
+msgid "Phone Digits"
+msgstr "Dígitos del teléfono"
+
+#. module: device_mobile_telegram
+#: model:res.groups,name:device_mobile_telegram.privilege_read_company_phones
+msgid "Privilege: a bot learns which company phones a user carries"
+msgstr ""
+"Privilegio: un bot conoce qué teléfonos de la empresa lleva un usuario"
+
+#. module: device_mobile_telegram
+#: model:ir.model,name:device_mobile_telegram.model_telegram_account
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_device_device__telegram_account_id
+msgid "Telegram Account"
+msgstr "Cuenta de Telegram"
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_device_device__telegram_user_id
+msgid "Telegram Acts As"
+msgstr "Telegram actúa como"
+
+#. module: device_mobile_telegram
+#: model:ir.model,name:device_mobile_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr "Configuración del bot de Telegram"
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,help:device_mobile_telegram.field_device_device__telegram_user_id
+msgid "The Odoo user that Telegram account is connected to."
+msgstr "El usuario de Odoo al que está conectada esa cuenta de Telegram."
+
+#. module: device_mobile_telegram
+#: model:ir.access.class,description:device_mobile_telegram.access_class_phone_telegram
+msgid ""
+"The Telegram account a company phone's number belongs to, and who it acts as"
+" in Odoo: which person is behind which phone. Administrators read it."
+msgstr ""
+"La cuenta de Telegram a la que pertenece el número de un teléfono de la "
+"empresa, y como quién actúa en Odoo: qué persona está detrás de qué "
+"teléfono. La leen los administradores."
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,help:device_mobile_telegram.field_device_device__telegram_account_id
+msgid "The Telegram account whose shared number is this phone's."
+msgstr "La cuenta de Telegram cuyo número compartido es el de este teléfono."
+
+#. module: device_mobile_telegram
+#: model:ir.model.fields,help:device_mobile_telegram.field_telegram_account__phone_digits
+msgid ""
+"The verified number's last digits, as a company phone's number is matched to"
+" it whatever prefix either carries."
+msgstr ""
+"Los últimos dígitos del número verificado, con los que se compara el número "
+"de un teléfono de la empresa, sea cual sea el prefijo de cada uno."
+
+#. module: device_mobile_telegram
+#. odoo-python
+#: code:addons/device_mobile_telegram/models/telegram_bot.py:0
+msgid ""
+"Your Odoo notifications reach only the Telegram of your company phone: share"
+" this account's phone number to show it is that one."
+msgstr ""
+"Tus notificaciones de Odoo solo llegan al Telegram de tu teléfono de la "
+"empresa: comparte el número de teléfono de esta cuenta para demostrar que es"
+" ese."

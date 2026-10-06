@@ -44,6 +44,18 @@ class TelegramAccount(models.Model):
         store=True,
     )
     language_code = fields.Char(readonly=True)
+    phone = fields.Char(
+        copy=False,
+        readonly=True,
+        help="The number this Telegram account is registered with, as Telegram "
+        "gave it when its owner shared their own contact with a bot. Telegram "
+        "never says when it changes: the owner shares it again.",
+    )
+    phone_verified_at = fields.Datetime(
+        string="Phone Verified On",
+        copy=False,
+        readonly=True,
+    )
     binding_ids = fields.One2many(
         comodel_name="telegram.binding",
         inverse_name="account_id",
@@ -174,6 +186,17 @@ class TelegramAccount(models.Model):
         )
         account._bind(partner, method="contact")
         return partner.with_env(self.env)
+
+    def _update_phone(self, number) -> None:
+        """Record the number Telegram vouched for: the one of a contact its
+        owner shared whose user id is their own."""
+        self.check_singleton()
+        digits = "".join(character for character in number or "" if character.isdigit())
+        if not digits:
+            return
+        operating(self).write(
+            {"phone": f"+{digits}", "phone_verified_at": fields.Datetime.now()}
+        )
 
     def _lang(self):
         """The active language closest to the one their Telegram app uses."""

@@ -58,8 +58,14 @@ class TelegramInboxController(http.Controller):
     def _serve(call):
         admission = request.admission
         bot = admission.subject
-        user = bot._mini_app_user(admission.extra.get("telegram_user_id"))
+        telegram_user_id = admission.extra.get("telegram_user_id")
+        user = bot._mini_app_user(telegram_user_id)
         if not user:
+            return {"error": "auth"}
+        account = bot.env["telegram.account"].search(
+            [("tg_user_id", "=", str(telegram_user_id))], limit=1
+        )
+        if not bot._can_deliver_mail(account, user):
             return {"error": "auth"}
         inbox = (
             request.env["telegram.inbox"].with_user(user).with_context(lang=user.lang)

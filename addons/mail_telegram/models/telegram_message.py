@@ -35,8 +35,10 @@ class TelegramMessage(models.Model):
         if not self.mail_message_id or not self.recipient_partner_id:
             return True
         partner = self.recipient_partner_id
-        user = partner.user_ids.filtered(lambda u: u.active and not u.share)[:1]
-        if not user or self.chat_id.account_id._acting_user("internal") != user:
+        user = self._get_recipient_user()
+        # the destination is decided again when the message is due: a chat
+        # disconnected, refused or replaced meanwhile gets nothing more
+        if not user or user._get_telegram_notify_chat() != self.chat_id:
             return False
         if self.mail_away_only and user.im_status == "online":
             return False
@@ -54,3 +56,18 @@ class TelegramMessage(models.Model):
             limit=1,
         )
         return not notification.is_read
+
+    def _get_recipient_user(self):
+        """The internal user whose notification this message carries."""
+        return self.recipient_partner_id.user_ids.filtered(
+            lambda user: user.active and not user.share
+        )[:1]
+
+    def _on_delivery_failed(self, error, started) -> None:
+        super()._on_delivery_failed(error, started)
+        user = self._get_recipient_user()
+        if not started or not user or not self.mail_message_id:
+            return
+        user._notify_telegram_unreachable(
+            self.chat_id, error or self.env._("Telegram refused it.")
+        )

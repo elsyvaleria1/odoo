@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+device_device_privilege_read_company_phones,Device: a bot reads the company phones whose numbers decide where notifications go,device.model_device_device,privilege_read_company_phones,permission,r,"[('device_category_id', '=', ref('device_mobile.device_category_mobile_phone'))]"

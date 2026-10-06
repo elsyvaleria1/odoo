@@ -144,8 +144,7 @@ class TestInbox(InboxCase):
         self.assertNotIn("reply_markup", queued.payload)
 
 
-@tagged("post_install", "-at_install")
-class TestInboxRoutes(TelegramBotHttpCase):
+class InboxRouteCase(TelegramBotHttpCase):
     def _rpc(self, path, **params):
         self.env.flush_all()
         response = self.url_open(
@@ -162,6 +161,9 @@ class TestInboxRoutes(TelegramBotHttpCase):
             {"auth_date": str(int(time.time())), "user": json_dumps({"id": user_id})},
         )
 
+
+@tagged("post_install", "-at_install")
+class TestInboxRoutes(InboxRouteCase):
     def test_a_bound_user_gets_their_inbox(self):
         body = self._rpc(
             "overview",

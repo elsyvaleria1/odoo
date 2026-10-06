@@ -81,6 +81,16 @@ class TelegramChat(models.Model):
         help="Telegram refused a message because the person blocked the bot or "
         "removed it: nothing more is sent until they write again.",
     )
+    delivery_failed_at = fields.Datetime(
+        string="Failing Since",
+        readonly=True,
+        help="When Telegram started refusing what the bot sends here: set by "
+        "the first failed message, cleared by the next one sent.",
+    )
+    delivery_error = fields.Char(
+        string="Last Delivery Error",
+        readonly=True,
+    )
     message_ids = fields.One2many(
         comodel_name="telegram.message",
         inverse_name="chat_id",
@@ -132,6 +142,20 @@ class TelegramChat(models.Model):
         "UNIQUE NULLS NOT DISTINCT (chat_id, bot_id, business_connection_id)",
         "A chat ID must be unique per bot and business connection!",
     )
+
+    @api.depends("account_id.name", "account_id.phone", "title", "bot_id.bot_username")
+    @api.depends_context("telegram_show_phone")
+    def _compute_display_name(self) -> None:
+        # the number tells apart two accounts of one person, where that person
+        # chooses between them; anywhere else a name stays a name
+        show_phone = self.env.context.get("telegram_show_phone")
+        for chat in self:
+            who = chat.title or chat.account_id.name or chat.chat_id
+            if show_phone and chat.account_id.phone:
+                who = f"{who} ({chat.account_id.phone})"
+            bot = chat.bot_id
+            via = f"@{bot.bot_username}" if bot.bot_username else bot.name
+            chat.display_name = f"{who} · {via}" if via else who
 
     @api.constrains("rate_limit_enabled", "rate_limit_requests")
     def _check_rate_limit_requests(self) -> None:
@@ -208,10 +232,50 @@ class TelegramChat(models.Model):
     def _side_block(self) -> None:
         self.flush_recordset()
         with self.env.registry.cursor() as cr:
+            # one row, raced by any job refused in this chat: wait for the
+            # other and write over it, rather than fail serialising
+            cr.use_read_committed()
             cr.execute(
                 "UPDATE telegram_chat SET bot_blocked = TRUE WHERE id = %s", (self.id,)
             )
         self.invalidate_recordset(["bot_blocked"])
+
+    def _side_update_delivery_failure(self, error) -> bool:
+        """Record on a side cursor that a message failed here; True when the
+        chat was delivering until now."""
+        self.check_singleton()
+        self.flush_recordset()
+        with self.env.registry.cursor() as cr:
+            # read committed: a concurrent failure or success in this chat is
+            # waited for and then seen, so exactly one failure starts it
+            cr.use_read_committed()
+            cr.execute(
+                "UPDATE telegram_chat AS chat SET delivery_error = %s, "
+                "delivery_failed_at = COALESCE(previous.failed_at, %s) "
+                "FROM (SELECT id, delivery_failed_at AS failed_at FROM telegram_chat "
+                "WHERE id = %s FOR UPDATE) AS previous "
+                "WHERE chat.id = previous.id RETURNING previous.failed_at IS NULL",
+                ((error or "")[:255], fields.Datetime.now(), self.id),
+            )
+            started = bool((cr.fetchone() or [False])[0])
+        self.invalidate_recordset(["delivery_error", "delivery_failed_at"])
+        return started
+
+    def _side_remove_delivery_failure(self) -> None:
+        """A message went through: the chat delivers again. Asked of the
+        table, not of this transaction's snapshot, which may predate a
+        failure another job recorded."""
+        self.check_singleton()
+        self.flush_recordset()
+        with self.env.registry.cursor() as cr:
+            cr.use_read_committed()
+            cr.execute(
+                "UPDATE telegram_chat SET delivery_failed_at = NULL, "
+                "delivery_error = NULL "
+                "WHERE id = %s AND delivery_failed_at IS NOT NULL",
+                (self.id,),
+            )
+        self.invalidate_recordset(["delivery_error", "delivery_failed_at"])
 
     def _migrate_to(self, new_chat_id):
         """The supergroup this group became, recorded once: the group keeps

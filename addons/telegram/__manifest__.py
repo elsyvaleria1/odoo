@@ -1,10 +1,10 @@
 {
     "name": "Telegram Bot Infrastructure",
-    "version": "19.0.3.7.0",
+    "version": "19.0.3.8.0",
     "oldest_upgradable_version": "19.0.3.6.0",
     "category": "Hidden",
     "summary": "Receive Telegram updates and route configured bot commands",
-    "description": "Provides bot credentials, webhook registration and authentication, linked chats, command routing, message records and outbound API helpers. Adds chat-flow state, rate limiting and retry-response reuse. Requires a Telegram bot token, reachable webhook and configured commands; business operations such as attendance and approvals belong to extension addons.",
+    "description": "Provides bot credentials, webhook registration and authentication, linked chats, command routing, message records and outbound API helpers, with the number a Telegram account shared as its own and the delivery health of each chat. Adds chat-flow state, rate limiting and retry-response reuse. Requires a Telegram bot token, reachable webhook and configured commands; business operations such as attendance and approvals belong to extension addons.",
     "author": "AgroMarin",
     "license": "LGPL-3",
     "depends": [

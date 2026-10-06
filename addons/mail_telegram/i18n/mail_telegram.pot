@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 16:20+0000\n"
-"PO-Revision-Date: 2026-09-29 16:20+0000\n"
+"POT-Creation-Date: 2026-10-06 08:04+0000\n"
+"PO-Revision-Date: 2026-10-06 08:04+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -65,6 +65,16 @@ msgid "Bot"
 msgstr ""
 
 #. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__blocked
+msgid "Bot blocked"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__start_bot
+msgid "Bot not started"
+msgstr ""
+
+#. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "Cancel"
@@ -74,6 +84,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:mail_telegram.field_wizard_telegram_group_link__channel_id
 #: model:ir.model.fields.selection,name:mail_telegram.selection__telegram_mirror__kind__broadcast
 msgid "Channel"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model,name:mail_telegram.model_discuss_channel_member
+msgid "Channel Member"
 msgstr ""
 
 #. module: mail_telegram
@@ -157,6 +172,11 @@ msgid ""
 msgstr ""
 
 #. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__user_id
+msgid "Connected By"
+msgstr ""
+
+#. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mirror.py:0
 msgid "Connected to the Telegram group %(title)s by %(user)s."
@@ -206,6 +226,11 @@ msgid "Deliver Odoo Notifications"
 msgstr ""
 
 #. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__ready
+msgid "Delivering"
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields,help:mail_telegram.field_res_users__telegram_notify_chats
 #: model:ir.model.fields,help:mail_telegram.field_res_users_settings__telegram_notify_chats
 msgid "Direct messages and group chats."
@@ -224,6 +249,7 @@ msgstr ""
 
 #. module: mail_telegram
 #: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel_member__display_name
 #: model:ir.model.fields,field_description:mail_telegram.field_mail_message__display_name
 #: model:ir.model.fields,field_description:mail_telegram.field_mixin_mail_thread__display_name
 #: model:ir.model.fields,field_description:mail_telegram.field_mixin_telegram_handler__display_name
@@ -247,6 +273,11 @@ msgstr ""
 #. module: mail_telegram
 #: model:ir.model.fields.selection,name:mail_telegram.selection__res_users_settings__telegram_notify_channels__all
 msgid "Every message"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__failing
+msgid "Failing"
 msgstr ""
 
 #. module: mail_telegram
@@ -275,6 +306,7 @@ msgstr ""
 
 #. module: mail_telegram
 #: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel__id
+#: model:ir.model.fields,field_description:mail_telegram.field_discuss_channel_member__id
 #: model:ir.model.fields,field_description:mail_telegram.field_mail_message__id
 #: model:ir.model.fields,field_description:mail_telegram.field_mixin_mail_thread__id
 #: model:ir.model.fields,field_description:mail_telegram.field_mixin_telegram_handler__id
@@ -372,6 +404,12 @@ msgid "New Channel"
 msgstr ""
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "No Telegram bot of your companies delivers Odoo notifications."
+msgstr ""
+
+#. module: mail_telegram
 #. odoo-javascript
 #: code:addons/mail_telegram/static/src/core/public_web/messaging_menu_model_patch.js:0
 msgid "No Telegram group is connected yet."
@@ -380,6 +418,11 @@ msgstr ""
 #. module: mail_telegram
 #: model_terms:ir.actions.act_window,help:mail_telegram.action_telegram_mirror
 msgid "No Telegram group is mirrored in Odoo yet"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__no_bot
+msgid "No bot delivers notifications"
 msgstr ""
 
 #. module: mail_telegram
@@ -395,9 +438,25 @@ msgid "No unread notifications."
 msgstr ""
 
 #. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__refused
+msgid "Not allowed here"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__unconnected
+msgid "Not connected"
+msgstr ""
+
+#. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Notifications"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users_settings.py:0
+msgid "Notifications go only to a Telegram chat of your own with a bot."
 msgstr ""
 
 #. module: mail_telegram
@@ -410,6 +469,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "Odoo Notifications"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid ""
+"Odoo asks for the phone number of this Telegram account: press the button "
+"below to share it."
 msgstr ""
 
 #. module: mail_telegram
@@ -436,6 +503,12 @@ msgstr ""
 
 #. module: mail_telegram
 #. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "Open Telegram: the bot asks for your phone number."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
 #: code:addons/mail_telegram/models/mixin_mail_thread.py:0
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Open in Odoo"
@@ -454,6 +527,17 @@ msgstr ""
 msgid ""
 "Open this link in Telegram to add the bot to your channel as an\n"
 "                        administrator that may post, edit and delete messages:"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__verify_phone
+msgid "Phone number needed"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "Press Connect Telegram."
 msgstr ""
 
 #. module: mail_telegram
@@ -510,6 +594,11 @@ msgid "Sent only if its recipient is not online in Odoo when it is due."
 msgstr ""
 
 #. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.res_users_view_form_preferences_mail_telegram
+msgid "Share Phone Number in Telegram"
+msgstr ""
+
+#. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Something went wrong. Try again."
@@ -555,6 +644,24 @@ msgid "Telegram Mirror"
 msgstr ""
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "Telegram is not delivering your notifications"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_message.py:0
+msgid "Telegram refused it."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "Telegram refuses what Odoo sends to %(chat)s: %(error)s"
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_channels
 #: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_notify_channels
 msgid "Telegram: Channels"
@@ -564,6 +671,22 @@ msgstr ""
 #: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_chats
 #: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_notify_chats
 msgid "Telegram: Chats"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_chat_id
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_notify_chat_id
+msgid "Telegram: Deliver To"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_state
+msgid "Telegram: Delivery"
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_detail
+msgid "Telegram: Delivery Detail"
 msgstr ""
 
 #. module: mail_telegram
@@ -583,6 +706,11 @@ msgid "Telegram: Odoo Notifications and Replies"
 msgstr ""
 
 #. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_notify_chat_ids
+msgid "Telegram: Possible Destinations"
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields,field_description:mail_telegram.field_res_users__telegram_grace_seconds
 #: model:ir.model.fields,field_description:mail_telegram.field_res_users_settings__telegram_grace_seconds
 msgid "Telegram: Wait Before Sending (seconds)"
@@ -599,6 +727,22 @@ msgstr ""
 msgid ""
 "The Odoo message this Telegram message carries: sent as a notification, or "
 "posted from a reply."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_res_users__telegram_notify_chat_id
+#: model:ir.model.fields,help:mail_telegram.field_res_users_settings__telegram_notify_chat_id
+msgid ""
+"The Telegram chat your notifications go to, when you connected more than "
+"one. Set to the last one you connected through a bot that delivers them. "
+"Empty: the one you used last."
+msgstr ""
+
+#. module: mail_telegram
+#: model:ir.access.class,description:mail_telegram.access_class_delivery
+msgid ""
+"The Telegram messages a chatter message went out as: the bridge's delivery "
+"records. Administrators read them; only the bridge writes them."
 msgstr ""
 
 #. module: mail_telegram
@@ -625,11 +769,34 @@ msgid ""
 msgstr ""
 
 #. module: mail_telegram
+#: model_terms:ir.ui.view,arch_db:mail_telegram.res_users_view_form_preferences_mail_telegram
+msgid "The one you used last"
+msgstr ""
+
+#. module: mail_telegram
 #: model_terms:ir.ui.view,arch_db:mail_telegram.wizard_telegram_group_link_view_form
 msgid ""
 "Then post this in the channel, from your own connected\n"
 "                        Telegram account. The bot deletes it at once. It works once,\n"
 "                        for the next 30 minutes."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "They stay in Odoo. See My Preferences, Telegram, for what to do."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_bot.py:0
+msgid "This Telegram account is not connected to you."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_bot.py:0
+msgid "This bot speaks for %(company)s, a company you do not belong to."
 msgstr ""
 
 #. module: mail_telegram
@@ -683,6 +850,13 @@ msgid "While I am away from Odoo"
 msgstr ""
 
 #. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_mirror__user_id
+msgid ""
+"Who connected the group: what its people say lands on the thread with this "
+"user's rights, in their own names."
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields,help:mail_telegram.field_telegram_message__recipient_partner_id
 msgid "Whose notification it is."
 msgstr ""
@@ -691,6 +865,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Write a message…"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid "You blocked %(bot)s in Telegram: open it and press Start."
 msgstr ""
 
 #. module: mail_telegram
@@ -709,6 +889,48 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "Your Odoo notifications and chats, inside Telegram:"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid ""
+"Your Odoo notifications come from %(bot)s: press Connect Telegram to open "
+"it."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"Your Odoo notifications come from another bot: open %(link)s and press "
+"Start."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/res_users.py:0
+msgid ""
+"Your Odoo notifications no longer reach %(chat)s in Telegram: %(reason)s"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Your Odoo notifications will arrive here."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"Your Odoo notifications will arrive here. Reply to one to answer it in Odoo."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "you blocked the bot."
 msgstr ""
 
 #. module: mail_telegram

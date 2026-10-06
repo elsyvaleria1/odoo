@@ -11,7 +11,9 @@ from odoo.libs.json import dumps as json_dumps
 
 from ..tools import errors, get_telegram_client, replay
 from ..tools import format as tools_format
+from ..tools import keyboard as kb
 from ..tools.authority import keeping, operating
+from ..tools.dispatch import translation_env
 
 _logger = logging.getLogger(__name__)
 
@@ -525,6 +527,15 @@ class TelegramBot(models.Model):
             media_type="text",
             reply_to_uid=reply_to or False,
             **vals,
+        )
+
+    def _queue_phone_request(self, chat, text):
+        """Ask the person of a private chat to share their own number: `text`
+        says why, the keyboard's one button shares it."""
+        self.check_singleton()
+        button = translation_env(self, chat)._("📱 Share my phone number")
+        return self._queue_text(
+            chat, text, html=False, reply_markup=kb.share_phone(button)
         )
 
     def _queue_file(

@@ -294,6 +294,11 @@ class TelegramMessage(models.Model):
             message._side_write(vals)
             if isinstance(error, errors.TelegramForbidden):
                 chat._side_block()
+            # a refused edit or deletion ("message is not modified", one too
+            # old to delete) says nothing of whether the chat takes messages
+            if message.api_method.startswith("send"):
+                started = chat._side_update_delivery_failure(vals["error_message"])
+                message._on_delivery_failed(vals["error_message"], started)
             return
         # an edit answers with the message it edited, a deletion with True:
         # only a send makes a new Telegram message
@@ -308,6 +313,14 @@ class TelegramMessage(models.Model):
                 "error_message": False,
             }
         )
+        if message.api_method.startswith("send"):
+            chat._side_remove_delivery_failure()
+
+    def _on_delivery_failed(self, error, started) -> None:
+        """Telegram refused this message, a send, for good, saying `error`;
+        `started` is True when its chat was delivering until now. Whoever the
+        message was for may need to know. The outcome was committed on a side
+        cursor this transaction cannot see: read it from the arguments."""
 
     def _requeue_in(self, chat):
         self.check_singleton()

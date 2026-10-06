@@ -16,12 +16,24 @@ Features
   exactly-once delivery guarantee.
 * Command routing with three-tier permission model (unlinked, partner,
   internal user), where "internal" excludes portal and other share users
-* Base commands: ``/start``, ``/ayuda``, ``/quiensoy``
+* Base commands: ``/start``, ``/ayuda``, ``/quiensoy``, ``/desconectar``,
+  ``/cancelar``
 * Chat session state machine with per-chat rate limiting (token bucket via
   ``rate_limit``) and context storage for multi-step flows
-* Markdown helpers that escape interpolated values, so a partner name carrying
-  ``_``, ``*``, ``` ` ``` or ``[`` cannot make Telegram reject the message
-* Automatic partner linking by Telegram username, case- and ``@``-insensitive
+* Telegram HTML helpers (``tools/format.py``) that escape interpolated values,
+  so a partner name carrying ``<`` or ``&`` cannot make Telegram reject the
+  message
+* Identity by proof, never by username: a ``telegram.account`` acts as someone
+  only through an active ``telegram.binding``, made by consuming a single-use
+  link token that an Odoo session or an administrator's invitation minted
+* A verified phone number per account, recorded when its owner shares their
+  own contact (the contact's ``user_id`` is the sender's): what Telegram
+  vouches for, never what someone types
+* An outbox: messages are queued (``_queue_text``, ``_queue_file``,
+  ``_queue_phone_request``) and sent by a job after the transaction commits,
+  each exactly once or visibly not; a chat records when Telegram starts
+  refusing what is sent to it (``delivery_failed_at``) until a send goes
+  through again
 * Inbound/outbound message history with per-chat ``msg_uid`` deduplication,
   15-day auto-vacuum for delivered traffic and 90-day for failures
 * Inline keyboard support (buttons with ``callback_data``)
@@ -52,41 +64,60 @@ Configuration
 Usage
 =====
 
-This is a base module that other ``telegram_bot_*`` modules depend on to add
-domain-specific functionality (attendance, approval automation, financial
-reports, project tasks).
+This is a base module that other ``*_telegram`` modules depend on to add
+domain-specific functionality (attendance, approvals, financial reports,
+project tasks, Discuss).
 
-Send a message programmatically:
+Queue a message: it is sent after the transaction commits, and its
+``telegram.message`` row records what became of it.
 
 .. code-block:: python
 
     bot = env['telegram.bot'].search([('name', '=', 'My Bot')], limit=1)
-    bot.send_message(chat_id='123456', text='Hello from Odoo!')
+    bot._queue_text(chat, 'Hello from Odoo!', html=False)
 
-Pass ``parse_mode=None`` for text built from untrusted values, or run the values
-through the Markdown helpers:
-
-.. code-block:: python
-
-    md = bot.get_markdown_helpers()
-    bot.send_message(chat.chat_id, f"Hola {md['bold'](partner.name)}")
-
-Extend with custom commands in a child module:
+Telegram HTML built from values goes through ``tools/format.py``, which
+escapes them:
 
 .. code-block:: python
 
-    from odoo.addons.telegram.controllers.telegram_controller import (
-        TelegramController,
-    )
+    from odoo.addons.telegram.tools import format as tg
+    bot._queue_text(chat, f"Hola {tg.bold(partner.name)}")
 
-    class MyBotController(TelegramController):
-        def __init__(self):
-            super().__init__()
-            self._command_handlers['/status'] = '_handle_status_command'
-            self._partner_added_cmds.add('/status')
+Extend with a handler in a child module: an abstract model named
+``telegram.handler.<feature>`` inheriting ``mixin.telegram.handler``. The
+router finds it in the registry; what it answers is what it declares.
+
+.. code-block:: python
+
+    from odoo import models
+    from odoo.addons.telegram.tools.dispatch import TelegramCommand
+
+    class TelegramHandlerStatus(models.AbstractModel):
+        _name = "telegram.handler.status"
+        _inherit = "mixin.telegram.handler"
+        _description = "Telegram: Status"
+
+        def _telegram_commands(self):
+            return {"/estado": TelegramCommand("_handle_status_command", "partner")}
 
         def _handle_status_command(self, bot, chat, args, partner=False, internal_user=False):
-            bot.send_message(chat.chat_id, f'Hello {partner.name}!')
+            bot._queue_text(chat, f"Hola {partner.name}", html=False)
+
+Besides commands, buttons and messages, a handler hears what happens around
+them; each hook is a no-op by default, and these reach every handler, enabled
+on the bot or not:
+
+* ``_on_account_bound(bot, chat, binding)`` -- someone just proved who they
+  are through ``/start <token>``;
+* ``_on_phone_verified(bot, chat, account)`` -- someone shared their own
+  number, now ``account.phone``;
+* ``_on_bot_membership(bot, chat, status)`` -- the bot was blocked, unblocked,
+  added or removed.
+
+``telegram.message._on_delivery_failed(error, started)`` is the outbox's: a
+queued send Telegram refused for good, ``started`` saying whether its chat was
+delivering until then. A refused edit or deletion is no delivery failure.
 
 Writing a handler
 =================

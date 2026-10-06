@@ -9,6 +9,31 @@
             ref="telegram.res_users_view_form_preferences_telegram" />
         <field name="arch" type="xml">
             <xpath expr="//group[@name='telegram']" position="inside">
+                <field name="telegram_notify_chat_ids" invisible="1" />
+                <field
+                    name="telegram_notify_state"
+                    widget="badge"
+                    invisible="telegram_notify_state == 'unconnected'"
+                    decoration-danger="telegram_notify_state in ('failing', 'blocked')"
+                    decoration-success="telegram_notify_state == 'ready'"
+                    decoration-warning="telegram_notify_state in ('verify_phone', 'refused', 'start_bot', 'no_bot')" />
+                <field
+                    name="telegram_notify_detail"
+                    invisible="telegram_notify_state == 'unconnected'" />
+                <field
+                    name="telegram_notify_chat_id"
+                    placeholder="The one you used last"
+                    context="{'telegram_show_phone': True}"
+                    options="{'no_create': True, 'no_open': True}"
+                    invisible="not telegram_notify_chat_ids" />
+                <div colspan="2" invisible="telegram_notify_state != 'verify_phone'">
+                    <button
+                        name="action_telegram_request_phone"
+                        type="object"
+                        string="Share Phone Number in Telegram"
+                        icon="fa-mobile"
+                        class="btn-secondary" />
+                </div>
                 <field
                     name="telegram_notify_inbox"
                     invisible="not telegram_account_ids" />

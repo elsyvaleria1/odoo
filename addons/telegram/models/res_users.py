@@ -38,11 +38,20 @@ class ResUsers(models.Model):
             [("bot_username", "!=", False)]
         )
         for user in self:
-            user.telegram_connect_bot_ids = bots
+            # a bot of another company refuses whatever its user writes
+            user.telegram_connect_bot_ids = bots.filtered(
+                lambda bot, user=user: bot._admits_user(user)
+            )
+
+    def _get_telegram_connect_bot(self):
+        """The bot Connect Telegram opens: one an extension needs the person
+        to talk to comes first."""
+        self.check_singleton()
+        return self.telegram_connect_bot_ids[:1]
 
     def action_telegram_connect(self) -> dict | None:
         self.check_singleton()
-        bot = self.telegram_connect_bot_ids[:1]
+        bot = self._get_telegram_connect_bot()
         if not bot:
             return None
         return {
