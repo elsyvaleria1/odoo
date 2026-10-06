@@ -116,6 +116,10 @@ def migrate(cr, version):
     for table in tables:
         if table in KIND_TABLES:
             continue
+        # a report reading the table by a column it keeps; its model's init
+        # builds it anew
+        for column in get_table_columns(cr, table):
+            drop_views_depending_on_table(cr, table, column)
         if table != ROOT:
             cr.execute(SQL("DROP TABLE %s", SQL.identifier(table)))
     cr.execute(SQL("DROP TABLE %s", SQL.identifier(ROOT)))

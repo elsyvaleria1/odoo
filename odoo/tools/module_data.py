@@ -426,6 +426,8 @@ def clear_dangling_references(
             list(models),
         )
     )
+    fields = cr.fetchall()
+    views = _views(cr)
     for (
         model,
         name,
@@ -434,12 +436,17 @@ def clear_dangling_references(
         required,
         relation_table,
         column2,
-    ) in cr.fetchall():
+    ) in fields:
         if ttype == "many2many":
             target, column = relation_table, column2
         else:
             target, column = _table_of(model, cr), name
-        if not target or not column or not column_exists(cr, target, column):
+        if (
+            not target
+            or not column
+            or target in views
+            or not column_exists(cr, target, column)
+        ):
             continue
         dangling = SQL(
             "%s IS NOT NULL AND NOT EXISTS (SELECT 1 FROM %s r WHERE r.id = %s)",
@@ -798,6 +805,8 @@ def rekey_records(
         "OR ttype IN ('many2one_reference', 'reference'))",
         {"models": models},
     )
+    fields = cr.fetchall()
+    views = _views(cr)
     rekeyed = set()
     for (
         model,
@@ -808,7 +817,7 @@ def rekey_records(
         column2,
         relation,
         cd,
-    ) in cr.fetchall():
+    ) in fields:
         if ttype == "many2one" and relation in models:
             target = (_table_of(model, cr), name, SQL())
             if cd:
@@ -826,11 +835,17 @@ def rekey_records(
                 continue
             target = (_table_of(model, cr), name, condition)
         elif ttype == "reference":
-            _rekey_reference_values(cr, _table_of(model, cr), name, models, moves)
+            _rekey_reference_values(
+                cr, _table_of(model, cr), name, models, moves, views
+            )
             continue
         else:
             continue
-        if target[:2] in rekeyed or not column_exists(cr, target[0], target[1]):
+        if (
+            target[:2] in rekeyed
+            or target[0] in views
+            or not column_exists(cr, target[0], target[1])
+        ):
             continue
         rekeyed.add(target[:2])
         _rekey_column(cr, *target[:2], olds, news, target[2])
@@ -976,8 +991,12 @@ def rehome_references(
         "WHERE ttype = 'many2one_reference' AND store AND model <> ALL(%s)",
         [list(keep)],
     )
-    for model, name in cr.fetchall():
+    fields = cr.fetchall()
+    views = _views(cr)
+    for model, name in fields:
         table = _table_of(model, cr)
+        if table in views:
+            continue
         found = _model_column_of(cr, table, name)
         if found is None:
             continue
@@ -1109,6 +1128,16 @@ def lift_columns(
     return lifted
 
 
+def _views(cr: BaseCursor) -> set[str]:
+    # a view's rows are the ones it reads, which move under it; one whose
+    # GROUP BY makes it read-only would refuse the UPDATE
+    cr.execute(
+        "SELECT relname FROM pg_class WHERE relkind IN ('v', 'm') "
+        "AND relnamespace = current_schema::regnamespace"
+    )
+    return {name for (name,) in cr.fetchall()}
+
+
 def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, str]]:
     cr.execute(
         """
@@ -1203,8 +1232,9 @@ def _rekey_reference_values(
     column: str,
     models: list[str],
     moves: Mapping[int, int],
+    views: set[str],
 ) -> None:
-    if not column_exists(cr, table, column):
+    if table in views or not column_exists(cr, table, column):
         return
     for model in models:
         cr.execute(
@@ -1476,9 +1506,11 @@ def _rewrite_reference_values(cr: BaseCursor, old: str, new: str) -> None:
     cr.execute(
         "SELECT model, name FROM ir_model_fields WHERE ttype = 'reference' AND store"
     )
-    for model, field in cr.fetchall():
+    fields = cr.fetchall()
+    views = _views(cr)
+    for model, field in fields:
         table = _table_of(model, cr)
-        if not column_exists(cr, table, field):
+        if table in views or not column_exists(cr, table, field):
             continue
         cr.execute(
             SQL(

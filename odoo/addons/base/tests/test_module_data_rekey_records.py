@@ -2,6 +2,7 @@ from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.module_data import (
     UNDECLARED_REFERENCES,
     _model_column_of,
+    clear_dangling_references,
     lift_columns,
     merge_model,
     rehome_references,
@@ -38,12 +39,18 @@ class TestRekeyRecords(TransactionCase):
                 ('probe.box', 1), ('probe.crate', 3), ('res.partner', 1);
             INSERT INTO probe_note (ref) VALUES ('probe.box,2'), ('res.partner,2');
             INSERT INTO probe_crate_slot_rel VALUES (3, 2);
+            CREATE VIEW probe_slot_count AS
+                SELECT box_id, count(*) AS slots FROM probe_slot GROUP BY box_id;
         """)
         box_id = cls._insert_model("probe.box")
         crate_id = cls._insert_model("probe.crate")
         slot_id = cls._insert_model("probe.slot")
         log_id = cls._insert_model("probe.log")
         note_id = cls._insert_model("probe.note")
+        count_id = cls._insert_model("probe.slot.count")
+        cls._insert_field(
+            count_id, "probe.slot.count", "box_id", "many2one", relation="probe.box"
+        )
         cls._insert_field(
             slot_id, "probe.slot", "box_id", "many2one", relation="probe.box"
         )
@@ -131,6 +138,12 @@ class TestRekeyRecords(TransactionCase):
         self.assertEqual(
             self._rows("SELECT id, box_id FROM probe_slot ORDER BY id"),
             [(1, 2), (2, 3), (3, 10)],
+        )
+
+    def test_a_view_reads_the_moved_ids_untouched(self):
+        self.assertEqual(
+            self._rows("SELECT box_id, slots FROM probe_slot_count ORDER BY 1"),
+            [(2, 1), (3, 1), (10, 1)],
         )
 
     def test_a_many2many_follows(self):
@@ -246,14 +259,56 @@ class TestRehomeReferences(TransactionCase):
                  SELECT id, 'probe.log', 'res_id', 'many2one_reference', 'base',
                         '{"en_US": "probe"}', true
                    FROM ir_model WHERE model = 'probe.log';
+            CREATE VIEW probe_log_count AS
+                SELECT res_model, res_id, count(*) AS logs FROM probe_log
+                 GROUP BY res_model, res_id;
+            INSERT INTO ir_model (model, name, "order", state)
+                 VALUES ('probe.log.count', '{"en_US": "probe"}', 'id', 'base');
+            INSERT INTO ir_model_fields (model_id, model, name, ttype, state,
+                                         field_description, store)
+                 SELECT id, 'probe.log.count', 'res_id', 'many2one_reference', 'base',
+                        '{"en_US": "probe"}', true
+                   FROM ir_model WHERE model = 'probe.log.count';
             INSERT INTO ir_model_data (module, name, model, res_id)
                  VALUES ('test_rehome', 'crate_three', 'probe.crate', 3);
         """)
         rehome_references(cr, ["probe.crate"], "probe.box")
         cr.execute("SELECT res_model, res_id FROM probe_log ORDER BY id")
         self.assertEqual(cr.fetchall(), [("probe.box", 3), ("res.partner", 3)])
+        cr.execute("SELECT res_model, res_id FROM probe_log_count ORDER BY 1")
+        self.assertEqual(cr.fetchall(), [("probe.box", 3), ("res.partner", 3)])
         cr.execute("SELECT model FROM ir_model_data WHERE module = 'test_rehome'")
         self.assertEqual(cr.fetchall(), [("probe.crate",)])
+
+
+@tagged("post_install", "-at_install")
+class TestClearDanglingReferences(TransactionCase):
+    """A slot naming a box that is gone loses the value; a view counting the
+    slots per box reads the cleared value and is left alone."""
+
+    def test_the_value_goes_and_a_view_reading_it_stays(self):
+        cr = self.env.cr
+        cr.execute("""
+            CREATE TABLE probe_box (id serial PRIMARY KEY);
+            CREATE TABLE probe_slot (id serial PRIMARY KEY, box_id int);
+            CREATE VIEW probe_slot_count AS
+                SELECT box_id, count(*) AS slots FROM probe_slot GROUP BY box_id;
+            INSERT INTO probe_box (id) VALUES (1);
+            INSERT INTO probe_slot (box_id) VALUES (1), (2);
+            INSERT INTO ir_model (model, name, "order", state) VALUES
+                ('probe.slot', '{"en_US": "probe"}', 'id', 'base'),
+                ('probe.slot.count', '{"en_US": "probe"}', 'id', 'base');
+            INSERT INTO ir_model_fields (model_id, model, name, ttype, relation,
+                                         state, field_description, store)
+                 SELECT id, model, 'box_id', 'many2one', 'probe.box', 'base',
+                        '{"en_US": "probe"}', true
+                   FROM ir_model WHERE model IN ('probe.slot', 'probe.slot.count');
+        """)
+        clear_dangling_references(cr, ["probe.box"], "probe_box")
+        cr.execute("SELECT box_id FROM probe_slot ORDER BY id")
+        self.assertEqual(cr.fetchall(), [(1,), (None,)])
+        cr.execute("SELECT box_id, slots FROM probe_slot_count ORDER BY 1")
+        self.assertEqual(cr.fetchall(), [(1, 1), (None, 1)])
 
 
 @tagged("post_install", "-at_install")
