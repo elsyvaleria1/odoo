@@ -766,10 +766,27 @@ class CredentialCredential(models.Model):
     def _inverse_bearer_token(self) -> None:
         self._inverse_credential_json_field("bearer_token")
 
-    @api.depends("credential_data", "category_id")
+    @api.depends("credential_data", "category_id", "storage_method")
     def _compute_secret_values(self) -> None:
         for record in self:
             payload = record.get_credential_dict()
+            definitions = record.category_id.sudo().field_ids
+            # a JSON key that only stands in for the simple value (bearer_token
+            # for credential_value) is no field of its own until the credential
+            # keeps JSON: written next to the simple value it would be refused,
+            # the storage being sealed by whichever is written first
+            alternatives = {
+                definition.requirement_group
+                for definition in definitions
+                if not definition.is_blob_key and definition.requirement_group
+            }
+            if record.storage_method != "json":
+                definitions = definitions.filtered(
+                    lambda definition, taken=alternatives: (
+                        not definition.requirement_group
+                        or definition.requirement_group not in taken
+                    )
+                )
             record.secret_values = [
                 {
                     "code": definition.code,
@@ -779,7 +796,7 @@ class CredentialCredential(models.Model):
                     "required": definition.required,
                     "filled": bool(payload.get(definition.code)),
                 }
-                for definition in record.category_id.sudo().field_ids
+                for definition in definitions
                 if definition.is_blob_key
             ]
 

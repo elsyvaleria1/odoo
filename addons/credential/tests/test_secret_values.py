@@ -17,7 +17,8 @@ class TestSecretValues(TransactionCase):
         )
 
     def _entries(self, credential=None):
-        entries = (credential or self.credential).secret_values
+        # a Json field reads an empty list back as False
+        entries = (credential or self.credential).secret_values or []
         return {entry["code"]: entry for entry in entries}
 
     def _write(self, **values):
@@ -124,3 +125,39 @@ class TestSecretValues(TransactionCase):
         with self.assertRaises(UserError):
             for _ in range(5):
                 self.credential.action_reveal_secret_field("password")
+
+
+class TestSecretValueAlternatives(TransactionCase):
+    """A bearer token is kept either as the credential's Secret Value or under
+    the bearer_token key of a JSON payload, never both: the form offers the
+    key only to a credential that already keeps JSON."""
+
+    def _credential(self, **values):
+        return self.env["credential.credential"].create(
+            {
+                "name": "bot token",
+                "category_id": self.env.ref(
+                    "credential.credential_category_bearer_token"
+                ).id,
+                **values,
+            }
+        )
+
+    @staticmethod
+    def _codes(credential):
+        return {entry["code"] for entry in credential.secret_values or []}
+
+    def test_a_new_credential_offers_the_secret_value_alone(self):
+        self.assertNotIn("bearer_token", self._codes(self._credential()))
+
+    def test_a_simple_credential_does_not_offer_the_json_key(self):
+        credential = self._credential(credential_value="123:abc")
+
+        self.assertEqual(credential.storage_method, "simple")
+        self.assertNotIn("bearer_token", self._codes(credential))
+
+    def test_a_json_credential_offers_its_key(self):
+        credential = self._credential(bearer_token="123:abc")
+
+        self.assertEqual(credential.storage_method, "json")
+        self.assertIn("bearer_token", self._codes(credential))
