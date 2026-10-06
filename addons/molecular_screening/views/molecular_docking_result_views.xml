@@ -55,6 +55,7 @@
                                     <field name="structure_id" />
                                     <field name="compound_id" readonly="1" />
                                     <field name="score" />
+                                    <field name="ligand_efficiency" />
                                     <field name="pose_rank" />
                                     <field name="rmsd_lb" optional="hide" />
                                     <field name="rmsd_ub" optional="hide" />
@@ -134,6 +135,7 @@
                 <field name="compound_id" />
                 <field name="structure_id" optional="hide" />
                 <field name="score" />
+                <field name="ligand_efficiency" />
                 <field name="pose_rank" />
                 <field name="rmsd_lb" optional="hide" />
                 <field name="rmsd_ub" optional="hide" />

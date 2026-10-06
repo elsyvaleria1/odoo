@@ -101,6 +101,24 @@ class TestDockingImport(TransactionCase):
         self._import(pose("CHEMBL406819", -6.9))
         self.assertEqual(compound.result_ids.score, -6.9)
 
+    def test_ligand_efficiency_counts_heavy_atoms_only(self):
+        structure = self.compounds["CHEMBL1"].structure_3d_id
+        # N with an explicit hydrogen: two atoms, one of them heavy
+        structure.molblock = (
+            "CHEMBL1\n     RDKit          3D\n\n"
+            "  2  1  0  0  0  0  0  0  0  0999 V2000\n"
+            "    0.0000    0.0000    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n"
+            "    1.0000    0.0000    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0\n"
+            "  1  2  1  0\n"
+            "M  END\n"
+        )
+        structure.action_explode_molblock()
+        self.assertEqual((structure.atom_count, structure.heavy_atom_count), (2, 1))
+        self._import(pose("CHEMBL1", -7.5))
+        self.assertAlmostEqual(
+            self.compounds["CHEMBL1"].result_ids.ligand_efficiency, 7.5
+        )
+
     def test_other_score_tag(self):
         self._import(pose("CHEMBL1", -9.1, tag="CNNaffinity"), score_tag="CNNaffinity")
         self.assertEqual(self.compounds["CHEMBL1"].result_ids.score, -9.1)

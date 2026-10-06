@@ -1,6 +1,6 @@
 {
     "name": "Molecular Screening",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Productivity",
     "summary": "Track virtual screening campaigns: targets, redocking gate, compounds and docking results",
     "description": "Adds screening campaigns, receptor targets with a redocking validation gate, a compound library keyed on chemical identity with campaign roles, 2D and 3D structures, and docking jobs that stay blocked while their target fails validation. Includes a sketch editor and a 3D viewer; formula, masses, rings, aromaticity, hydrogen-bond counts and Gasteiger partial charges are recomputed on the server, and every property keeps the method that produced it. It records docking runs and results but does not run a docking engine, and it perceives no stereochemistry.",

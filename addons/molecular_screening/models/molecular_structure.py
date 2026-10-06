@@ -61,6 +61,11 @@ class MolecularStructure(models.Model):
         compute="_compute_counts",
         store=True,
     )
+    heavy_atom_count = fields.Integer(
+        compute="_compute_counts",
+        store=True,
+        help="Atoms other than hydrogen in the connection table.",
+    )
     formula = fields.Char(
         readonly=True,
         help="Hill formula of this connection table.",
@@ -80,11 +85,14 @@ class MolecularStructure(models.Model):
                 structure.compound_id.display_name, kinds.get(structure.kind, "")
             )
 
-    @api.depends("atom_ids", "bond_ids")
+    @api.depends("atom_ids.element", "bond_ids")
     def _compute_counts(self):
         for structure in self:
             structure.atom_count = len(structure.atom_ids)
             structure.bond_count = len(structure.bond_ids)
+            structure.heavy_atom_count = len(
+                structure.atom_ids.filtered(lambda atom: atom.element != "H")
+            )
 
     @api.constrains("kind", "ph")
     def _check_ph(self):

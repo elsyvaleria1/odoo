@@ -30,6 +30,15 @@ class MolecularDockingResult(models.Model):
         digits=(16, 2),
         required=True,
     )
+    ligand_efficiency = fields.Float(
+        string="Ligand Efficiency",
+        compute="_compute_ligand_efficiency",
+        store=True,
+        digits=(16, 3),
+        help="Score per heavy atom of the docked structure, in kcal/mol, with "
+        "the sign turned so that higher is better. Docking scores grow with "
+        "size; this compares compounds of different size on equal terms.",
+    )
     rmsd_lb = fields.Float(
         string="RMSD l.b. (Å)",
         digits=(16, 2),
@@ -48,6 +57,12 @@ class MolecularDockingResult(models.Model):
         "unique(job_id, structure_id, pose_rank)",
         "This pose is already recorded for the structure in this job.",
     )
+
+    @api.depends("score", "structure_id.heavy_atom_count")
+    def _compute_ligand_efficiency(self):
+        for result in self:
+            heavy = result.structure_id.heavy_atom_count
+            result.ligand_efficiency = -result.score / heavy if heavy else 0.0
 
     @api.constrains("job_id")
     def _check_job_not_blocked(self):
