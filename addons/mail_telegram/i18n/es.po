@@ -36,6 +36,15 @@ msgstr "/bandeja - Abre aquí tus notificaciones y chats de Odoo."
 
 #. module: mail_telegram
 #. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"/escribir - Write to a colleague or a conversation of Odoo, as in a chat."
+msgstr ""
+"/escribir - Escribe a un colega o a una conversación de Odoo, como en un "
+"chat."
+
+#. module: mail_telegram
+#. odoo-python
 #: code:addons/mail_telegram/wizards/wizard_telegram_group_link.py:0
 msgid ""
 "A Telegram group mirrors a Telegram channel of Discuss; a Telegram channel "
@@ -273,6 +282,12 @@ msgid "Display Name"
 msgstr "Nombre mostrado"
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Done: what you write here no longer goes to that conversation."
+msgstr "Listo: lo que escribas aquí ya no va a esa conversación."
+
+#. module: mail_telegram
 #: model:ir.model,name:mail_telegram.model_mixin_mail_thread
 msgid "Email Thread"
 msgstr "Hilo de correo"
@@ -434,6 +449,13 @@ msgstr "Todavía no se refleja ningún grupo de Telegram en Odoo"
 #: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__no_bot
 msgid "No bot delivers notifications"
 msgstr "Ningún bot entrega notificaciones"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "No colleague is called %(name)s. Send /escribir to try again."
+msgstr ""
+"Ningún colega se llama %(name)s. Envía /escribir para intentarlo de nuevo."
 
 #. module: mail_telegram
 #. odoo-python
@@ -864,6 +886,12 @@ msgstr "Lo que hay que publicar en el canal de Telegram para conectarlo."
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Where do you want to write?"
+msgstr "¿Dónde quieres escribir?"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "Where should I post it? Reply to a notification to skip this."
 msgstr "¿Dónde lo publico? Responde a una notificación para saltarte esto."
 
@@ -883,6 +911,12 @@ msgstr ""
 "permisos de este usuario, en nombre de cada uno."
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Who do you want to write to? Send their name."
+msgstr "¿A quién quieres escribir? Envía su nombre."
+
+#. module: mail_telegram
 #: model:ir.model.fields,help:mail_telegram.field_telegram_message__recipient_partner_id
 msgid "Whose notification it is."
 msgstr "De quién es la notificación."
@@ -892,6 +926,12 @@ msgstr "De quién es la notificación."
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Write a message…"
 msgstr "Escribe un mensaje…"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Write to whom?"
+msgstr "¿A quién le escribes?"
 
 #. module: mail_telegram
 #. odoo-python
@@ -969,8 +1009,24 @@ msgstr "bloqueaste el bot."
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "⏹ End"
+msgstr "⏹ Terminar"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "✉️ Message to followers"
 msgstr "✉️ Mensaje a seguidores"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"✍️ You now write to %(name)s: what you send here goes to that conversation "
+"in Odoo, until you end it or an hour passes without writing."
+msgstr ""
+"✍️ Ahora escribes a %(name)s: lo que envíes aquí llega a esa conversación en"
+" Odoo, hasta que la termines o pase una hora sin escribir."
 
 #. module: mail_telegram
 #. odoo-python
@@ -990,6 +1046,12 @@ msgstr "✓ Publicado en %(thread)s"
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "✓ Read"
 msgstr "✓ Leído"
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "➕ New conversation"
+msgstr "➕ Nueva conversación"
 
 #. module: mail_telegram
 #. odoo-python

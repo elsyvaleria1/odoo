@@ -535,6 +535,20 @@ class TelegramBot(models.Model):
             **vals,
         )
 
+    def _queue_reaction(self, chat, message_id, emoji="👍"):
+        """React to a message of the chat: an acknowledgement that says less
+        than a reply."""
+        self.check_singleton()
+        return self.env["telegram.message"]._queue(
+            self,
+            chat,
+            "setMessageReaction",
+            {
+                "message_id": int(message_id),
+                "reaction": json_dumps([{"type": "emoji", "emoji": emoji}]),
+            },
+        )
+
     def _queue_phone_request(self, chat, text):
         """Ask the person of a private chat to share their own number: `text`
         says why, the keyboard's one button shares it."""

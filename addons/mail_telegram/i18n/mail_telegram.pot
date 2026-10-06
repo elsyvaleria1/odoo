@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-06 08:04+0000\n"
-"PO-Revision-Date: 2026-10-06 08:04+0000\n"
+"POT-Creation-Date: 2026-10-06 10:00+0000\n"
+"PO-Revision-Date: 2026-10-06 10:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -27,6 +27,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "/bandeja - Open your Odoo notifications and chats here."
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"/escribir - Write to a colleague or a conversation of Odoo, as in a chat."
 msgstr ""
 
 #. module: mail_telegram
@@ -266,6 +273,12 @@ msgid "Display Name"
 msgstr ""
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Done: what you write here no longer goes to that conversation."
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model,name:mail_telegram.model_mixin_mail_thread
 msgid "Email Thread"
 msgstr ""
@@ -423,6 +436,12 @@ msgstr ""
 #. module: mail_telegram
 #: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__no_bot
 msgid "No bot delivers notifications"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "No colleague is called %(name)s. Send /escribir to try again."
 msgstr ""
 
 #. module: mail_telegram
@@ -840,6 +859,12 @@ msgstr ""
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Where do you want to write?"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "Where should I post it? Reply to a notification to skip this."
 msgstr ""
 
@@ -857,6 +882,12 @@ msgid ""
 msgstr ""
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Who do you want to write to? Send their name."
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields,help:mail_telegram.field_telegram_message__recipient_partner_id
 msgid "Whose notification it is."
 msgstr ""
@@ -865,6 +896,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Write a message…"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Write to whom?"
 msgstr ""
 
 #. module: mail_telegram
@@ -936,7 +973,21 @@ msgstr ""
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "⏹ End"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "✉️ Message to followers"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid ""
+"✍️ You now write to %(name)s: what you send here goes to that conversation "
+"in Odoo, until you end it or an hour passes without writing."
 msgstr ""
 
 #. module: mail_telegram
@@ -955,6 +1006,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "✓ Read"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "➕ New conversation"
 msgstr ""
 
 #. module: mail_telegram

@@ -1,6 +1,7 @@
 import logging
+from datetime import timedelta
 
-from odoo import models
+from odoo import fields, models
 from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.telegram.tools import format as tg
@@ -16,7 +17,15 @@ _logger = logging.getLogger(__name__)
 
 _DRAFT_KEY = "mail_draft"
 _REPLY_KEY = "mail_reply"
+_FOCUS_KEY = "mail_focus"
+_PICK_KEY = "mail_pick_colleague"
 _RECENT_THREADS = 5
+_RECENT_CONVERSATIONS = 6
+_COLLEAGUES_SHOWN = 8
+# a conversation stays open this long after the last message written to it
+_FOCUS_TTL = timedelta(hours=1)
+# what an open conversation takes: a contact or a location is someone else's
+_FOCUS_KINDS = frozenset({"text", "photo", "document", "voice"})
 
 
 class TelegramHandlerMail(models.AbstractModel):
@@ -47,7 +56,10 @@ class TelegramHandlerMail(models.AbstractModel):
         return {
             "/bandeja": TelegramCommand(
                 "_handle_inbox_command", "internal", builtin=True
-            )
+            ),
+            "/escribir": TelegramCommand(
+                "_handle_write_command", "internal", builtin=True
+            ),
         }
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
@@ -57,7 +69,13 @@ class TelegramHandlerMail(models.AbstractModel):
         return [
             (
                 tr._("Odoo Notifications"),
-                [tr._("/bandeja - Open your Odoo notifications and chats here.")],
+                [
+                    tr._("/bandeja - Open your Odoo notifications and chats here."),
+                    tr._(
+                        "/escribir - Write to a colleague or a conversation of "
+                        "Odoo, as in a chat."
+                    ),
+                ],
             )
         ]
 
@@ -122,7 +140,12 @@ class TelegramHandlerMail(models.AbstractModel):
         if not internal_user or chat.chat_type != "private":
             return False
         replied = (message.get("reply_to_message") or {}).get("message_id")
-        return bool(self._delivered(bot, chat, replied))
+        if self._delivered(bot, chat, replied):
+            return True
+        kind = message_kind(message)
+        if kind == "text" and chat._get_context(_PICK_KEY):
+            return True
+        return kind in _FOCUS_KINDS and self._get_focus(chat, internal_user) is not None
 
     def _get_chat_mail_refusal(self, bot, chat, user) -> str | None:
         """Why this chat's Telegram account may not carry `user`'s Odoo mail
@@ -148,30 +171,24 @@ class TelegramHandlerMail(models.AbstractModel):
         if parent:
             self._reply(bot, chat, message, parent, internal_user)
             return True
+        if message_kind(message) == "text" and chat._get_context(_PICK_KEY):
+            chat._set_context(_PICK_KEY, False)
+            self._offer_colleagues(bot, chat, internal_user, message.get("text"))
+            return True
+        focus = self._get_focus(chat, internal_user)
+        if focus is not None:
+            postable = self._get_postable(bot, chat, message, internal_user)
+            posted = postable and self._post_from_telegram(bot, chat, postable, focus)
+            if posted:
+                self._update_focus(chat, focus)
+                bot._queue_reaction(chat, message["message_id"])
+            return True
         return self._offer_threads(bot, chat, message, internal_user)
 
     def _reply(self, bot, chat, message, parent, user, visibility=None) -> None:
         tr = self._tr(bot, chat)
-        body = self._body_of(message)
-        if not body and message_kind(message) == "voice":
-            heard = self._voice_text(bot, chat, message, user)
-            if heard is None:
-                bot.send_message(
-                    chat.chat_id,
-                    tr._("I cannot turn voice notes into text here: please type it."),
-                    parse_mode=None,
-                )
-                return
-            # the transcript stands for the note from here on, a pending
-            # visibility question included
-            message = {**message, "text": f"🎤 {heard}"}
-            body = self._body_of(message)
-        if not body and not self._files_of(message):
-            bot.send_message(
-                chat.chat_id,
-                tr._("Only text, photos and documents can be posted to Odoo."),
-                parse_mode=None,
-            )
+        message = self._get_postable(bot, chat, message, user)
+        if message is None:
             return
         thread = self._thread_of(parent, user)
         if thread is None:
@@ -186,12 +203,58 @@ class TelegramHandlerMail(models.AbstractModel):
             if visibility == "ask":
                 self._ask_visibility(bot, chat, message, parent, thread)
                 return
-        subtype = "mail.mt_note" if visibility == "note" else "mail.mt_comment"
+        posted = self._post_from_telegram(
+            bot,
+            chat,
+            message,
+            thread,
+            parent=parent,
+            subtype="mail.mt_note" if visibility == "note" else "mail.mt_comment",
+        )
+        if posted:
+            bot.send_message(
+                chat.chat_id,
+                tr._("✓ Posted on %(thread)s")
+                % {"thread": tg.escape(thread.display_name)},
+            )
+
+    def _get_postable(self, bot, chat, message, user):
+        """`message` as Odoo can take it -- a voice note as its transcript --
+        or None when it holds nothing Odoo takes; the person is told why."""
+        tr = self._tr(bot, chat)
+        if not self._body_of(message) and message_kind(message) == "voice":
+            heard = self._voice_text(bot, chat, message, user)
+            if heard is None:
+                bot.send_message(
+                    chat.chat_id,
+                    tr._("I cannot turn voice notes into text here: please type it."),
+                    parse_mode=None,
+                )
+                return None
+            # the transcript stands for the note from here on, a pending
+            # visibility question included
+            message = {**message, "text": f"🎤 {heard}"}
+        if not self._body_of(message) and not self._files_of(message):
+            bot.send_message(
+                chat.chat_id,
+                tr._("Only text, photos and documents can be posted to Odoo."),
+                parse_mode=None,
+            )
+            return None
+        return message
+
+    def _post_from_telegram(
+        self, bot, chat, message, thread, *, parent=None, subtype="mail.mt_comment"
+    ):
+        """Post a postable Telegram message on `thread`, which the posting
+        user's environment carries: its text and its photos and documents.
+        The posted message, or None when the user may not write there -- the
+        person is told so."""
         try:
             with self.env.cr.savepoint():
                 posted = thread.message_post(
-                    body=body,
-                    parent_id=parent.id,
+                    body=self._body_of(message),
+                    parent_id=parent.id if parent else False,
                     message_type="comment",
                     subtype_xmlid=subtype,
                     attachments=self._download(bot, message),
@@ -199,15 +262,14 @@ class TelegramHandlerMail(models.AbstractModel):
         except AccessError:
             bot.send_message(
                 chat.chat_id,
-                tr._("You may read that conversation in Odoo but not write on it."),
+                self._tr(bot, chat)._(
+                    "You may read that conversation in Odoo but not write on it."
+                ),
                 parse_mode=None,
             )
-            return
+            return None
         self._link_inbound(bot, chat, message, posted)
-        bot.send_message(
-            chat.chat_id,
-            tr._("✓ Posted on %(thread)s") % {"thread": tg.escape(thread.display_name)},
-        )
+        return posted
 
     def _thread_of(self, parent, user):
         """The record or conversation `parent` is on, as `user` may write it."""
@@ -405,6 +467,11 @@ class TelegramHandlerMail(models.AbstractModel):
             if parent and draft.get("text"):
                 self._reply(bot, chat, {"text": draft["text"]}, parent, internal_user)
             return True
+        if action in ("cv", "dm", "new", "end"):
+            bot.answer_callback_query(callback_query.get("id"))
+            self._clear_keyboard(bot, chat, callback_query)
+            self._on_conversation_button(bot, chat, action, argument, internal_user)
+            return True
         return False
 
     def _mark_read(self, user, mail_message_id) -> None:
@@ -423,6 +490,186 @@ class TelegramHandlerMail(models.AbstractModel):
                 member._mark_as_read(message.id)
             return
         message.with_user(user).set_message_done()
+
+    # -- conversations ----------------------------------------------------------
+
+    @log_command_execution
+    def _handle_write_command(
+        self, bot, chat, args, partner=False, internal_user=False
+    ) -> None:
+        """Choose where what is written here goes, as in a chat: a recent
+        conversation, or a colleague -- `/escribir ana` looks one up at once."""
+        if not bot.notify_mail:
+            return
+        refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
+        if refusal:
+            self._explain_mail_refusal(bot, chat, internal_user, refusal)
+            return
+        # another feature's flow takes this chat's messages: it ends first
+        owner = self._router()._flow_owner(chat)
+        if owner is not None:
+            self._router()._send_flow_busy_notice(bot, chat, owner, "/escribir")
+            return
+        if args:
+            self._offer_colleagues(bot, chat, internal_user, " ".join(args))
+            return
+        tr = self._tr(bot, chat)
+        trailing = [kb.button(tr._("➕ New conversation"), "mt:new")]
+        if self._get_focus(chat, internal_user) is not None:
+            trailing.append(kb.button(tr._("⏹ End"), "mt:end"))
+        bot.send_message(
+            chat.chat_id,
+            tr._("Where do you want to write?"),
+            parse_mode=None,
+            reply_markup=kb.record_list(
+                self._get_recent_conversations(internal_user),
+                lambda channel: self._get_conversation_name(channel, internal_user),
+                lambda channel: f"mt:cv:{channel.id}",
+                width=60,
+                trailing=trailing,
+            ),
+        )
+
+    def _get_recent_conversations(self, user):
+        """The Discuss conversations `user` is in, the liveliest first."""
+        return (
+            self.env["discuss.channel"]
+            .with_user(user)
+            .search(
+                [
+                    ("is_member", "=", True),
+                    ("channel_type", "in", ("chat", "group", "channel")),
+                    ("parent_channel_id", "=", False),
+                ],
+                order="last_interest_dt desc, id desc",
+                limit=_RECENT_CONVERSATIONS,
+            )
+        )
+
+    @staticmethod
+    def _get_conversation_name(channel, user) -> str:
+        """A direct chat is named after the others in it, not after `user`."""
+        if channel.channel_type == "chat":
+            others = channel.channel_member_ids.partner_id - user.partner_id
+            if others:
+                return ", ".join(others.mapped("name"))
+        return channel.display_name
+
+    def _offer_colleagues(self, bot, chat, user, term) -> None:
+        tr = self._tr(bot, chat)
+        term = (term or "").strip()
+        colleagues = (
+            self.env["res.users"]
+            .with_user(user)
+            .search(
+                [
+                    ("share", "=", False),
+                    ("id", "!=", user.id),
+                    ("name", "ilike", term),
+                ],
+                order="name",
+                limit=_COLLEAGUES_SHOWN,
+            )
+            if term
+            else self.env["res.users"]
+        )
+        if not colleagues:
+            bot.send_message(
+                chat.chat_id,
+                tr._("No colleague is called %(name)s. Send /escribir to try again.")
+                % {"name": tg.escape(term)},
+            )
+            return
+        bot.send_message(
+            chat.chat_id,
+            tr._("Write to whom?"),
+            parse_mode=None,
+            reply_markup=kb.record_list(
+                colleagues,
+                lambda colleague: colleague.name,
+                lambda colleague: f"mt:dm:{colleague.id}",
+                width=60,
+            ),
+        )
+
+    def _on_conversation_button(self, bot, chat, action, argument, user) -> None:
+        tr = self._tr(bot, chat)
+        if action == "new":
+            chat._set_context(_PICK_KEY, True)
+            bot.send_message(
+                chat.chat_id,
+                tr._("Who do you want to write to? Send their name."),
+                parse_mode=None,
+            )
+            return
+        if action == "end":
+            chat._set_context(_FOCUS_KEY, False)
+            bot.send_message(
+                chat.chat_id,
+                tr._("Done: what you write here no longer goes to that conversation."),
+                parse_mode=None,
+            )
+            return
+        channels = self.env["discuss.channel"].with_user(user)
+        if action == "dm":
+            colleague = (
+                self.env["res.users"]
+                .with_user(user)
+                .search([("id", "=", int(argument or 0)), ("share", "=", False)])
+            )
+            if not colleague:
+                return
+            channel = channels._get_or_create_chat(partners_to=colleague.partner_id.ids)
+        else:
+            channel = channels.search(
+                [("id", "=", int(argument or 0)), ("is_member", "=", True)]
+            )
+        if channel:
+            self._open_focus(bot, chat, channel, user)
+
+    # -- the open conversation ---------------------------------------------------
+
+    def _open_focus(self, bot, chat, channel, user) -> None:
+        """From now on what is written here goes to `channel`."""
+        self._update_focus(chat, channel)
+        tr = self._tr(bot, chat)
+        bot.send_message(
+            chat.chat_id,
+            tr._(
+                "✍️ You now write to %(name)s: what you send here goes to that "
+                "conversation in Odoo, until you end it or an hour passes "
+                "without writing."
+            )
+            % {"name": tg.bold(self._get_conversation_name(channel, user))},
+            reply_markup=kb.single(tr._("⏹ End"), "mt:end"),
+        )
+
+    def _update_focus(self, chat, channel) -> None:
+        chat._set_context(
+            _FOCUS_KEY,
+            {
+                "channel_id": channel.id,
+                "until": fields.Datetime.to_string(fields.Datetime.now() + _FOCUS_TTL),
+            },
+        )
+
+    def _get_focus(self, chat, user):
+        """The conversation what is written here goes to, as `user`, or None:
+        none was opened, it went quiet, or `user` left it. A stale entry stays
+        until the next one replaces it."""
+        focus = chat._get_context(_FOCUS_KEY) or {}
+        if not focus or not user:
+            return None
+        if fields.Datetime.to_datetime(focus.get("until")) <= fields.Datetime.now():
+            return None
+        channel = (
+            self.env["discuss.channel"]
+            .with_user(user)
+            .search(
+                [("id", "=", focus.get("channel_id") or 0), ("is_member", "=", True)]
+            )
+        )
+        return channel or None
 
     # -- connecting -----------------------------------------------------------
 
