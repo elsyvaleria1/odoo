@@ -395,12 +395,17 @@ class MixinAccessGraph(models.AbstractModel):
         partner: bool = True,
         owner: bool = True,
     ) -> typing.Callable[..., SQL]:
-        # an SQL condition on a row of the model, as three branches PostgreSQL
-        # answers with bitmap scans: a grant on the node itself, the node's
-        # scope chain overlapping granted containers (GIN), or its owner.
-        # Given the query it goes into, the condition has each set of granted
-        # nodes computed once there: a rule that walks to the graph through
-        # several aliases asks for the same sets at every one of them
+        # an SQL condition on a row of the model, as three branches: a grant
+        # on the node itself, the node's scope chain overlapping granted
+        # containers (GIN), or its owner.
+        # A grant on the node itself is a semi-join on the grant table, by
+        # principal: PostgreSQL hashes the principal's grants once and probes
+        # it per row, in parallel workers too. Not an array of granted node
+        # ids: a partner's grants run to thousands, and = ANY() over an array
+        # computed at run time compares every row with each of them.
+        # Containers are few; given the query the condition goes into, each
+        # set of granted containers is computed once there, as a rule that
+        # walks to the graph through several aliases asks for it at each
         graph = self._access_graph
         grant_model = self.env[self._fields[graph.grants].comodel_name]
         names = type(grant_model)._access_grant_names
@@ -435,28 +440,37 @@ class MixinAccessGraph(models.AbstractModel):
         grant_table = SQL.identifier(grant_model._table)
         resource = SQL.identifier(names.resource)
         role_column = SQL.identifier(names.role)
-        if graph.container:
-            cfield, cvalue = graph.container
-            container = SQL("node.%s = %s", SQL.identifier(cfield), cvalue)
-        else:
-            container = SQL("TRUE")
 
-        def granted(principal: SQL, containers: bool) -> SQL:
+        def is_container(alias: str) -> SQL:
+            if not graph.container:
+                return SQL("TRUE")
+            cfield, cvalue = graph.container
+            return SQL("%s = %s", SQL.identifier(alias, cfield), cvalue)
+
+        container = is_container("node")
+
+        def held_grants(principal: SQL) -> SQL:
             return SQL(
                 """SELECT grant_row.%(resource)s
                      FROM %(grant_table)s AS grant_row
-                     JOIN %(table)s AS node ON node.id = grant_row.%(resource)s
                     WHERE %(principal)s
                       AND grant_row.%(role)s = ANY(%(held)s)
-                      AND (grant_row.date_to IS NULL OR grant_row.date_to > now() AT TIME ZONE 'UTC')
-                      AND %(side)s""",
+                      AND (grant_row.date_to IS NULL OR grant_row.date_to > now() AT TIME ZONE 'UTC')""",
                 resource=resource,
                 grant_table=grant_table,
-                table=table,
                 principal=principal,
                 role=role_column,
                 held=list(held),
-                side=container if containers else SQL("NOT (%s)", container),
+            )
+
+        def granted_containers(principal: SQL) -> SQL:
+            return SQL(
+                "SELECT node.id FROM (%s) AS held JOIN %s AS node ON node.id = held.%s"
+                " WHERE %s",
+                held_grants(principal),
+                table,
+                resource,
+                container,
             )
 
         def owned_containers() -> SQL:
@@ -474,17 +488,18 @@ class MixinAccessGraph(models.AbstractModel):
             chain = SQL(
                 SCOPE_CHAIN.format("%s"), SQL.identifier(alias, "access_scope_path")
             )
-            containers = granted(principal, True)
+            containers = granted_containers(principal)
             if with_owner:
                 containers = SQL("%s UNION ALL %s", containers, owned_containers())
-            nodes = SQL("ARRAY(%s)", granted(principal, False))
             containers = SQL("ARRAY(%s)", containers)
             if query is not None:
-                nodes, containers = query.once(nodes), query.once(containers)
+                containers = query.once(containers)
+            # a grant on a container reaches it through its own scope chain
             return SQL(
-                "(%s = ANY(%s::int4[]) OR %s && %s::int4[])",
+                "((NOT (%s) AND %s IN (%s)) OR %s && %s::int4[])",
+                is_container(alias),
                 SQL.identifier(alias, "id"),
-                nodes,
+                held_grants(principal),
                 chain,
                 containers,
             )

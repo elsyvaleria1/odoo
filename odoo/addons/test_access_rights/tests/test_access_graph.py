@@ -377,10 +377,11 @@ class TestAccessGraph(TransactionCase):
         grants = reached(self.bob, self.Grant._name, role="edit", at="node_id.")
         self.assertEqual(grants.node_id & nodes, leaf)
 
-    def test_a_search_computes_each_set_of_granted_nodes_once(self):
+    def test_a_search_computes_each_set_of_granted_containers_once(self):
         # a rule that walks to the graph through two aliases -- the node and
-        # its parent -- asks for the same grants at both; the statement names
-        # each set once and both conditions read it
+        # its parent -- asks for the same granted containers at both; the
+        # statement names each set once and both conditions read it, while
+        # each alias probes the grants on itself
         root = self.Node.create({"name": "R"})
         mid = self.Node.create({"name": "m", "parent_id": root.id})
         leaf = self.Node.create({"name": "l", "parent_id": mid.id, "is_boundary": True})
@@ -399,21 +400,25 @@ class TestAccessGraph(TransactionCase):
         Node = self.Node.with_user(self.alice)
         reach = Node._access_graph_reach("view")
         walked = reach | Domain("parent_id", "any", reach)
-        grants = f'FROM "{self.Grant._table}" AS grant_row'
+        containers = "AS held JOIN"
+        probes = '"id" IN (SELECT grant_row.'
 
         alone = Node.sudo()._search(reach)
-        sets = alone.statement().code.count(grants)
-        self.assertGreaterEqual(sets, 2, "a node set and a container set at least")
+        sets = alone.statement().code.count(containers)
+        self.assertGreaterEqual(sets, 1, "a container set at least")
+        own = alone.statement().code.count(probes)
+        self.assertGreaterEqual(own, 1, "a probe of the node's own grants at least")
 
         query = Node.sudo()._search(walked)
         self.assertEqual(
-            query.statement().code.count(grants),
+            query.statement().code.count(containers),
             sets,
-            "the second alias asks for no set the first did not",
+            "the second alias asks for no container set the first did not",
         )
+        self.assertEqual(query.statement().code.count(probes), 2 * own)
         # inside another statement the query reads each set where it is used
-        self.assertEqual(query.subselect().code.count(grants), 2 * sets)
-        self.assertEqual(query.where_clause.code.count(grants), 2 * sets)
+        self.assertEqual(query.subselect().code.count(containers), 2 * sets)
+        self.assertEqual(query.where_clause.code.count(containers), 2 * sets)
 
         # mid by its group grant, other by the partner's; leaf is a boundary
         # the group's grant stops at, and is reached here through its parent
@@ -427,7 +432,18 @@ class TestAccessGraph(TransactionCase):
 
         # read without a query to hold them, the condition states them inline
         inline = Node._access_graph_condition("view")(self.Node._table)
-        self.assertEqual(inline.code.count(grants), sets)
+        self.assertEqual(inline.code.count(containers), sets)
+
+    def test_a_node_s_own_grants_are_a_semi_join(self):
+        # a partner's grants run to thousands of nodes: the node's own grants
+        # are a semi-join on the grant table, which PostgreSQL hashes once and
+        # probes per row in parallel workers too -- not an array of node ids,
+        # which = ANY() scans per row and IN (SELECT unnest()) keeps serial
+        Node = self.Node.with_user(self.alice)
+        statement = Node.sudo()._search(Node._access_graph_reach("view")).statement()
+        self.assertIn('"id" IN (SELECT grant_row.', statement.code)
+        self.assertNotIn('"id" = ANY(', statement.code)
+        self.assertNotIn("unnest(", statement.code)
 
     def test_a_folder_grant_reaches_its_subtree_live_and_leaves_with_a_move(self):
         root_a = self.Node.create({"name": "A"})

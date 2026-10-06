@@ -124,20 +124,28 @@ class Query:
         """A scalar subquery standing for ``expression``, computed once.
 
         For an expression that reads none of the query's tables and that its
-        conditions name many times over -- the set of nodes a principal holds
-        a grant on, asked of every alias an access rule walks. Written inline,
-        each occurrence is a subquery PostgreSQL plans on its own. The
-        statement the query is run as (`statement`, the ids, the counts)
-        states each distinct expression once, as a common table expression,
-        and what comes back here reads it: to the planner the same parameter
-        the inline subquery was, so the plan of the rest does not change.
+        conditions name many times over -- the set of containers a principal
+        holds a grant on, asked of every alias an access rule walks. Written
+        inline, each occurrence is a subquery PostgreSQL plans on its own. The
+        statement the query is run as (`statement`, the ids, the counts) states
+        each distinct expression once, as a common table expression, and what
+        comes back here reads it: to the planner the same parameter the inline
+        subquery was, so the plan of the rest does not change.
 
         What goes into another statement stays whole on its own -- `select`,
         `subselect`, `from_clause` and `where_clause` have the expression
         back inline: a subquery that opens with WITH is one PostgreSQL no
         longer folds into the query around it.
-        Inside ``ANY(...)`` the reference needs a cast (``ANY(%s::int4[])``),
-        or PostgreSQL reads it as the subquery form of ``ANY``.
+
+        Keep it to small sets. The reference is a parameter computed at run
+        time, not a constant: PostgreSQL hashes ``x = ANY(array)`` only for a
+        constant array, and against this one compares every row with each
+        element in turn. ``x IN (SELECT unnest(...))`` would hash it, but a
+        subquery that reads a common table expression keeps the whole plan
+        out of parallel workers. Test membership in a large set as a
+        semi-join on the table it comes from instead. Inside ``ANY(...)`` the
+        reference needs a cast (``ANY(%s::int4[])``), or PostgreSQL reads it
+        as the subquery form of ``ANY``.
         """
         try:
             index = self._once.index(expression)
