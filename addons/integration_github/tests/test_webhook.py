@@ -4,6 +4,7 @@ from unittest.mock import patch
 from odoo.tests import HttpCase, tagged
 
 from .common import WebhookDelivery, fixture
+from odoo.addons.integration_github.models import integration_github_pull as pull_module
 
 REPOSITORY = "Codertocat/Hello-World"
 HEAD = "ec26c3e57ca3a959ca5aad62de7213c562f8c821"
@@ -127,3 +128,27 @@ class TestWebhook(WebhookDelivery, HttpCase):
                 (response.status_code, response.json()["outcome"]), (200, "ignored")
             )
         self.assertEqual(self._deliver("ping", {"zen": "x"}).json()["outcome"], "pong")
+
+
+@tagged("post_install", "-at_install", "integration_github", "github")
+class TestRefresh(HttpCase):
+    def test_a_refresh_reads_the_pull_request_and_its_checks_in_one_go(self):
+        opened = fixture("pull_request__opened")["pull_request"]
+        run = fixture("check_run__completed_success")["check_run"]
+
+        class FakeClient:
+            def get_pull_request(self, owner, repo, number):
+                return opened
+
+            def list_check_runs(self, owner, repo, ref):
+                return [run]
+
+            def get_combined_status(self, owner, repo, ref):
+                return {"statuses": []}
+
+        pull = self.env["integration.github.pull"].create(
+            {"name": "?", "repository": REPOSITORY, "number": 2}
+        )
+        with patch.object(pull_module, "get_github_client", return_value=FakeClient()):
+            pull.action_refresh()
+        self.assertEqual((pull.head_sha, pull.checks_state), (HEAD, "success"))

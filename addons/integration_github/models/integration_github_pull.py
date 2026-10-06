@@ -160,6 +160,8 @@ class IntegrationGithubPull(models.Model):
         return pull
 
     def _refresh_checks_state(self) -> None:
+        # checks recorded earlier in this transaction are not in a cached value
+        self.invalidate_recordset(["check_ids"])
         for pull in self:
             state = pull.check_ids._aggregate_state()
             if state != pull.checks_state:
