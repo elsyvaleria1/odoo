@@ -15,6 +15,7 @@
                     </div>
                     <group>
                         <field name="color" widget="color_picker" required="True" />
+                        <field name="document_type_id" options="{'no_create': True}" />
                     </group>
                     <group name="tooltip" string="Tooltip" invisible="1">
                         <field name="tooltip" />
@@ -35,6 +36,7 @@
             <list default_order="sequence">
                 <field name="name" />
                 <field name="color" widget="color_picker" required="True" />
+                <field name="document_type_id" optional="show" />
                 <field name="tooltip" invisible="1" />
             </list>
         </field>

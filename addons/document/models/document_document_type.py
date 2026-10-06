@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import date, timedelta
 from typing import Any
 
@@ -7,6 +8,8 @@ from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 
 EXPIRING_SOON_DAYS = 30
+# set while the type/tag sync writes back, so its own writes do not sync again
+TYPE_TAG_SYNC = "document_type_tag_sync"
 
 _debug = DebugLog(__name__)
 
@@ -129,6 +132,124 @@ class DocumentDocument(models.Model):
                     )
                 )
 
+    @api.constrains("tag_ids")
+    def _check_single_type_tag(self) -> None:
+        for record in self:
+            type_tags = record.tag_ids.filtered("document_type_id")
+            if len(type_tags) > 1:
+                _debug.logic("type_tags_refused", reason="several", document=record)
+                raise ValidationError(
+                    self.env._(
+                        "Document '%(doc)s' carries the tags %(tags)s, and each "
+                        "one stands for a document type. Keep only the one that "
+                        "says what this document is.",
+                        doc=record.name,
+                        tags=", ".join(type_tags.mapped("name")),
+                    )
+                )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        documents = super().create(vals_list)
+        if not self.env.context.get(TYPE_TAG_SYNC):
+            documents._sync_type_and_tags(
+                type_written=documents, tags_written=documents, previous={}
+            )
+        return documents
+
+    def write(self, vals: dict) -> bool:
+        if self.env.context.get(TYPE_TAG_SYNC) or not (
+            "tag_ids" in vals or "document_type_id" in vals
+        ):
+            return super().write(vals)
+        previous = (
+            {record.id: record.tag_ids.filtered("document_type_id") for record in self}
+            if "tag_ids" in vals
+            else {}
+        )
+        result = super().write(vals)
+        self._sync_type_and_tags(
+            type_written=self if "document_type_id" in vals else self.browse(),
+            tags_written=self if "tag_ids" in vals else self.browse(),
+            previous=previous,
+        )
+        return result
+
+    def _sync_type_and_tags(self, type_written, tags_written, previous) -> None:
+        """Make the type and the type tag of each document say the same thing.
+
+        A type tag the caller wrote decides the type; a type written alone puts
+        its tag. Removing the type tag clears the type it stood for.
+
+        :param recordset type_written: documents whose ``document_type_id`` was written
+        :param recordset tags_written: documents whose ``tag_ids`` were written
+        :param dict previous: type tags per document id before the write
+        """
+        tags_by_type = {
+            tag.document_type_id: tag
+            for tag in self.env["document.tag"].search(
+                [("document_type_id", "!=", False)]
+            )
+        }
+        if not tags_by_type:
+            return
+        new_type = defaultdict(self.browse)
+        new_tags = defaultdict(self.browse)
+        for record in self:
+            type_tags = record.tag_ids.filtered("document_type_id")
+            if len(type_tags) > 1:
+                continue  # _check_single_type_tag names the conflict
+            if record in tags_written and type_tags:
+                if record in type_written and record.document_type_id not in (
+                    type_tags.document_type_id,
+                    self.env["document.type"],
+                ):
+                    raise ValidationError(
+                        self.env._(
+                            "Document '%(doc)s' was given the type '%(type)s' and "
+                            "the tag '%(tag)s', which stands for another type.",
+                            doc=record.name,
+                            type=record.document_type_id.name,
+                            tag=type_tags.name,
+                        )
+                    )
+                if record.document_type_id != type_tags.document_type_id:
+                    new_type[type_tags.document_type_id] |= record
+                continue
+            if record in tags_written and record not in type_written:
+                removed = previous.get(record.id, self.env["document.tag"])
+                if record.document_type_id and (
+                    removed.document_type_id == record.document_type_id
+                ):
+                    new_type[self.env["document.type"]] |= record
+                    continue
+            wanted = tags_by_type.get(record.document_type_id, self.env["document.tag"])
+            if wanted != type_tags:
+                new_tags[(type_tags, wanted)] |= record
+
+        synced = self.with_context(**{TYPE_TAG_SYNC: True})
+        for doc_type, records in new_type.items():
+            _debug.pipeline("type_from_tag", documents=records, type=doc_type)
+            records.with_env(synced.env).write({"document_type_id": doc_type.id})
+        for (stale, wanted), records in new_tags.items():
+            _debug.pipeline("tag_from_type", documents=records, tag=wanted)
+            records.with_env(synced.env).write(
+                {
+                    "tag_ids": [Command.unlink(tag.id) for tag in stale]
+                    + [Command.link(tag.id) for tag in wanted]
+                }
+            )
+
+    @api.onchange("tag_ids")
+    def _onchange_tag_ids_document_type(self) -> None:
+        type_tags = self.tag_ids.filtered("document_type_id")
+        if len(type_tags) == 1:
+            self.document_type_id = type_tags.document_type_id
+        elif not type_tags and self.document_type_id:
+            removed = self._origin.tag_ids.filtered("document_type_id")
+            if removed.document_type_id == self.document_type_id:
+                self.document_type_id = False
+
     @api.constrains("renewal_document_id")
     def _check_renewal_no_cycle(self) -> None:
         for record in self:
@@ -199,6 +320,14 @@ class DocumentDocument(models.Model):
     @api.onchange("document_type_id")
     def _onchange_document_type_id(self) -> None:
         doc_type = self.document_type_id
+        type_tags = self.tag_ids.filtered("document_type_id")
+        wanted = self.env["document.tag"]
+        if doc_type:
+            wanted = wanted.search([("document_type_id", "=", doc_type.id)], limit=1)
+        if wanted != type_tags:
+            self.tag_ids = [Command.unlink(tag.id) for tag in type_tags] + [
+                Command.link(tag.id) for tag in wanted
+            ]
         if not doc_type:
             return
         if doc_type.folder_id:

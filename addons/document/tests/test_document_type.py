@@ -662,3 +662,99 @@ class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
             documents.mapped("expiration_state"),
             ["expiring_soon", "expiring_soon"],
         )
+
+
+class TestTypeTags(DocumentTypeCase):
+    """A tag that stands for a type keeps the document's type in step."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Tag = cls.env["document.tag"]
+        cls.id_type = cls._type("TT_ID")
+        cls.note_type = cls._type("TT_NOTE")
+        cls.id_tag = Tag.create({"name": "INE", "document_type_id": cls.id_type.id})
+        cls.note_tag = Tag.create(
+            {"name": "Pagare", "document_type_id": cls.note_type.id}
+        )
+        cls.free_tag = Tag.create({"name": "Aval"})
+
+    def test_putting_a_type_tag_sets_the_type(self):
+        doc = self._doc()
+
+        doc.tag_ids = [(4, self.id_tag.id)]
+
+        self.assertEqual(doc.document_type_id, self.id_type)
+
+    def test_creating_with_a_type_tag_sets_the_type(self):
+        doc = self._doc(tag_ids=[(4, self.id_tag.id), (4, self.free_tag.id)])
+
+        self.assertEqual(doc.document_type_id, self.id_type)
+
+    def test_setting_the_type_puts_its_tag(self):
+        doc = self._doc(tag_ids=[(4, self.free_tag.id)])
+
+        doc.document_type_id = self.id_type
+
+        self.assertEqual(doc.tag_ids, self.free_tag | self.id_tag)
+
+    def test_creating_with_a_type_puts_its_tag(self):
+        doc = self._doc(self.id_type)
+
+        self.assertEqual(doc.tag_ids, self.id_tag)
+
+    def test_changing_the_type_swaps_the_tag(self):
+        doc = self._doc(self.id_type, tag_ids=[(4, self.free_tag.id)])
+
+        doc.document_type_id = self.note_type
+
+        self.assertEqual(doc.tag_ids, self.free_tag | self.note_tag)
+
+    def test_removing_the_type_tag_clears_the_type(self):
+        doc = self._doc(self.id_type, tag_ids=[(4, self.free_tag.id)])
+
+        doc.tag_ids = [(3, self.id_tag.id)]
+
+        self.assertFalse(doc.document_type_id)
+        self.assertEqual(doc.tag_ids, self.free_tag)
+
+    def test_free_tags_leave_the_type_alone(self):
+        doc = self._doc(self.id_type)
+
+        doc.tag_ids = [(4, self.free_tag.id)]
+
+        self.assertEqual(doc.document_type_id, self.id_type)
+        self.assertEqual(doc.tag_ids, self.id_tag | self.free_tag)
+
+    def test_two_type_tags_are_refused(self):
+        doc = self._doc(self.id_type)
+
+        with self.assertRaises(ValidationError):
+            doc.tag_ids = [(4, self.note_tag.id)]
+
+    def test_a_type_and_a_tag_that_disagree_are_refused(self):
+        doc = self._doc()
+
+        with self.assertRaises(ValidationError):
+            doc.write(
+                {
+                    "document_type_id": self.id_type.id,
+                    "tag_ids": [(4, self.note_tag.id)],
+                }
+            )
+
+    def test_a_type_without_a_tag_is_kept_as_is(self):
+        untagged_type = self._type("TT_UNTAGGED")
+        doc = self._doc(untagged_type)
+
+        doc.tag_ids = [(4, self.free_tag.id)]
+
+        self.assertEqual(doc.document_type_id, untagged_type)
+        self.assertEqual(doc.tag_ids, self.free_tag)
+
+    def test_a_type_is_represented_by_one_tag_only(self):
+        with self.assertRaises(IntegrityError), self.env.cr.savepoint():
+            self.env["document.tag"].create(
+                {"name": "INE bis", "document_type_id": self.id_type.id}
+            )
+            self.env.flush_all()

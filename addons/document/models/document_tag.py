@@ -14,6 +14,19 @@ class DocumentsTag(models.Model):
         comodel_name="document.document",
         relation="document_tag_rel",
     )
+    document_type_id = fields.Many2one(
+        comodel_name="document.type",
+        index="btree_not_null",
+        ondelete="set null",
+        help="Document type this tag stands for. Putting the tag on a document "
+        "sets its type and setting the type puts the tag, so a document carries "
+        "at most one such tag",
+    )
+
+    _document_type_uniq = models.UniqueIndex(
+        "(document_type_id) WHERE document_type_id IS NOT NULL",
+        "A document type can be represented by one tag only.",
+    )
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_used_in_server_action(self) -> None:

@@ -6,19 +6,21 @@
             position="inside"
         >
             <t t-if="this.hasComplianceFields">
-                <i class="fa-solid fa-stamp mx-1 my-2" title="Document Type" />
-                <div class="o_field_widget o_field_many2one">
-                    <DocumentsDetailsMany2OneField
-                        name="'document_type_id'"
-                        readonly="this.userPermissionViewOnly"
-                        record="this.record"
-                        canOpen="false"
-                        canCreate="false"
-                        canQuickCreate="false"
-                        canCreateEdit="false"
-                        placeholder.translate="No document type"
-                    />
-                </div>
+                <t t-if="this.documentService.userIsDocumentManager">
+                    <i class="fa-solid fa-stamp mx-1 my-2" title="Document Type" />
+                    <div class="o_field_widget o_field_many2one">
+                        <DocumentsDetailsMany2OneField
+                            name="'document_type_id'"
+                            readonly="this.userPermissionViewOnly"
+                            record="this.record"
+                            canOpen="false"
+                            canCreate="false"
+                            canQuickCreate="false"
+                            canCreateEdit="false"
+                            placeholder.translate="No document type"
+                        />
+                    </div>
+                </t>
 
                 <t t-if="this.complianceDocumentSelected">
                     <i class="fa-solid fa-landmark mx-1 my-2" title="Issuer" />

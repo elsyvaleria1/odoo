@@ -62,7 +62,9 @@
                     string="Requested Documents"
                     domain="[('type', '=', 'binary'), ('attachment_id', '=', False)]" />
                 <separator />
-                <field name="document_type_id" />
+                <field
+                    name="document_type_id"
+                    groups="document.group_documents_manager" />
                 <field name="legal_number" />
                 <filter
                     name="expiration_valid"
@@ -151,7 +153,8 @@
                     <filter
                         name="filter_document_type"
                         string="Document Type"
-                        context="{'group_by': 'document_type_id'}" />
+                        context="{'group_by': 'document_type_id'}"
+                        groups="document.group_documents_manager" />
                     <filter
                         name="filter_expiration_state"
                         string="Expiration"
@@ -554,7 +557,10 @@
                     optional="hide"
                     groups="base.group_user" />
                 <field name="create_date" optional="hide" />
-                <field name="document_type_id" optional="show" />
+                <field
+                    name="document_type_id"
+                    optional="show"
+                    groups="document.group_documents_manager" />
                 <field name="has_expiration" column_invisible="1" />
                 <field name="legal_number" optional="hide" />
                 <field name="issuer_id" optional="hide" />
