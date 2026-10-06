@@ -20,16 +20,18 @@ class DocumentsDocument(models.Model):
         embedded_actions = self._get_folder_embedded_actions(
             self.folder_id.ids, reached=True
         )
-        embedded_actions_per_folder = {
-            folder_id: actions.ids for folder_id, actions in embedded_actions.items()
-        }
-        self.available_embedded_actions_ids = False
-        for document in self.filtered(
-            lambda d: d.type != "folder" and not d.shortcut_document_id
-        ):
-            document.available_embedded_actions_ids = embedded_actions_per_folder.get(
-                document.folder_id.id, False
+        # one assignment per folder: each one costs the relation's bookkeeping,
+        # which per document was the most of this compute
+        empty = self.env["ir.embedded.actions"]
+        by_actions = self.grouped(
+            lambda d: (
+                embedded_actions.get(d.folder_id.id, empty)
+                if d.type != "folder" and not d.shortcut_document_id
+                else empty
             )
+        )
+        for actions, documents in by_actions.items():
+            documents.available_embedded_actions_ids = actions
 
     @api.model
     def action_folder_embed_action(self, folder_id: int, action_id: int) -> list:
@@ -296,6 +298,9 @@ class DocumentsDocument(models.Model):
                 order="sequence",
             )
         )
+        if not all_embedded_actions_sudo:
+            # nothing pinned: which server actions the user may run is moot
+            return {}
         accessible_server_actions_ids = (
             self.env["ir.actions.server"]
             .sudo()
