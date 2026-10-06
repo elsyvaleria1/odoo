@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (4717 methods, 944 classes, 173 files)
+# All base tests (4726 methods, 946 classes, 174 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -213,7 +213,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_with_privilege.py` | `post_install`, `-at_install` | 2 | 13 | TransactionCase |
 | `test_x2many_cache_scope.py` | `post_install`, `-at_install` | 4 | 15 | TransactionCase |
 
-### Untagged Files (67 files)
+### Untagged Files (68 files)
 
 These run in **both** at_install and post_install phases by default.
 
@@ -263,6 +263,7 @@ These run in **both** at_install and post_install phases by default.
 - `test_module.py` — Module operations needing a database (the manifest,
 - `test_num2words_ar.py` — Arabic number words
 - `test_pdf.py` — PDF operations
+- `test_pdf_raster.py` — TestPdfRaster, TestPdfRasterUnavailable
 - `test_populate.py` — TestPopulate
 - `test_properties_base_definition.py` — TestPropertiesBaseDefinition
 - `test_query.py` — SQL query building
@@ -289,11 +290,11 @@ These run in **both** at_install and post_install phases by default.
 
 | Metric | Value |
 |--------|-------|
-| Total test files | 173 |
-| Total test classes | 944 |
-| Total test methods | 4717 |
+| Total test files | 174 |
+| Total test classes | 946 |
+| Total test methods | 4726 |
 | Files with @tagged | 106 (61%) |
-| Files without @tagged | 67 (39%) |
+| Files without @tagged | 68 (39%) |
 | Classes using post_install | 342 |
 | Unique tags | 29 |
 | Largest test file | test_db_cursor.py (125 classes, 403 tests) |

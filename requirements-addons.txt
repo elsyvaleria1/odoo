@@ -91,9 +91,10 @@ pdfminer.six==20260107  # attachment_indexation — optional, degrades without i
 phonenumbers==9.0.40  # phone_validation
 pymodbus==3.15.0  # integration_modbus
 # AGPL-3.0-or-commercial, which is why base/ir_actions_report guards the import
-# and degrades rather than depending on it. setup.py offers the same package as
-# the `pdf-raster` extra.
-PyMuPDF==1.28.2  # base — optional
+# and degrades rather than depending on it, and odoo.libs.pdf_raster loads it
+# only in a child process of its own. setup.py offers the same package as the
+# `pdf-raster` extra.
+PyMuPDF==1.28.2  # base, document (odoo.libs.pdf_raster) — optional
 python-ldap==3.4.8 ; sys_platform != 'win32'  # auth_ldap
 python-stdnum==2.2  # account_vat + 15 l10n modules. Fixes operation_timeout in SOAP client
 qrcode==8.2  # auth_totp, pos_self_order
