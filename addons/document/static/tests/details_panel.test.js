@@ -378,7 +378,7 @@ test("Add from document from log a note", async () => {
         args[0].map((model) => ({ model, display_name: model })),
     );
     onRpc("document.document", "add_documents_attachment", ({ args }) => {
-        expect(args).toEqual([[12], "wizard.mail.message.send", 0, false]);
+        expect(args).toEqual([[12], "wizard.mail.message.send", 0]);
         expect.step("add_documents_attachment");
         return [
             {

@@ -25,18 +25,21 @@ export class AddDocumentsAttachmentPlugin extends Plugin {
 
     openSelectAddDocumentCreateDialog() {
         const { resModel, resId: rawResId } = this.config.getRecordInfo?.() || {};
-        // a view's content is served to website visitors: its files must be public
+        // a view's content is served to website visitors: they get links to
+        // the documents, shared by link, never copies outside their access
         const isPublic = resModel === "ir.ui.view";
-        const resId = isPublic || !rawResId ? false : parseInt(rawResId) || false;
+        const resId = parseInt(rawResId) || false;
         const dialog = {
             add: (...args) => this.dependencies.dialog.addDialog(...args),
         };
         openDocumentsPicker(dialog, {
             // an unsaved record has nothing to attach the copies to yet
-            onAddAttachments: rawResId
-                ? (attachments) => this.insertFiles(attachments)
-                : undefined,
-            attachTo: { resModel, resId, isPublic },
+            onAddAttachments:
+                resId && !isPublic
+                    ? (attachments) => this.insertFiles(attachments)
+                    : undefined,
+            attachTo: { resModel, resId },
+            linksArePublic: isPublic,
             onPasteLinks: (links) => this.insertLinks(links),
         });
     }

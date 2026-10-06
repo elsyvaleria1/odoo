@@ -4,6 +4,7 @@ import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
 import { omit } from "@web/core/utils/collections/objects";
 import { useService } from "@web/core/utils/hooks";
+import { ConfirmationDialog } from "@web/ui/dialog";
 import { SelectCreateDialog } from "@web/views/view_dialogs";
 
 const log = makeLogger("document.add_documents");
@@ -19,14 +20,17 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
         /** absent where nothing can be attached yet (an unsaved record) */
         onAddAttachments: t.function().optional(),
         onPasteLinks: t.function(),
-        /** where the attachment copies are made: resModel, resId, isPublic */
+        /** where the attachment copies are made: resModel, resId */
         attachTo: t.object().optional(),
+        /** the links are for visitors: a document must be shared by link */
+        linksArePublic: t.boolean().optional(false),
     };
 
     setup() {
         super.setup();
         this.orm = useService("orm");
         this.notification = useService("notification");
+        this.dialogService = useService("dialog");
     }
 
     get viewProps() {
@@ -58,15 +62,12 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
     /** @param {number[]} resIds */
     addAttachments(resIds) {
         return this._runOnceAndClose(_t("Failed to add document(s): "), async () => {
-            const {
-                resModel = "wizard.mail.message.send",
-                resId = 0,
-                isPublic = false,
-            } = this.props.attachTo || {};
+            const { resModel = "wizard.mail.message.send", resId = 0 } =
+                this.props.attachTo || {};
             const attachmentRecords = await this.orm.call(
                 "document.document",
                 "add_documents_attachment",
-                [resIds, resModel, resId, isPublic],
+                [resIds, resModel, resId],
             );
             const attachments = await this._processAttachments(attachmentRecords);
             log.logic("addAttachments", () => ({
@@ -81,12 +82,89 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
     /** @param {number[]} resIds */
     pasteLinks(resIds) {
         return this._runOnceAndClose(_t("Failed to paste link(s): "), async () => {
-            const links = await this.orm.read("document.document", resIds, [
+            let links = await this.orm.read("document.document", resIds, [
                 "display_name",
                 "access_url",
+                "access_via_link",
+                "user_can_manage",
             ]);
+            if (this.props.linksArePublic) {
+                links = await this._shareForVisitors(links);
+            }
+            log.logic("pasteLinks", () => ({
+                documents: resIds.length,
+                pasted: links.length,
+                linksArePublic: this.props.linksArePublic,
+            }));
+            if (!links.length) {
+                return;
+            }
             await this.props.onPasteLinks(links);
             this.notification.add(_t("Link(s) pasted!"), { type: "success" });
+        });
+    }
+
+    /**
+     * A visitor opens only a document shared by link: the ones that are not
+     * are shared once the user agrees, where they may share them, and are
+     * left out otherwise.
+     *
+     * @param {Object[]} links
+     * @returns {Promise<Object[]>} the links a visitor can open
+     */
+    async _shareForVisitors(links) {
+        const isShared = (link) => link.access_via_link !== "none";
+        const unshared = links.filter((link) => !isShared(link));
+        const shareable = unshared.filter((link) => link.user_can_manage);
+        const unshareable = unshared.filter((link) => !link.user_can_manage);
+        log.logic("shareForVisitors", () => ({
+            shared: links.length - unshared.length,
+            shareable: shareable.map((link) => link.id),
+            unshareable: unshareable.map((link) => link.id),
+        }));
+        if (unshareable.length) {
+            this.notification.add(
+                _t(
+                    "Visitors could not open %s: it is not shared by link, and only who manages it can share it.",
+                    unshareable.map((link) => link.display_name).join(", "),
+                ),
+                { type: "warning" },
+            );
+        }
+        let shared = [];
+        if (shareable.length && (await this._confirmSharing(shareable))) {
+            await this.orm.call(
+                "document.document",
+                "action_update_access_rights",
+                [shareable.map((link) => link.id)],
+                { access_via_link: "view" },
+            );
+            shared = shareable;
+        }
+        const pasted = new Set([...links.filter(isShared), ...shared]);
+        return links.filter((link) => pasted.has(link));
+    }
+
+    /**
+     * @param {Object[]} links
+     * @returns {Promise<boolean>}
+     */
+    _confirmSharing(links) {
+        return new Promise((resolve) => {
+            this.dialogService.add(
+                ConfirmationDialog,
+                {
+                    title: _t("Share by link?"),
+                    body: _t(
+                        "Visitors can open only documents shared by link. Share %s so that anyone with the link can view it?",
+                        links.map((link) => link.display_name).join(", "),
+                    ),
+                    confirmLabel: _t("Share and paste"),
+                    confirm: () => resolve(true),
+                    cancel: () => resolve(false),
+                },
+                { onClose: () => resolve(false) },
+            );
         });
     }
 

@@ -70,30 +70,20 @@ class TestDocumentsDownloadBlocked(TransactionCase):
         )
         self.assertEqual(len(media), 1)
 
-    def test_a_public_copy_is_made_only_for_a_web_page_its_caller_can_write(self):
-        open_document = self.env["document.document"].create(
-            {"name": "picture.txt", "type": "binary", "raw": b"open"}
-        )
-        open_document.action_update_access_rights(
-            partners={self.viewer.partner_id: ("view", False)}
-        )
-        with self.assertRaisesRegex(AccessError, "web page"):
-            open_document.with_user(self.viewer).add_documents_attachment(
-                "wizard.mail.message.send", 0, is_public=True
-            )
+    def test_a_copy_is_never_public_a_web_page_links_to_the_document(self):
         page = self.env["ir.ui.view"].create(
             {"name": "page", "type": "qweb", "arch": "<div/>"}
         )
         with self.assertRaises(AccessError):
-            open_document.with_user(self.viewer).add_documents_attachment(
-                "ir.ui.view", page.id, is_public=True
+            self.document.with_user(self.editor).add_documents_attachment(
+                "ir.ui.view", page.id
             )
-        media = open_document.add_documents_attachment(
-            "ir.ui.view", page.id, is_public=True
-        )
+        media = self.document.add_documents_attachment("ir.ui.view", page.id)
         copy = self.env["ir.attachment"].browse(media[0]["id"])
-        self.assertTrue(copy.public)
-        self.assertTrue(copy.access_token)
+        self.assertFalse(copy.public)
+        self.assertFalse(copy.access_token)
+        with self.assertRaises(TypeError):
+            self.document.add_documents_attachment("ir.ui.view", page.id, True)
 
     def test_an_unblocked_document_is_downloadable_by_viewers(self):
         open_document = self.env["document.document"].create(

@@ -49,6 +49,8 @@ export class DocumentsDocument extends models.Model {
     is_multipage = fields.Boolean();
 
     user_can_move = fields.Boolean({ default: true });
+    user_can_manage = fields.Boolean({ default: true });
+    access_url = fields.Char();
     // the server's answers for the current user, recomputed on every write
     is_locked_by_other = fields.Boolean({ compute: "_compute_capabilities" });
     user_can_trash = fields.Boolean({ compute: "_compute_capabilities" });

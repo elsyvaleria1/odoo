@@ -2427,9 +2427,13 @@ class DocumentsDocument(models.Model):
         )
         return super(DocumentsDocument, to_unarchive_documents).action_unarchive()
 
-    def add_documents_attachment(
-        self, res_model: str, res_id: int, is_public: bool = False
-    ) -> list[dict]:
+    def add_documents_attachment(self, res_model: str, res_id: int) -> list[dict]:
+        """Copy the documents' files as attachments of a record being edited.
+
+        The copies are private to that record. A content served to visitors (a
+        web page) links to the documents instead, which stay revocable, logged
+        and current: a public copy would leave the documents' access for good.
+        """
         # the copies are plain attachments, outside the documents' download
         # block: a file its caller may only view is not theirs to attach, as
         # it is not theirs to duplicate (copy)
@@ -2444,26 +2448,15 @@ class DocumentsDocument(models.Model):
                     "You cannot attach “%s”: its download is blocked.", blocked[0].name
                 )
             )
-        # a public copy carries an access token anyone can use: it is what a
-        # web page's editor inserts, and only in a page its caller may edit
-        if is_public and not self.env.su:
-            if res_model != "ir.ui.view":
-                raise AccessError(
-                    self.env._(
-                        "A public copy of a document is only made for a web page."
-                    )
-                )
-            self.env["ir.ui.view"].browse(res_id).check_access("write")
         origins = self.attachment_id
         new_attachments = origins.copy(
-            {"res_model": res_model, "res_id": res_id, "public": is_public}
+            {"res_model": res_model, "res_id": res_id, "public": False}
         )
         for origin, copied in zip(origins, new_attachments, strict=True):
             copied.original_id = origin.id
-
-        if is_public:
-            new_attachments.generate_access_token()
-
+        _debug.lifecycle(
+            "attachments_copied", documents=self, res_model=res_model, res_id=res_id
+        )
         return [attachment._get_media_info() for attachment in new_attachments]
 
     def _copy_attachment_filter(self, default: dict | None) -> DocumentsDocument:
