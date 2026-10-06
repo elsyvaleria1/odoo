@@ -368,6 +368,14 @@ class AccessMixin(_ModelStubs):
         )
         return self.browse(id_ for id_ in self._ids if id_ in allowed_ids)
 
+    def _visible_display_names(self) -> dict[IdType, str | None]:
+        # each of these existing records' display name where the current user
+        # may see it, None where it is withheld: one access decision for the
+        # batch, so one unreadable record never sends the rest one by one
+        named = self._filtered_display_name_access()
+        names = dict(zip(named._ids, named.sudo().mapped("display_name"), strict=True))
+        return {id_: names.get(id_) for id_ in self._ids}
+
     def _check_access(
         self, operation: str
     ) -> tuple[Self, Callable[[], Exception]] | None:

@@ -1600,6 +1600,53 @@ class TestDocumentsResName(TransactionCaseDocuments):
         self.assertEqual(doc_restricted.with_user(self.doc_user).res_name, "Restricted")
         self.assertFalse(doc_missing.res_name)
 
+    def test_res_name_restricted_targets_cost_no_query_per_document(self):
+        partners = self.env["res.partner"].create(
+            [{"name": f"readable target {i}"} for i in range(10)]
+        )
+        params = self.env["ir.config_parameter"].create(
+            [
+                {"key": f"document.restricted_target_{i}", "value": "x"}
+                for i in range(10)
+            ]
+        )
+        targets = [("res.partner", p.id) for p in partners] + [
+            ("ir.config_parameter", p.id) for p in params
+        ]
+        documents = self.env["document.document"].create(
+            [
+                {
+                    "type": "binary",
+                    "name": f"link {i}",
+                    "folder_id": self.folder_b.id,
+                    "owner_id": self.doc_user.id,
+                    "res_model": res_model,
+                    "res_id": res_id,
+                }
+                for i, (res_model, res_id) in enumerate(targets)
+            ]
+        )
+        self.env.flush_all()
+        as_user = documents.with_user(self.doc_user)
+        few = as_user[:1] | as_user[10:11]
+
+        def statements(docs):
+            self.env.invalidate_all()
+            start = self.cr.sql_statement_count
+            names = docs.mapped("res_name")
+            return self.cr.sql_statement_count - start, names
+
+        statements(few)
+        few_count, _names = statements(few)
+        all_count, names = statements(as_user)
+        self.assertEqual(names[:10], partners.mapped("display_name"))
+        self.assertEqual(names[10:], ["Restricted"] * 10)
+        self.assertEqual(
+            all_count,
+            few_count,
+            f"2 documents cost {few_count} statements, 20 cost {all_count}",
+        )
+
     def test_f4_compute_res_name_ignores_whether_an_attachment_exists(self):
         param = self.env["ir.config_parameter"].create(
             {"key": "document.audit3_probe_attached", "value": "x"}

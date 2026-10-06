@@ -1157,6 +1157,121 @@ class TestUnityRead(TransactionCase):
             ],
         )
 
+    def _partial_lesson_reader(self):
+        # reads the lessons named "open…" and no other
+        group = self.env["res.groups"].create({"name": "open lesson readers"})
+        self.env["ir.access"].create(
+            {
+                "name": "open lessons only",
+                "model_id": self.env.ref("test_orm.model_test_orm_lesson").id,
+                "group_id": group.id,
+                "kind": "permission",
+                "operation": "r",
+                "reach": "all",
+                "domain": "[('name', '=like', 'open%')]",
+            }
+        )
+        user = new_test_user(self.env, "partial lessons", "base.group_public")
+        user.group_ids = [Command.link(group.id)]
+        return user
+
+    def _courses_on_lessons(self, names):
+        lessons = self.env["test_orm.lesson"].create(
+            [{"name": name, "course_id": self.course.id} for name in names]
+        )
+        return self.env["test_orm.course"].create(
+            [
+                {
+                    "name": f"on {lesson.name}",
+                    "m2o_reference_model": lesson._name,
+                    "m2o_reference_id": lesson.id,
+                    "reference": f"{lesson._name},{lesson.id}",
+                }
+                for lesson in lessons
+            ]
+        )
+
+    def test_reference_mixed_access_reads_each_target_as_allowed(self):
+        user = self._partial_lesson_reader()
+        courses = self._courses_on_lessons(["open a", "closed b"])
+        self.env.invalidate_all()
+        read = courses.with_user(user).web_read(
+            {
+                "m2o_reference_id": {"fields": {"display_name": {}, "date": {}}},
+                "reference": {"fields": {"display_name": {}}},
+            }
+        )
+        opened, closed = read
+        self.assertEqual(opened["m2o_reference_id"]["display_name"], "open a")
+        self.assertIn("date", opened["m2o_reference_id"])
+        self.assertEqual(opened["reference"]["display_name"], "open a")
+        withheld = "You don't have access to this record"
+        self.assertEqual(
+            closed["m2o_reference_id"],
+            {"id": closed["m2o_reference_id"]["id"], "display_name": withheld},
+        )
+        self.assertEqual(closed["reference"]["display_name"], withheld)
+
+    def test_reference_read_cost_does_not_grow_with_withheld_targets(self):
+        user = self._partial_lesson_reader()
+        courses = self._courses_on_lessons(
+            [f"open {i}" for i in range(7)] + [f"closed {i}" for i in range(7)]
+        )
+        few = courses[:1] | courses[7:8]
+        spec = {"m2o_reference_id": {"fields": {"display_name": {}}}}
+
+        def queries(subset):
+            self.env.invalidate_all()
+            start = self.env.cr.sql_statement_count
+            subset.with_user(user).web_read(spec)
+            return self.env.cr.sql_statement_count - start
+
+        queries(few)
+        self.assertEqual(queries(few), queries(courses))
+
+    def test_a_withheld_reference_read_for_its_id_only_is_its_id(self):
+        user = self._partial_lesson_reader()
+        courses = self._courses_on_lessons(["closed id"])
+        self.env.invalidate_all()
+        for spec in ({}, {"id": {}}):
+            read = courses.with_user(user).web_read(
+                {"m2o_reference_id": {"fields": spec}}
+            )
+            self.assertEqual(
+                read[0]["m2o_reference_id"], {"id": courses.m2o_reference_id}
+            )
+
+    def test_a_reference_sub_field_the_reader_may_not_read_withholds_the_target(self):
+        user = self._partial_lesson_reader()
+        courses = self._courses_on_lessons(["open restricted"])
+        lesson_name = self.env["test_orm.lesson"]._fields["name"]
+        self.env.invalidate_all()
+        with patch.object(lesson_name, "groups", "base.group_system"):
+            read = courses.with_user(user).web_read(
+                {"m2o_reference_id": {"fields": {"name": {}}}}
+            )
+        self.assertEqual(
+            read[0]["m2o_reference_id"],
+            {
+                "id": courses.m2o_reference_id,
+                "display_name": "You don't have access to this record",
+            },
+        )
+
+    def test_reference_to_a_deleted_target_reads_false(self):
+        courses = self._courses_on_lessons(["open gone"])
+        lesson = self.env["test_orm.lesson"].browse(courses.m2o_reference_id)
+        lesson.unlink()
+        self.env.invalidate_all()
+        read = courses.web_read(
+            {
+                "m2o_reference_id": {"fields": {"display_name": {}}},
+                "m2o_reference_model": {},
+            }
+        )
+        self.assertEqual(read[0]["m2o_reference_id"], False)
+        self.assertEqual(read[0]["m2o_reference_model"], False)
+
     def test_properties(self):
         discussion = self.env["test_orm.discussion"].create(
             {

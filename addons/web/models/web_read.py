@@ -6,11 +6,14 @@ from odoo.api import DomainType, NewId
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Command
 from odoo.fields import Datetime as FieldsDatetime
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import OrderedSet
 from odoo.tools.authority_keys import strip_authority_keys
 from odoo.tools.cache_version import versioned_dispatched, versioned_envelope
 
 from odoo.addons.base.models.ir_ui_view_base import VERBS_FIELD
+
+_debug = DebugLog(__name__)
 
 
 class lazymapping(defaultdict):
@@ -486,20 +489,12 @@ class Base(models.AbstractModel):
     def _web_read_resolve_many2one(
         self, values_list, field, field_name, field_spec
     ) -> None:
-        def cleanup(vals: dict) -> dict:
-            if not vals["id"]:
-                vals["id"] = vals["id"].origin or False
-            return vals
-
-        if "fields" not in field_spec:
-            for values in values_list:
-                if isinstance(values[field_name], NewId):
-                    values[field_name] = values[field_name].origin or False
-            return
-
         for values in values_list:
             if isinstance(values[field_name], NewId):
                 values[field_name] = values[field_name].origin or False
+
+        if "fields" not in field_spec:
+            return
 
         co_ids = OrderedSet(
             vals[field_name] for vals in values_list if vals[field_name]
@@ -509,40 +504,63 @@ class Base(models.AbstractModel):
             co_records = co_records.with_context(
                 **strip_authority_keys(field_spec["context"], door="web_read")
             )
-
-        extra_fields = dict(field_spec["fields"])
-        extra_fields.pop("display_name", None)
-
-        if co_records:
-            readable_records = (
-                co_records.with_context(active_test=False)
-                ._filtered_access("read")
-                .with_context(co_records.env.context)
-            )
-        else:
-            readable_records = co_records
-
-        many2one_data = {
-            vals["id"]: cleanup(vals)
-            for vals in readable_records._web_read(extra_fields)
-        }
-
-        withheld = co_records.browse(
-            [co_id for co_id in co_ids if co_id not in many2one_data]
+        many2one_data, _withheld = self._web_read_targets(
+            co_records, field_spec["fields"]
         )
-        for rec in withheld.sudo().exists():
-            many2one_data[rec.id] = {"id": rec.id}
-
-        if "display_name" in field_spec["fields"]:
-            named = co_records.browse([co_id for co_id in many2one_data if co_id])
-            for rec in named._filtered_display_name_access().sudo():
-                many2one_data[rec.id]["display_name"] = rec.display_name
 
         for values in values_list:
             if values[field_name] is False:
                 continue
             vals = many2one_data.get(values[field_name])
             values[field_name] = (vals and vals["id"] and vals) or False
+
+    @api.model
+    def _web_read_targets(
+        self, co_records: models.BaseModel, sub_fields: dict
+    ) -> tuple[dict, set]:
+        # the records a relation points to, as the current user may read them:
+        # those they read with sub_fields, the others by id only, and the
+        # display name of each wherever they may see it. One access decision
+        # for the batch: an unreadable target never sends the readable ones
+        # one by one. co_records must exist.
+        def cleanup(vals: dict) -> dict:
+            if not vals["id"]:
+                vals["id"] = vals["id"].origin or False
+            return vals
+
+        extra_fields = dict(sub_fields)
+        extra_fields.pop("display_name", None)
+        readable = (
+            co_records.with_context(active_test=False)
+            ._filtered_access("read")
+            .with_context(co_records.env.context)
+            if co_records
+            else co_records
+        )
+        data = {vals["id"]: cleanup(vals) for vals in readable._web_read(extra_fields)}
+
+        withheld = set()
+        for rec in (
+            co_records.browse([co_id for co_id in co_records._ids if co_id not in data])
+            .sudo()
+            .exists()
+        ):
+            data[rec.id] = {"id": rec.id}
+            withheld.add(rec.id)
+
+        if "display_name" in sub_fields:
+            named = co_records.browse([co_id for co_id in data if co_id])
+            for co_id, name in named._visible_display_names().items():
+                if name is not None:
+                    data[co_id]["display_name"] = name
+        if _debug.logic.enabled:
+            _debug.logic(
+                "web_read.targets",
+                model=co_records._name,
+                targets=len(co_records),
+                withheld=len(withheld),
+            )
+        return data, withheld
 
     def _web_read_resolve_x2many(
         self, values_list, field, field_name, field_spec
@@ -621,9 +639,6 @@ class Base(models.AbstractModel):
 
         values_by_id = {vals["id"]: vals for vals in values_list}
         has_sub_fields = "fields" in field_spec
-        can_infer_existence = has_sub_fields and any(
-            fname != "id" for fname in field_spec["fields"]
-        )
 
         co_by_model = defaultdict(list)
         for record in self:
@@ -643,40 +658,41 @@ class Base(models.AbstractModel):
                 )
 
         for model_name, pairs in co_by_model.items():
-            co_ids = list({co_id for _, co_id in pairs})
             CoModel = self.env[model_name]
             if "context" in field_spec:
                 CoModel = CoModel.with_context(
                     **strip_authority_keys(field_spec["context"], door="web_read")
                 )
-            co_recordset = CoModel.browse(co_ids)
+            # a reference has no foreign key: its target may be gone
+            existing = CoModel.browse(
+                list(dict.fromkeys(co_id for _, co_id in pairs))
+            ).exists()
 
             co_data = {}
             if has_sub_fields:
+                sub_fields = field_spec["fields"]
                 try:
-                    co_data = {
-                        d["id"]: d for d in co_recordset._web_read(field_spec["fields"])
-                    }
+                    co_data, withheld = self._web_read_targets(existing, sub_fields)
                 except AccessError:
-                    for co_id in co_ids:
+                    # a sub-field some target refuses fails the batch: each
+                    # target is read alone, and those that refuse are withheld
+                    co_data, withheld = {}, set()
+                    for target in existing:
                         try:
-                            result = CoModel.browse(co_id)._web_read(
-                                field_spec["fields"]
-                            )
-                            if result:
-                                co_data[co_id] = result[0]
+                            data, refused = self._web_read_targets(target, sub_fields)
                         except AccessError:
-                            co_data[co_id] = {
-                                "id": co_id,
-                                "display_name": self.env._(
-                                    "You don't have access to this record"
-                                ),
-                            }
+                            data, refused = {target.id: {"id": target.id}}, {target.id}
+                        co_data.update(data)
+                        withheld |= refused
+                # what an id-only read never asked for, it is never told
+                if any(fname != "id" for fname in sub_fields):
+                    for co_id in withheld:
+                        co_data[co_id].setdefault(
+                            "display_name",
+                            self.env._("You don't have access to this record"),
+                        )
 
-            existing_ids = (
-                set(co_data) if can_infer_existence else set(co_recordset.exists().ids)
-            )
-
+            existing_ids = set(existing._ids)
             for record_id, co_id in pairs:
                 record_values = values_by_id[record_id]
                 if co_id not in existing_ids:

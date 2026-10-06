@@ -13,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 import odoo
 from odoo import SUPERUSER_ID, Command, api, fields, models, modules
 from odoo.api import ValuesType
-from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import get_extension
@@ -1996,33 +1996,30 @@ class DocumentsDocument(models.Model):
 
     @api.depends("res_model", "res_id")
     def _compute_res_name(self) -> None:
-        linked = self.filtered(lambda d: d.res_id and d.res_model)
-        for res_model, documents in linked.grouped("res_model").items():
-            if res_model not in self.env:
-                continue
-            with contextlib.suppress(MissingError, AccessError):
-                self.env[res_model].browse(documents.mapped("res_id")).exists().mapped(
-                    "display_name"
-                )
-
+        linked = self.filtered(
+            lambda d: d.res_id and d.res_model and d.res_model in self.env
+        )
         (self - linked).res_name = False
-        for record in linked:
-            if record.res_model not in self.env:
-                record.res_name = False
-                continue
-            try:
-                record.res_name = (
-                    self.env[record.res_model].browse(record.res_id).display_name
+        with _debug.perf(
+            "res_name", cr=self.env.cr, documents=len(self), linked=len(linked)
+        ) as span:
+            masked = 0
+            for res_model, documents in linked.grouped("res_model").items():
+                names = (
+                    self.env[res_model]
+                    .browse(documents.mapped("res_id"))
+                    .exists()
+                    ._visible_display_names()
                 )
-            except MissingError:
-                record.res_name = False
-            except AccessError:
-                _debug.logic(
-                    "res_name_masked",
-                    document=record,
-                    res_model=record.res_model,
-                )
-                record.res_name = self.env._("Restricted")
+                for document in documents:
+                    if document.res_id not in names:
+                        document.res_name = False
+                    elif names[document.res_id] is None:
+                        masked += 1
+                        document.res_name = self.env._("Restricted")
+                    else:
+                        document.res_name = names[document.res_id]
+            span.set(masked=masked)
 
     @api.depends(
         "checksum",
