@@ -913,10 +913,19 @@ test("Control panel cog menu visibility", async function () {
 
     await contains(".o_search_panel_label_title:contains('Company')").click();
     await waitFor(".o_last_breadcrumb_item:contains('Company')");
-    await waitForNone(".o_cp_action_menus", {});
+    expect(".o_cp_action_menus").toHaveCount(1, {
+        message: "a root keeps the view's cog: a lone crumb is still a crumb",
+    });
     await contains(`.o_kanban_record:contains('${folder1Name}')`).click();
     await waitFor(`.o_last_breadcrumb_item:contains('${folder1Name}')`);
     expect(`.o_cp_action_menus`).toHaveCount(1);
+    await contains(".o_kanban_record:contains('Request') .o_record_selector").click({
+        ctrlKey: true,
+    });
+    await animationFrame();
+    expect(".o_control_panel .o_cog_menu_toggler").toHaveCount(0, {
+        message: "a selection has its own actions: the cog steps aside, as web's",
+    });
 });
 
 test("Select a range with SHIFT key", async () => {

@@ -3,10 +3,13 @@ import { documentActions, documentActionText } from "@document/views/document_ac
 import { useDocumentContext } from "@document/views/document_context";
 import { reloadDocumentsView } from "@document/views/hooks";
 import { Component, useProps } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { useService } from "@web/core/utils/hooks";
 import { useViewScope } from "@web/model/view_scope";
 import { CogMenuItem } from "@web/search/cog_menu/cog_menu_item";
 import { useSearchModel } from "@web/search/search_model";
+
+const log = makeLogger("document.cog_menu");
 
 /**
  * @param {Object} env
@@ -27,15 +30,25 @@ export function isDocumentsCogMenuItemVisible(
     ) {
         return false;
     }
+    // a picker in a dialog shows folders to pick from, not to act on
+    if (searchModel.context.documents_view_secondary) {
+        return false;
+    }
     const folder = searchModel.getSelectedFolder();
     const documentService = services["document.document"];
-    return Boolean(
+    const visible = Boolean(
         folder &&
         documentService &&
         ["kanban", "list"].includes(config.viewType) &&
         (!isVisibleAdditional ||
             isVisibleAdditional({ folder, config, searchModel, documentService })),
     );
+    log.logic("itemVisible", () => ({
+        folderId: folder?.id,
+        viewType: config.viewType,
+        visible,
+    }));
+    return visible;
 }
 
 export class DocumentsCogMenuItem extends Component {

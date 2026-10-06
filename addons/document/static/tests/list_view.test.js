@@ -754,6 +754,59 @@ test("the row's Trash keeps away from what action_archive refuses", () => {
     );
 });
 
+test("the cog is there at a root too, with its global entries; a folder adds its own", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "In Folder 1", { folder_id: 1 }),
+        makeDocumentRecordData(3, "Read Only", {
+            type: "folder",
+            folder_id: 1,
+            user_permission: "view",
+        }),
+    ]);
+    onRpc("/documents/touch/*", () => ({}));
+    let searchModel;
+    patchWithCleanup(DocumentsSearchModel.prototype, {
+        setup() {
+            super.setup(...arguments);
+            searchModel = this;
+        },
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsListView();
+    const cogItems = async () => {
+        expect(".o_control_panel .o_cog_menu_toggler").toHaveCount(1, {
+            message: "one cog: the view's and the folder's are the same menu",
+        });
+        await contains(".o_control_panel .o_cog_menu_toggler").click();
+        const items = queryAll(".o-dropdown--menu .o-dropdown-item").map((el) =>
+            el.textContent.trim(),
+        );
+        await contains(".o_control_panel .o_cog_menu_toggler").click();
+        return items;
+    };
+    for (const root of [false, "COMPANY", "TRASH"]) {
+        searchModel.toggleCategoryValue(searchModel.folderCategory.id, root);
+        await animationFrame();
+        const items = await cogItems();
+        expect(items).toInclude("Export All", {
+            message: `${root}: a lone root crumb`,
+        });
+        expect(items).not.toInclude("Rename…");
+    }
+    searchModel.toggleCategoryValue(searchModel.folderCategory.id, 1);
+    await animationFrame();
+    const items = await cogItems();
+    expect(items).toInclude("Export All");
+    expect(items).toInclude("Rename…");
+
+    // from a folder to another: the menu follows, no remount needed
+    searchModel.toggleCategoryValue(searchModel.folderCategory.id, 3);
+    await animationFrame();
+    expect(await cogItems()).not.toInclude("Rename…", {
+        message: "a folder the user may only view is not renamed",
+    });
+});
+
 test("the folder tree is fetched without narrowing it to the open folder", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Doc A", { folder_id: 1 }),

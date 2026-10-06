@@ -3,9 +3,20 @@ import {
     mountPdfManager,
     usePdfManagerDoubles,
 } from "@document/../tests/helpers/pdf_manager";
+import { DocumentsKanbanModel } from "@document/views/kanban/document_kanban_model";
 import { describe, expect, test } from "@odoo/hoot";
+import { queryAllTexts } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
-import { contains, defineModels } from "@web/../tests/web_test_helpers";
+import {
+    contains,
+    defineActions,
+    defineModels,
+    getService,
+    mountWithCleanup,
+    onRpc,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
+import { WebClient } from "@web/webclient/webclient";
 
 import {
     DocumentsModels,
@@ -13,7 +24,12 @@ import {
     makeDocumentRecordData,
 } from "./helpers/data.js";
 import { makeDocumentsMockEnv } from "./helpers/model.js";
-import { mountDocumentsKanbanView } from "./helpers/views/kanban.js";
+import {
+    basicDocumentsKanbanArch,
+    mountDocumentsKanbanView,
+} from "./helpers/views/kanban.js";
+import { basicDocumentsListArch } from "./helpers/views/list.js";
+import { getEnrichedSearchArch } from "./helpers/views/search.js";
 
 describe.current.tags("mobile");
 
@@ -62,5 +78,93 @@ test("picking a folder with no subfolder closes the folder menu", async () => {
     await animationFrame();
     expect(".o_search_panel_category_value").toHaveCount(0, {
         message: "a leaf has nothing left to show in the menu",
+    });
+});
+
+test("on a small screen the cog acts on the open folder too", async () => {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "In Folder 1", { folder_id: 1 }),
+    ]);
+    onRpc("/documents/touch/*", () => ({}));
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsKanbanView();
+    await contains(".o_search_panel .dropdown-toggle").click();
+    await contains(
+        ".o_search_panel_category_value[data-value-id='COMPANY'] .o_toggle_fold",
+    ).click();
+    await contains(".o_search_panel_label_title:contains('Folder 1')").click();
+    await animationFrame();
+    await contains(".o_cog_menu_toggler").click();
+    const items = queryAllTexts(".o-dropdown--menu .o-dropdown-item");
+    expect(items).toInclude("Rename…", {
+        message: "the folder's actions, not only the view's",
+    });
+    expect(items).toInclude("Share…");
+});
+
+/** @returns {Promise<Object>} the kanban model of the mounted view */
+async function mountKanbanCapturingModel(serverData) {
+    let model;
+    patchWithCleanup(DocumentsKanbanModel.prototype, {
+        setup() {
+            super.setup(...arguments);
+            model = this;
+        },
+    });
+    await makeDocumentsMockEnv({ serverData });
+    return { getModel: () => model };
+}
+
+const folderMenuHidden = () =>
+    Boolean(document.querySelector(".o_content > .o_search_panel.d-none"));
+
+test("the folder menu steps aside while documents are selected", async () => {
+    const { getModel } = await mountKanbanCapturingModel(
+        getDocumentsTestServerModelsData([makeDocumentRecordData(2, "Doc A")]),
+    );
+    await mountDocumentsKanbanView();
+    const record = getModel().root.records.find((r) => r.resId === 2);
+    expect(folderMenuHidden()).toBe(false);
+    record.toggleSelection(true);
+    await animationFrame();
+    expect(folderMenuHidden()).toBe(true, {
+        message: "the selection bar takes its room",
+    });
+    record.toggleSelection(false);
+    await animationFrame();
+    expect(folderMenuHidden()).toBe(false);
+});
+
+test("a view switch keeping the selection keeps the folder menu aside", async () => {
+    DocumentsModels.DocumentsDocument._views = {
+        kanban: basicDocumentsKanbanArch,
+        list: basicDocumentsListArch,
+        [["search", false]]: getEnrichedSearchArch(),
+    };
+    defineActions([
+        {
+            id: 1,
+            name: "Documents",
+            res_model: "document.document",
+            views: [
+                [false, "kanban"],
+                [false, "list"],
+            ],
+        },
+    ]);
+    const { getModel } = await mountKanbanCapturingModel(
+        getDocumentsTestServerModelsData([makeDocumentRecordData(2, "Doc A")]),
+    );
+    await mountWithCleanup(WebClient);
+    await getService("action").doAction(1);
+    getModel()
+        .root.records.find((r) => r.resId === 2)
+        .toggleSelection(true);
+    await animationFrame();
+    await getService("action").switchView("list");
+    await animationFrame();
+    expect(".o_data_row_selected").toHaveCount(1);
+    expect(folderMenuHidden()).toBe(true, {
+        message: "the list mounts with the selection: no patch needed to hide it",
     });
 });

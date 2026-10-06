@@ -13,6 +13,10 @@
         <xpath expr="//div[@t-if='this.hasSelectedRecords']" position="attributes">
             <attribute name="t-if">this.hasSelectedRecords and !this.rightPanelState.previewedDocument</attribute>
         </xpath>
+        <!-- the small screen's cog (the desktop's is in the breadcrumbs): the folder's actions too -->
+        <xpath expr="//t[@t-set-slot='control-panel-additional-actions']/CogMenu[@t-if='!this.hasSelectedRecords']" position="replace">
+            <DocumentsCogMenu t-if="!this.hasSelectedRecords"/>
+        </xpath>
         <xpath expr="//ActionMenus" position="attributes">
             <attribute name="t-if">this.showActions</attribute>
         </xpath>

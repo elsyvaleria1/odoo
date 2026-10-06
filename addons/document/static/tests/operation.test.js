@@ -9,6 +9,7 @@ import { basicDocumentsKanbanArch } from "@document/../tests/helpers/views/kanba
 import { basicDocumentsListArch } from "@document/../tests/helpers/views/list";
 import { getEnrichedSearchArch } from "@document/../tests/helpers/views/search";
 import { MOVE_ACCESS_CHECK } from "@document/core/document_service";
+import { isDocumentsCogMenuItemVisible } from "@document/views/cog_menu/document_cog_menu_item";
 import {
     openDocumentsPicker,
     SelectAddDocumentCreateDialog,
@@ -300,6 +301,23 @@ test("Add from Documents copies the documents and hands the caller the attachmen
         {
             message: "no chatter thread is made up from the wizard's ids",
         },
+    );
+});
+
+test("a documents picker offers no action on the folder behind it", () => {
+    const env = (context) => ({
+        config: { viewType: "list" },
+        services: { "document.document": {} },
+        searchModel: {
+            resModel: "document.document",
+            context,
+            getSelectedFolder: () => ({ id: 1 }),
+        },
+    });
+    expect(isDocumentsCogMenuItemVisible(env({}))).toBe(true);
+    expect(isDocumentsCogMenuItemVisible(env({ documents_view_secondary: true }))).toBe(
+        false,
+        { message: "the picker picks; its folder is not to be renamed from it" },
     );
 });
 

@@ -2,8 +2,18 @@
 <templates xml:space="preserve">
 
     <t t-name="document.ControlPanel" t-inherit="web.ControlPanel" t-inherit-mode="primary">
+        <!-- the folder's path, and its cog where web puts the view's: both
+             branches of web.Breadcrumbs (a path, or a lone root) call the slot.
+             A selection has its own menu, so the cog steps aside as web's does -->
         <xpath expr="//t[@t-else='']/Breadcrumbs" position="replace">
-            <DocumentsBreadcrumbs breadcrumbs="this.pathBreadcrumbs"/>
+            <DocumentsBreadcrumbs breadcrumbs="this.pathBreadcrumbs">
+                <t t-set-slot="breadcrumb-status-indicator">
+                    <t t-call-slot="control-panel-status-indicator"/>
+                </t>
+                <t t-set-slot="breadcrumb-additional-actions">
+                    <DocumentsCogMenu t-if="!this.model.root.selection.length"/>
+                </t>
+            </DocumentsBreadcrumbs>
         </xpath>
 
         <xpath expr="//div[hasclass('o_control_panel_actions')]" position="inside">

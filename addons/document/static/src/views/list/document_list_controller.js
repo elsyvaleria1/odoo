@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { DocumentsCogMenu } from "@document/views/cog_menu/document_cog_menu";
 import { DocumentsControllerMixin } from "@document/views/document_controller_mixin";
 import { DocumentsSelectionBox } from "@document/views/selection_box/document_selection_box";
 import { Dropdown } from "@web/components/dropdown";
@@ -9,6 +10,7 @@ export class DocumentsListController extends DocumentsControllerMixin(ListContro
     static components = {
         ...ListController.components,
         Dropdown,
+        DocumentsCogMenu,
         SelectionBox: DocumentsSelectionBox,
     };
 

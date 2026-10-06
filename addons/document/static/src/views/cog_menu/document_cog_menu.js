@@ -1,10 +1,14 @@
 /** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { registry } from "@web/core/registry";
+import { useBus } from "@web/core/utils/hooks";
+import { useRender } from "@web/core/utils/render_hooks";
 import { CogMenu } from "@web/search/cog_menu/cog_menu";
 import {
     COG_GROUP,
     COG_MENU_REGISTRY_VALIDATION,
 } from "@web/search/cog_menu/cog_menu_group";
+import { useSearchModel } from "@web/search/search_model";
 import { getDisplayedRegistryItems } from "@web/search/utils/misc";
 
 import { makeDocumentsCogMenuItem } from "./document_cog_menu_item.js";
@@ -28,12 +32,30 @@ for (const [key, item] of [
     documentsCogMenuRegistry.add(key, item);
 }
 
+const log = makeLogger("document.cog_menu");
+
 export class DocumentsCogMenu extends CogMenu {
+    setup() {
+        super.setup();
+        // its items are the open folder's: the base reloads them on new props
+        // only, and opening another folder brings none
+        const render = useRender();
+        useBus(useSearchModel(), "update", async () => {
+            await this._refreshRegistryItems("update");
+            render();
+        });
+    }
+
     async _registryItems() {
         const [globalItems, documentsItems] = await Promise.all([
             super._registryItems(),
             getDisplayedRegistryItems(documentsCogMenuRegistry, this.viewScope),
         ]);
+        log.logic("registryItems", () => ({
+            global: globalItems.length,
+            documents: documentsItems.length,
+            folderId: this.viewScope?.searchModel?.getSelectedFolderId?.(),
+        }));
         return [
             ...globalItems,
             ...documentsItems.map((item) => ({
