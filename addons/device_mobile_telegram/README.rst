@@ -10,9 +10,10 @@ is a company phone of theirs.
 A company phone of a user is an active ``device.device`` of the **Mobile Phone**
 category whose *Phone user* they are, in the bot's company or in none. A
 Telegram account is that phone's when the number its owner shared with a bot
-(``telegram.account.phone``, which Telegram vouches for) ends in the same ten
-digits as the phone's, so an account registered before Mexico dropped the
-mobile ``1`` still matches.
+(``telegram.account.phone``, which Telegram vouches for) is the phone's number:
+both are compared in E.164, the phone's read in its company's country when
+written without a country code. An account registered before Mexico dropped the
+mobile ``1`` (``+52 1 55 …``) is the same line as ``55 …``.
 
 Rolling it out
 ==============

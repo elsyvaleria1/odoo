@@ -180,6 +180,18 @@ class TestPhoneNumber(DeviceTransactionCase):
 
         self.assertEqual(phone.line_number_digits, "5512345678")
 
+    def test_a_phone_number_reads_in_its_company_s_country(self):
+        self.env.company.country_id = self.env.ref("base.mx")
+
+        self.assertEqual(
+            self._phone("MOB-NUM-6", "55 1234 5678").line_number_e164, "+525512345678"
+        )
+        self.assertEqual(
+            self._phone("MOB-NUM-7", "+52 1 55 8765 4321").line_number_e164,
+            "+525587654321",
+        )
+        self.assertFalse(self._phone("MOB-NUM-8", "12").line_number_e164)
+
     def test_two_phones_cannot_share_a_number(self):
         self._phone("MOB-NUM-2", "55 1234 5678")
 

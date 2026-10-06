@@ -18,6 +18,8 @@ class TestCompanyPhonesOnly(MailTelegramCase):
             {"bot_username": "notify_bot", "notify_company_phones_only": True}
         )
         cls.test_user._telegram_settings().telegram_notify_inbox = "always"
+        # the phone's number is written as its company writes it, without +52
+        cls.env.company.country_id = cls.env.ref("base.mx")
         profile = cls.env["device.profile"].create(
             {"name": "Phones", "auth_type": "bearer", "auth_token": "phones_token"}
         )
@@ -92,6 +94,14 @@ class TestCompanyPhonesOnly(MailTelegramCase):
         refusal = self.test_bot._get_mail_refusal(self.test_account, self.test_user)
         self.assertIn("+525599999999", refusal)
         self.assertEqual(self.test_user._get_telegram_notify_status()[0], "refused")
+
+    def test_a_foreign_number_ending_alike_is_not_the_phone(self):
+        # a US line whose ten digits are the Mexican phone's is another line
+        self._verify("+1 551 234 5678")
+
+        self._post_to_user()
+
+        self.assertFalse(self._delivered())
 
     def test_a_phone_carried_by_somebody_else_does_not_count(self):
         self.phone.user_id = self.author
@@ -176,6 +186,7 @@ class TestCompanyPhonesWhoeverAsks(TestCompanyPhonesOnly):
         cls.main = cls.env.company
         cls.other = cls.env["res.company"].create({"name": "TG Phones Other"})
         cls.test_bot.company_id = cls.other
+        cls.other.country_id = cls.env.ref("base.mx")
         cls.phone.company_id = cls.other
         cls.test_user.write({"company_ids": [Command.set((cls.main | cls.other).ids)]})
         cls.poster = new_test_user(

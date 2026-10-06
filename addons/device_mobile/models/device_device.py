@@ -2,8 +2,33 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 from odoo.addons.phone_call.models.phone_call import number_key
+from odoo.addons.phone_validation.tools import phone_validation
 
 MOBILE_CATEGORY_CODE = "mobile_phone"
+
+
+def mobile_e164(number, country=None) -> str | None:
+    """The E.164 form of a mobile number, or None when it is no valid number:
+    one written without its country code is read in `country`. Mexico dropped
+    the 1 of its mobile numbers in 2019; one registered before, as Telegram
+    still reports it (+521...), is the same line without it."""
+    raw = (number or "").strip()
+    digits = "".join(character for character in raw if character.isdigit())
+    if not digits:
+        return None
+    if raw.startswith(("+", "00")):
+        digits = digits[2:] if raw.startswith("00") else digits
+        if digits.startswith("521") and len(digits) == 13:
+            digits = "52" + digits[3:]
+        raw = f"+{digits}"
+    formatted = phone_validation.phone_format(
+        raw,
+        country.code if country else None,
+        country.phone_code if country else None,
+        force_format="E164",
+        raise_exception=False,
+    )
+    return formatted if formatted.startswith("+") else None
 
 
 class DeviceDevice(models.Model):
@@ -14,6 +39,14 @@ class DeviceDevice(models.Model):
         string="Phone Number",
         help="The number of the phone's SIM, as the carrier issued it.",
     )
+    line_number_e164 = fields.Char(
+        string="Phone Number (E.164)",
+        compute="_compute_line_number_e164",
+        store=True,
+        index="btree_not_null",
+        help="The number with its country code, read in the phone's company's "
+        "country when written without one. Empty when it is no valid number.",
+    )
     line_number_digits = fields.Char(
         compute="_compute_line_number_digits",
         store=True,
@@ -21,6 +54,13 @@ class DeviceDevice(models.Model):
         help="The number's last digits, as calls and other numbers are matched "
         "to it whatever prefix they carry.",
     )
+
+    @api.depends("line_number", "company_id.country_id")
+    def _compute_line_number_e164(self) -> None:
+        for device in self:
+            device.line_number_e164 = (
+                mobile_e164(device.line_number, device.company_id.country_id) or False
+            )
 
     @api.depends("line_number")
     def _compute_line_number_digits(self) -> None:

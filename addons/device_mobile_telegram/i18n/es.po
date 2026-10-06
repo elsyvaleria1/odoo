@@ -77,9 +77,9 @@ msgid "Only to Company Phones"
 msgstr "Solo a teléfonos de la empresa"
 
 #. module: device_mobile_telegram
-#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_account__phone_digits
-msgid "Phone Digits"
-msgstr "Dígitos del teléfono"
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_telegram_account__phone_e164
+msgid "Phone (E.164)"
+msgstr "Teléfono (E.164)"
 
 #. module: device_mobile_telegram
 #: model:res.groups,name:device_mobile_telegram.privilege_read_company_phones
@@ -124,13 +124,13 @@ msgid "The Telegram account whose shared number is this phone's."
 msgstr "La cuenta de Telegram cuyo número compartido es el de este teléfono."
 
 #. module: device_mobile_telegram
-#: model:ir.model.fields,help:device_mobile_telegram.field_telegram_account__phone_digits
+#: model:ir.model.fields,help:device_mobile_telegram.field_telegram_account__phone_e164
 msgid ""
-"The verified number's last digits, as a company phone's number is matched to"
-" it whatever prefix either carries."
+"The verified number as a company phone's number is written: the same line "
+"whatever prefix Telegram gives it."
 msgstr ""
-"Los últimos dígitos del número verificado, con los que se compara el número "
-"de un teléfono de la empresa, sea cual sea el prefijo de cada uno."
+"El número verificado tal como se escribe el de un teléfono de la empresa: la"
+" misma línea sea cual sea el prefijo con que lo dé Telegram."
 
 #. module: device_mobile_telegram
 #. odoo-python

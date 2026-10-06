@@ -21,18 +21,18 @@ class DeviceDevice(models.Model):
         help="The Odoo user that Telegram account is connected to.",
     )
 
-    @api.depends("line_number_digits")
+    @api.depends("line_number_e164")
     def _compute_telegram_account_id(self) -> None:
-        keys = [key for key in self.mapped("line_number_digits") if key]
+        numbers = [number for number in self.mapped("line_number_e164") if number]
         accounts = self.env["telegram.account"].search(
-            [("phone_digits", "in", keys)], order="phone_verified_at desc"
+            [("phone_e164", "in", numbers)], order="phone_verified_at desc"
         )
-        by_digits = {}
+        by_number = {}
         for account in accounts:
-            by_digits.setdefault(account.phone_digits, account)
+            by_number.setdefault(account.phone_e164, account)
         for device in self:
-            account = by_digits.get(
-                device.line_number_digits, self.env["telegram.account"]
+            account = by_number.get(
+                device.line_number_e164, self.env["telegram.account"]
             )
             device.telegram_account_id = account
             device.telegram_user_id = (

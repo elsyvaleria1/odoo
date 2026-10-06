@@ -16,12 +16,12 @@ class TelegramBot(models.Model):
         refusal = super()._get_mail_refusal(account, user)
         if refusal or not self.notify_company_phones_only:
             return refusal
-        if not account.phone_digits:
+        if not account.phone:
             return self.env._(
                 "Your Odoo notifications reach only the Telegram of your company "
                 "phone: share this account's phone number to show it is that one."
             )
-        if account.phone_digits not in self._get_company_phone_digits(user):
+        if account.phone_e164 not in self._get_company_phone_numbers(user):
             return self.env._(
                 "%(phone)s is not the number of a company phone assigned to you. "
                 "Ask an administrator to record your phone in Devices.",
@@ -30,13 +30,11 @@ class TelegramBot(models.Model):
         return None
 
     def _is_phone_needed_for_mail(self, account, user) -> bool:
-        return bool(
-            self.notify_company_phones_only and account and not account.phone_digits
-        )
+        return bool(self.notify_company_phones_only and account and not account.phone)
 
-    def _get_company_phone_digits(self, user) -> set[str]:
-        """The last digits of the numbers of the company phones `user`
-        carries, in the company this bot speaks for."""
+    def _get_company_phone_numbers(self, user) -> set[str]:
+        """The numbers, in E.164, of the company phones `user` carries, in the
+        company this bot speaks for."""
         self.check_singleton()
         category = self.env.ref("device_mobile.device_category_mobile_phone")
         # read as `user` in this bot's company, whoever asks: the poster's or
@@ -55,8 +53,8 @@ class TelegramBot(models.Model):
             [
                 ("user_id", "=", user.id),
                 ("device_category_id", "=", category.id),
-                ("line_number_digits", "!=", False),
+                ("line_number_e164", "!=", False),
                 ("company_id", "in", [self.company_id.id, False]),
             ]
         )
-        return set(phones.mapped("line_number_digits"))
+        return set(phones.mapped("line_number_e164"))
