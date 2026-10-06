@@ -36,35 +36,22 @@ class WizardResUsersResetMicrosoftCalendar(models.TransientModel):
         events = self.env["calendar.event"].search(
             [("user_id", "=", self.user_id.id), ("ms_universal_event_id", "!=", False)]
         )
-        non_recurring_events = self.env["calendar.event"].search(
-            [
-                ("user_id", "=", self.user_id.id),
-                ("recurrence_id", "=", False),
-                ("ms_universal_event_id", "!=", False),
-            ]
-        )
 
         if self.delete_policy in ("delete_microsoft", "delete_both"):
-            for event in non_recurring_events:
+            for event in events.filtered(lambda event: not event.recurrence_id):
                 event._microsoft_delete(
                     event._get_organizer(), event.microsoft_id, timeout=3
                 )
 
-        if self.sync_policy == "all":
-            events.with_context(
-                dont_notify=True, microsoft_calendar_syncing=True
-            ).update(
-                {
-                    "microsoft_id": False,
-                    "need_sync_m": True,
-                }
-            )
-
+        events = events.with_context(dont_notify=True, microsoft_calendar_syncing=True)
+        if self.delete_policy != "dont_delete" or self.sync_policy == "all":
+            # Both ids go: `_filtered_synced` reads the universal one, so a record
+            # keeping it was still patched or deleted, at `/events/False`.
+            events.write({"microsoft_id": False, "ms_universal_event_id": False})
         if self.delete_policy in ("delete_odoo", "delete_both"):
-            events.with_context(
-                dont_notify=True, microsoft_calendar_syncing=True
-            ).microsoft_id = False
             events.unlink()
+        else:
+            events.need_sync_m = self.sync_policy == "all"
 
         # We commit to make sure the _microsoft_delete are called when we still have a token on the user.
         self.env["ir.cron"]._commit_progress()

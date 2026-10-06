@@ -9,10 +9,7 @@ patch(AttendeeCalendarModel.prototype, {
         super.setup(...arguments);
         this.isAlive = params.isAlive;
         this.googlePendingSync = false;
-        this.state = proxy({
-            googleIsSync: true,
-            googleIsPaused: false,
-        });
+        this.googleSync = proxy({ isSync: true, isPaused: false });
     },
 
     /**
@@ -60,16 +57,24 @@ patch(AttendeeCalendarModel.prototype, {
                 "sync_paused",
             ].includes(result.status)
         ) {
-            this.state.googleIsSync = false;
+            this.googleSync.isSync = false;
         } else if (
             result.status === "no_new_event_from_google" ||
             result.status === "need_refresh"
         ) {
-            this.state.googleIsSync = true;
+            this.googleSync.isSync = true;
         }
-        this.state.googleIsPaused = result.status === "sync_paused";
+        this.googleSync.isPaused = result.status === "sync_paused";
         this.googlePendingSync = false;
         return result;
+    },
+
+    get googleIsSync() {
+        return this.googleSync.isSync;
+    },
+
+    get googleIsPaused() {
+        return this.googleSync.isPaused;
     },
 
     get googleCredentialsSet() {

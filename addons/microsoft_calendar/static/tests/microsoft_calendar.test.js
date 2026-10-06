@@ -8,6 +8,7 @@ import {
     fields,
     getService,
     models,
+    mountView,
     mountWebClient,
     onRpc,
     serverState,
@@ -139,4 +140,46 @@ test(`component is destroyed while sync microsoft calendar`, async () => {
     deferred.resolve();
     await animationFrame();
     expect.verifySteps(["search_read"]);
+});
+
+const SYNC_BUTTON_ARCH = `
+    <calendar js_class="attendee_calendar" date_start="start" date_stop="stop">
+        <field name="name"/>
+    </calendar>
+`;
+
+test.tags("desktop");
+test(`the Outlook button hides once the calendar reports synchronized`, async () => {
+    // The templates read `model.microsoftIsSync` while the model wrote
+    // `state.microsoftIsSync`, so the button never followed the live status.
+    onRpc("check_synchronization_status", async () => ({
+        microsoft_calendar: "sync_stopped",
+    }));
+    onRpc("/microsoft_calendar/sync_data", () => ({
+        status: "no_new_event_from_microsoft",
+    }));
+
+    await mountView({
+        type: "calendar",
+        resModel: "calendar.event",
+        arch: SYNC_BUTTON_ARCH,
+    });
+
+    expect(`#microsoft_sync_pending`).toHaveCount(0);
+});
+
+test.tags("desktop");
+test(`the Outlook button shows while authorization is needed`, async () => {
+    onRpc("check_synchronization_status", async () => ({
+        microsoft_calendar: "sync_stopped",
+    }));
+    onRpc("/microsoft_calendar/sync_data", () => ({ status: "need_auth" }));
+
+    await mountView({
+        type: "calendar",
+        resModel: "calendar.event",
+        arch: SYNC_BUTTON_ARCH,
+    });
+
+    expect(`#microsoft_sync_pending`).toHaveCount(1);
 });

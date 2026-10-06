@@ -1871,6 +1871,99 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         self.assertGoogleAPINotCalled()
 
     @patch_api
+    def test_an_attendee_spelled_differently_is_the_same_attendee(self):
+        """The event path keyed Odoo's attendees by normalised address and
+        looked Google's up as Google spelled it, so `C.C@Example.com` missed
+        `c.c@example.com` and the sync tried to add the same partner twice."""
+        user = new_test_user(self.env, login="calendar-user")
+        google_id = "oj44nep1ldf8a3ll02uip0c9aa"
+        event = (
+            self.env["calendar.event"]
+            .with_user(user)
+            .create(
+                {
+                    "name": "Event with me",
+                    "start": date(2020, 1, 6),
+                    "stop": date(2020, 1, 6),
+                    "google_id": google_id,
+                    "user_id": False,
+                    "need_sync": False,
+                    "partner_ids": [(6, 0, user.partner_id.ids)],
+                }
+            )
+        )
+        attendee = event.attendee_ids
+        values = {
+            "id": google_id,
+            "updated": self.now,
+            "organizer": {"email": "odoocalendarref@gmail.com", "self": True},
+            "summary": "Event with me",
+            "attendees": [{"email": "C.C@Example.com", "responseStatus": "declined"}],
+            "reminders": {"useDefault": True},
+            "start": {"date": "2020-01-06", "dateTime": None},
+            "end": {"date": "2020-01-07", "dateTime": None},
+        }
+        self.env["calendar.event"]._sync_google2odoo(GoogleEvent([values]))
+
+        self.assertEqual(event.attendee_ids, attendee)
+        self.assertEqual(attendee.state, "declined")
+        self.assertGoogleAPINotCalled()
+
+    @patch_api
+    def test_a_recurrence_attendee_spelled_differently_is_the_same_attendee(self):
+        """The recurrence path keyed attendees by Odoo's raw address, so a
+        partner stored as `Name <Mixed@Case>` missed Google's bare address and
+        the sync died on `calendar_attendee_event_id_partner_id_unique`."""
+        other_user = new_test_user(self.env, login="calendar-user")
+        other_user.partner_id.email = "Calendar User <C.C@Example.com>"
+        google_id = "aaaaaaaaaaa"
+        base_event = self.env["calendar.event"].create(
+            {
+                "name": "coucou",
+                "start": datetime(2021, 2, 15, 7, 0, 0),
+                "stop": datetime(2021, 2, 15, 9, 0, 0),
+                "event_tz": "Europe/Brussels",
+                "need_sync": False,
+                "partner_ids": [(6, 0, [other_user.partner_id.id])],
+            }
+        )
+        recurrence = self.env["calendar.recurrence"].create(
+            {
+                "google_id": google_id,
+                "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
+                "need_sync": False,
+                "base_event_id": base_event.id,
+                "calendar_event_ids": [(4, base_event.id)],
+            }
+        )
+        recurrence._apply_recurrence()
+        values = {
+            "id": google_id,
+            "updated": self.now,
+            "description": "",
+            "attendees": [{"email": "c.c@example.com", "responseStatus": "declined"}],
+            "summary": "coucou",
+            "recurrence": ["RRULE:FREQ=WEEKLY;COUNT=3;BYDAY=MO"],
+            "reminders": {"useDefault": True},
+            "start": {
+                "dateTime": "2021-02-15T8:00:00+01:00",
+                "timeZone": "Europe/Brussels",
+                "date": None,
+            },
+            "end": {
+                "dateTime": "2021-02-15T10:00:00+01:00",
+                "timeZone": "Europe/Brussels",
+                "date": None,
+            },
+        }
+        self.env["calendar.recurrence"]._sync_google2odoo(GoogleEvent([values]))
+
+        for event in recurrence.calendar_event_ids:
+            self.assertEqual(len(event.attendee_ids), 1)
+            self.assertEqual(event.attendee_ids.state, "declined")
+        self.assertGoogleAPINotCalled()
+
+    @patch_api
     def test_recurrence_creation_with_attendee_answer(self):
         """Create a recurrence with predefined attendee answers"""
         google_id = "aaaaaaaaaaa"

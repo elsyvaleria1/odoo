@@ -48,7 +48,7 @@ class IrHttp(models.AbstractModel):
         is considered inactive and this method returns without raising.
         """
         super()._check_request_recaptcha_token(action)
-        if not self._is_recaptcha_enabled():
+        if not request or not self._is_recaptcha_enabled():
             return
         ip_addr = request.httprequest.remote_addr
         token = request.params.pop("recaptcha_token_response", False)

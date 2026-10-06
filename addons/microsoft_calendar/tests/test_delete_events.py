@@ -51,6 +51,29 @@ class TestDeleteEvents(TestCommon):
             event_id, token=mock_get_token(self.organizer_user), timeout=ANY
         )
 
+    @patch.object(MicrosoftCalendarService, "_get_single_event")
+    @patch.object(MicrosoftCalendarService, "answer")
+    def test_an_attendee_removing_the_event_in_outlook_declines_it(
+        self, mock_answer, mock_get_single_event
+    ):
+        """The organizer is an Odoo user, so only the organizer deletes.
+
+        The cancel filter also matched any user among `partner_ids`, so an
+        attendee whose Outlook reported the event gone unlinked the shared Odoo
+        event for the organizer and every other attendee.
+        """
+        mock_get_single_event.return_value = (
+            True,
+            {"value": [{"id": self.simple_event.microsoft_id}]},
+        )
+        self.simple_event.with_user(self.attendee_user)._cancel_microsoft()
+
+        self.assertTrue(self.simple_event.exists())
+        attendee = self.simple_event.attendee_ids.filtered(
+            lambda a: a.partner_id == self.attendee_user.partner_id
+        )
+        self.assertEqual(attendee.state, "declined")
+
     @patch.object(MicrosoftCalendarService, "delete")
     def test_archive_simple_event_from_odoo_organizer_calendar(self, mock_delete):
         event_id = self.simple_event.microsoft_id

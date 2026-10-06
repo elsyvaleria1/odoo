@@ -6,3 +6,5 @@ from . import test_delete_events
 from . import test_sync_odoo2microsoft_mail
 from . import test_answer_events
 from . import test_oauth_state
+from . import test_sync_candidates
+from . import test_reset_account

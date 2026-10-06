@@ -190,6 +190,11 @@ class TestGoogleRecaptcha(TransactionCase):
         )
         self.assertEqual(result, "wrong_action")
 
+    def test_request_verification_skipped_outside_a_request(self):
+        """Enabled or not, there is no visitor's token to read without a request."""
+        self.icp.set_param("enable_recaptcha", "True")
+        self.assertIsNone(self.env["ir.http"]._check_request_recaptcha_token("login"))
+
     def test_request_verification_skipped_when_disabled(self):
         """The request wrapper is a no-op when reCAPTCHA is disabled."""
         self.icp.set_param("enable_recaptcha", "False")

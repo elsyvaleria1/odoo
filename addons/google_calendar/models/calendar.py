@@ -294,11 +294,11 @@ class CalendarEvent(models.Model):
         }
         partner_by_email = self._get_sync_partner(emails)
         for email, google_attendee in zip(emails, google_attendees, strict=True):
-            if email in attendees_by_emails:
+            if (normalized := tools.email_normalize(email)) in attendees_by_emails:
                 # Update existing attendees
                 attendee_commands += [
                     Command.update(
-                        attendees_by_emails[email].id,
+                        attendees_by_emails[normalized].id,
                         {"state": google_attendee.get("responseStatus")},
                     )
                 ]
@@ -321,10 +321,11 @@ class CalendarEvent(models.Model):
                 partner_commands += [Command.link(partner.id)]
                 if google_attendee.get("displayName") and not partner.name:
                     partner.name = google_attendee.get("displayName")
-        for odoo_attendee in attendees_by_emails.values():
+        google_emails = {tools.email_normalize(email) for email in emails}
+        user_email = tools.email_normalize(self.env.user.email)
+        for email, odoo_attendee in attendees_by_emails.items():
             # Remove old attendees but only if it does not correspond to the current user.
-            email = tools.email_normalize(odoo_attendee.email)
-            if email not in emails and email != self.env.user.email:
+            if email not in google_emails and email != user_email:
                 attendee_commands += [Command.delete(odoo_attendee.id)]
                 partner_commands += [Command.unlink(odoo_attendee.partner_id.id)]
         return attendee_commands, partner_commands

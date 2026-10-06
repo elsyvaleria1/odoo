@@ -22,7 +22,6 @@
     ],
     "assets": {
         "web.assets_backend": [
-            "google_calendar/static/src/scss/google_calendar.scss",
             "google_calendar/static/src/views/**/*",
         ],
         "web.assets_unit_tests": [

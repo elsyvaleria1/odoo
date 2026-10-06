@@ -21,7 +21,6 @@
     ],
     "assets": {
         "web.assets_backend": [
-            "microsoft_calendar/static/src/scss/microsoft_calendar.scss",
             "microsoft_calendar/static/src/views/**/*",
         ],
         "web.assets_unit_tests": [

@@ -39,7 +39,7 @@ class AppointmentType(models.Model):
                         for user in users_not_synchronized
                     ),
                 )
-            if not self.connector_google:
+            if not appointment_type.connector_google:
                 appointment_type.users_wo_google_calendar_msg = self.env._(
                     "Google Sync is either paused or not properly configured. Google Meet links won't be added to the meetings."
                 )

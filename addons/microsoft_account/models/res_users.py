@@ -35,6 +35,8 @@ class ResUsers(models.Model):
     microsoft_calendar_token_validity = fields.Datetime(
         string="Microsoft Token Validity",
         copy=False,
+        classification="secret.credential",
+        groups="base.group_system",
     )
 
     @api.depends("microsoft_calendar_credential_id")

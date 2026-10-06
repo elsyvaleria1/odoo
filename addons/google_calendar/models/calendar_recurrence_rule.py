@@ -116,11 +116,13 @@ class CalendarRecurrence(models.Model):
         emails = [a.get("email") for a in google_attendees]
         partner_by_email = self._get_sync_partner(emails)
         existing_attendees = self.calendar_event_ids.attendee_ids
-        attendees_by_email = existing_attendees.grouped("email")
+        attendees_by_email = existing_attendees.grouped(
+            lambda attendee: email_normalize(attendee.email)
+        )
         for email, google_attendee in zip(emails, google_attendees, strict=True):
-            if email in attendees_by_email:
+            if (normalized := email_normalize(email)) in attendees_by_email:
                 # Update existing attendees
-                attendees_by_email[email].write(
+                attendees_by_email[normalized].write(
                     {"state": google_attendee.get("responseStatus")}
                 )
             else:
@@ -147,16 +149,12 @@ class CalendarRecurrence(models.Model):
                     partner.name = google_attendee.get("displayName")
 
         organizers = self.calendar_event_ids.user_id.partner_id
-        for odoo_attendee_email in set(existing_attendees.mapped("email")):
+        google_emails = {email_normalize(email) for email in emails}
+        for email, attendees in attendees_by_email.items():
             # Sometimes, several partners have the same email. Remove old attendees except organizer, otherwise the events will disappear.
-            if email_normalize(odoo_attendee_email) not in emails:
-                attendees = (
-                    attendees_by_email.get(
-                        email_normalize(odoo_attendee_email),
-                        existing_attendees.browse(),
-                    )
-                    .exists()
-                    .filtered_domain([("partner_id", "not in", organizers.ids)])
+            if email not in google_emails:
+                attendees = attendees.exists().filtered_domain(
+                    [("partner_id", "not in", organizers.ids)]
                 )
                 self.calendar_event_ids.write(
                     {

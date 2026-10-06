@@ -195,3 +195,43 @@ test(`component is destroyed while sync google calendar`, async () => {
     await animationFrame();
     expect.verifySteps(["search_read"]);
 });
+
+const SYNC_BUTTON_ARCH = `
+    <calendar js_class="attendee_calendar" date_start="start" date_stop="stop">
+        <field name="name"/>
+    </calendar>
+`;
+
+test.tags("desktop");
+test(`the Google button hides once the calendar reports synchronized`, async () => {
+    // The templates read `model.googleIsSync` while the model wrote
+    // `state.googleIsSync`, so the button never followed the live status.
+    onRpc("check_synchronization_status", async () => ({
+        google_calendar: "sync_stopped",
+    }));
+    onRpc("/google_calendar/sync_data", () => ({ status: "no_new_event_from_google" }));
+
+    await mountView({
+        type: "calendar",
+        resModel: "calendar.event",
+        arch: SYNC_BUTTON_ARCH,
+    });
+
+    expect(`#google_sync_pending`).toHaveCount(0);
+});
+
+test.tags("desktop");
+test(`the Google button shows while authorization is needed`, async () => {
+    onRpc("check_synchronization_status", async () => ({
+        google_calendar: "sync_stopped",
+    }));
+    onRpc("/google_calendar/sync_data", () => ({ status: "need_auth" }));
+
+    await mountView({
+        type: "calendar",
+        resModel: "calendar.event",
+        arch: SYNC_BUTTON_ARCH,
+    });
+
+    expect(`#google_sync_pending`).toHaveCount(1);
+});

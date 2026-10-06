@@ -13,10 +13,7 @@ patch(AttendeeCalendarModel.prototype, {
         super.setup(...arguments);
         this.isAlive = params.isAlive;
         this.microsoftPendingSync = false;
-        this.state = proxy({
-            microsoftIsSync: true,
-            microsoftIsPaused: false,
-        });
+        this.microsoftSync = proxy({ isSync: true, isPaused: false });
     },
 
     /**
@@ -64,16 +61,24 @@ patch(AttendeeCalendarModel.prototype, {
                 "sync_paused",
             ].includes(result.status)
         ) {
-            this.state.microsoftIsSync = false;
+            this.microsoftSync.isSync = false;
         } else if (
             result.status === "no_new_event_from_microsoft" ||
             result.status === "need_refresh"
         ) {
-            this.state.microsoftIsSync = true;
+            this.microsoftSync.isSync = true;
         }
-        this.state.microsoftIsPaused = result.status === "sync_paused";
+        this.microsoftSync.isPaused = result.status === "sync_paused";
         this.microsoftPendingSync = false;
         return result;
+    },
+
+    get microsoftIsSync() {
+        return this.microsoftSync.isSync;
+    },
+
+    get microsoftIsPaused() {
+        return this.microsoftSync.isPaused;
     },
 
     get microsoftCredentialsSet() {

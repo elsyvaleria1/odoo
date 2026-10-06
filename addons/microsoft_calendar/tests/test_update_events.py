@@ -59,6 +59,27 @@ class TestUpdateEvents(TestCommon):
         self.assertEqual(self.simple_event.need_sync_m, False)
 
     @patch.object(MicrosoftCalendarService, "patch")
+    def test_update_simple_event_with_sync_config_paused(self, mock_patch):
+        """An edit made while the sync is paused waits for the unpause.
+
+        `write` marked the record only while the status was `sync_active`, so
+        a paused edit was neither sent nor marked, and the resumed sync never
+        picked it up.
+        """
+        self.organizer_user.microsoft_synchronization_stopped = False
+        self.organizer_user.pause_microsoft_synchronization()
+        self.simple_event.need_sync_m = False
+
+        self.simple_event.with_user(self.organizer_user).write(
+            {"name": "renamed while paused"}
+        )
+        self.call_post_commit_hooks()
+        self.simple_event.invalidate_recordset()
+
+        mock_patch.assert_not_called()
+        self.assertTrue(self.simple_event.need_sync_m)
+
+    @patch.object(MicrosoftCalendarService, "patch")
     def test_update_simple_event_from_odoo(self, mock_patch):
         """
         Update an Odoo event with Outlook sync enabled
@@ -817,6 +838,52 @@ class TestUpdateEvents(TestCommon):
         # assert
         self.assertEqual(self.simple_event.name, new_name)
         self.assertEqual(self.simple_event.follow_recurrence, False)
+
+    @freeze_time("2021-09-22")
+    @patch.object(MicrosoftCalendarService, "get_events")
+    def test_an_attendee_spelled_differently_in_outlook_is_the_same_attendee(
+        self, mock_get_events
+    ):
+        """Outlook may spell an address differently from Odoo; the answer lands
+        on the existing attendee. Pinned for the shared engine: Google's two
+        paths died on `calendar_attendee_event_id_partner_id_unique` here."""
+        attendee = self.simple_event.attendee_ids.filtered(
+            lambda a: a.partner_id == self.attendee_user.partner_id
+        )
+        outlook_attendees = [
+            dict(
+                outlook_attendee,
+                emailAddress={
+                    **outlook_attendee["emailAddress"],
+                    "address": outlook_attendee["emailAddress"]["address"].title(),
+                },
+                status={"response": "accepted", "time": "0001-01-01T00:00:00Z"},
+            )
+            for outlook_attendee in self.simple_event_from_outlook_organizer[
+                "attendees"
+            ]
+        ]
+        mock_get_events.return_value = (
+            MicrosoftEvent(
+                [
+                    dict(
+                        self.simple_event_from_outlook_organizer,
+                        attendees=outlook_attendees,
+                        lastModifiedDateTime=_modified_date_in_the_future(
+                            self.simple_event
+                        ),
+                    )
+                ]
+            ),
+            None,
+        )
+
+        self.organizer_user.with_user(
+            self.organizer_user
+        ).sudo()._sync_microsoft_calendar()
+
+        self.assertIn(attendee, self.simple_event.attendee_ids)
+        self.assertEqual(attendee.state, "accepted")
 
     @freeze_time("2021-09-22")
     @patch.object(MicrosoftCalendarService, "get_events")

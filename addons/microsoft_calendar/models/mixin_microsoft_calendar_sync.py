@@ -83,7 +83,7 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         if (
             fields_to_sync
             and "need_sync_m" not in vals
-            and self.env.user._get_microsoft_sync_status() == "sync_active"
+            and not self.env.user.microsoft_synchronization_stopped
         ):
             vals["need_sync_m"] = True
 

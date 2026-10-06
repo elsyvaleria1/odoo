@@ -162,19 +162,32 @@ class ResUsers(models.Model):
         return bool(events | synced_events) or bool(recurrences | synced_recurrences)
 
     @api.model
-    def _sync_all_microsoft_calendar(self) -> None:
-        """Cron job"""
-        users = (
+    def _microsoft_sync_candidates(self):
+        """The users the cron syncs, narrowed in SQL on the one stored link.
+
+        The refresh token is a compute onto ``credential.credential``'s
+        encrypted JSON and the stop flag a related through
+        ``res_users_settings_id``, which has no column: searching either raised
+        ``Cannot convert res.users.microsoft_calendar_rtoken to SQL because it
+        is not stored`` on every cron run. Both are settled in Python on the
+        users holding a credential.
+        """
+        return (
             self.env["res.users"]
             .sudo()
-            .search(
+            .search([("microsoft_calendar_credential_id", "!=", False)])
+            .filtered_domain(
                 [
                     ("microsoft_calendar_rtoken", "!=", False),
                     ("microsoft_synchronization_stopped", "=", False),
                 ]
             )
         )
-        for user in users:
+
+    @api.model
+    def _sync_all_microsoft_calendar(self) -> None:
+        """Cron job"""
+        for user in self._microsoft_sync_candidates():
             _logger.info("Calendar Synchro - Starting synchronization for %s", user)
             try:
                 user.with_user(user).sudo()._sync_microsoft_calendar()

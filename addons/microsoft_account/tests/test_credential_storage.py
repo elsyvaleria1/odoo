@@ -86,3 +86,12 @@ class TestMicrosoftCredentials(TransactionCase):
         self.assertTrue(
             self.env["res.users"]._fields["microsoft_calendar_token_validity"].store
         )
+
+    def test_the_expiry_is_read_like_the_tokens_beside_it(self):
+        """It had neither class nor group, so any internal user read when
+        anybody's Outlook token was last refreshed; Google's twin and the
+        sync token beside it are system-only token material. Still a column:
+        the class names its readers, not where it is stored."""
+        field = self.env["res.users"]._fields["microsoft_calendar_token_validity"]
+        self.assertEqual(field.classification, "secret.credential")
+        self.assertEqual(field.groups, "base.group_system")

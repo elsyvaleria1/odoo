@@ -29,6 +29,8 @@ class IrHttp(models.AbstractModel):
     @api.model
     def _check_request_recaptcha_token(self, action) -> None:
         super()._check_request_recaptcha_token(action)
+        if not request:
+            return
         ip_addr = request.httprequest.remote_addr
         token = request.params.pop("turnstile_captcha", False)
         turnstile_result = request.env["ir.http"]._get_turnstile_verdict(
@@ -83,7 +85,7 @@ class IrHttp(models.AbstractModel):
         if res_success:
             if res_action and res_action != action:
                 logger.warning(
-                    "Turnstile verification for ip address %s failed with action %f, expected: %s.",
+                    "Turnstile verification for ip address %s failed with action %s, expected: %s.",
                     ip_addr,
                     res_action,
                     action,

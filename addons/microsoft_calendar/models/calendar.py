@@ -906,11 +906,7 @@ class CalendarEvent(models.Model):
           2) the organizer is NOT an Odoo user: any attendee should remove the Odoo event.
         """
         user = self.env.user
-        records = self.filtered(
-            lambda e: (
-                not e.user_id or e.user_id == user or user.partner_id in e.partner_ids
-            )
-        )
+        records = self.filtered(lambda e: not e.user_id or e.user_id == user)
         for event in records:
             # remove the tracking data to avoid calling _track_template in the pre-commit phase
             self.env.cr.precommit.data.pop(
