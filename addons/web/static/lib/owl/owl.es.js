@@ -6471,7 +6471,7 @@ function makeProps(type) {
   if (!type) {
     const view = new PropsView(node);
     node.addHook("propsUpdated", view);
-    return new Proxy(view, viewHandler);
+    return markRaw(new Proxy(view, viewHandler));
   }
   const { app, componentName } = node;
   let defaults = null;
@@ -6519,7 +6519,7 @@ function makeProps(type) {
       assertType(np, validation, `Invalid component props (${componentName})`);
     });
   }
-  return Object.preventExtensions(result);
+  return markRaw(Object.preventExtensions(result));
 }
 var schemaKeyLists = /* @__PURE__ */ new WeakMap();
 function schemaKeys(type) {
@@ -6591,11 +6591,9 @@ var StateStamp = class extends ObjectReturner {
     this.#state = state;
   }
   // the state of `view`, or of the view it inherits from (a read through
-  // `Object.create(props)`); a reactive or observed proxy of a view reads as
-  // the view it wraps, since a private field is not visible through a proxy
+  // `Object.create(props)`)
   static of(view) {
     while (view !== null && typeof view === "object") {
-      view = toRaw(viewBases.get(view) ?? view);
       if (#state in view) {
         return view.#state;
       }
@@ -6921,8 +6919,8 @@ var blockDom = {
 };
 var __info__ = {
   version: App.version,
-  date: "2026-10-05T23:37:45.031Z",
-  hash: "740f45dc",
+  date: "2026-10-06T05:41:40.861Z",
+  hash: "80dd04cc",
   url: "https://github.com/odoo/owl"
 };
 
