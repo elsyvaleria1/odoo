@@ -11,6 +11,22 @@ export class DataCleaningCommonListController extends ListController {
     }
 
     /**
+     * The id of the record a row points at. `data_merge.record` stores it in a
+     * Many2oneReference, which the relational model reads as `{ resId, displayName }`;
+     * the cleaning and recycle rows store a plain integer.
+     *
+     * @param {import("@web/model/relational_model/record").RelationalRecord} record
+     * @returns {number | false}
+     */
+    getOriginalResId(record) {
+        const value = record.data.res_id;
+        if (record.fields.res_id.type === "many2one_reference") {
+            return value ? value.resId : false;
+        }
+        return value;
+    }
+
+    /**
      * Open the form view of the record the row points at, not the proposal row itself.
      * @override
      */
@@ -19,7 +35,7 @@ export class DataCleaningCommonListController extends ListController {
             type: "ir.actions.act_window",
             views: [[false, "form"]],
             res_model: record.data.res_model_name,
-            res_id: record.data.res_id,
+            res_id: this.getOriginalResId(record),
             context: {
                 create: false,
                 edit: false,

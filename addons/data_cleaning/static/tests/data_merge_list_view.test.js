@@ -4,6 +4,7 @@ import {
     contains,
     defineModels,
     fields,
+    mockService,
     models,
     mountView,
     onRpc,
@@ -14,12 +15,16 @@ class DataMergeRecord extends models.Model {
 
     name = fields.Char();
     group_id = fields.Many2one({ relation: "data_merge.group" });
+    res_model_name = fields.Char();
+    res_id = fields.Many2oneReference({ model_field: "res_model_name" });
 
     _records = [
         {
             id: 1,
             name: "a1",
             group_id: 1,
+            res_model_name: "data_merge.group",
+            res_id: 2,
         },
         {
             id: 2,
@@ -83,4 +88,30 @@ test("merge multiple records uses the domain selection", async () => {
     await contains(".modal-dialog button.btn-primary").click();
 
     expect.verifySteps(["merge_multiple_records"]);
+});
+
+test.tags("desktop");
+test("opening a row opens the original record by its integer id", async () => {
+    // res_id is a Many2oneReference: the row holds `{ resId, displayName }`,
+    // and the form view only accepts the integer.
+    mockService("action", {
+        doAction(action) {
+            expect.step(`${action.res_model},${action.res_id}`);
+            return true;
+        },
+    });
+    await mountView({
+        resModel: "data_merge.record",
+        type: "list",
+        arch: `
+            <list js_class="data_merge_list">
+                <field name="name"/>
+                <field name="res_model_name" column_invisible="1"/>
+                <field name="res_id"/>
+            </list>`,
+    });
+
+    await contains(".o_data_row:first-child .o_data_cell[name=name]").click();
+
+    expect.verifySteps(["data_merge.group,2"]);
 });
