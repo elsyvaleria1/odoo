@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from itertools import product
 
 from odoo import Command, exceptions
@@ -92,11 +94,16 @@ class WhatsAppControllerSecurity(MockIncomingWhatsApp, WhatsAppSecurityCase):
 
     @mute_logger("odoo.addons.whatsapp.controller.main")
     def test_signature_verification(self):
-        # valid signature for
-        # >>> {"entry": [{"id": "abcdef123456"}]}
-        sig = "0a354a1c094d43355c4b478408ba4344564de72fc8ff9699a64ea9095ecb5415"
+        # signed over the exact bytes sent: a digest frozen for one JSON
+        # spelling stops matching the moment the serializer spells it otherwise
+        body = json_dumps_bytes({"entry": [{"id": self.whatsapp_account.account_uid}]})
+        sig = hmac.new(
+            self.whatsapp_account.app_secret.encode(), body, hashlib.sha256
+        ).hexdigest()
         response = self._make_webhook_request(
-            self.whatsapp_account, headers={"X-Hub-Signature-256": f"sha256={sig}"}
+            self.whatsapp_account,
+            message_data=body,
+            headers={"X-Hub-Signature-256": f"sha256={sig}"},
         )
         # the endpoint returns nothing when everything is fine
         self.assertEqual(response.status_code, 200)
@@ -107,7 +114,7 @@ class WhatsAppControllerSecurity(MockIncomingWhatsApp, WhatsAppSecurityCase):
             False,  # no signature
             "sha256=",  # empty
             sig,  # wrong format
-            f"sha256=a{sig[1:]}",  # wrong
+            f"sha256={sig[:-1]}{'1' if sig[-1] == '0' else '0'}",  # wrong
         ]:
             with self.subTest(signature=signature):
                 headers = {"X-Hub-Signature-256": signature} if signature else None
