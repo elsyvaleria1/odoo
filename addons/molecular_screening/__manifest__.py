@@ -14,6 +14,7 @@
     "data": [
         "security/molecular_screening_groups.xml",
         "security/ir.access.csv",
+        "wizard/molecular_docking_import_views.xml",
         "wizard/molecular_sketch_views.xml",
         "views/molecular_screening_campaign_views.xml",
         "views/molecular_target_views.xml",
