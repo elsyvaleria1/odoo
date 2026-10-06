@@ -64,11 +64,16 @@ export class DocumentsListRenderer extends DocumentsRendererMixin(
         if (!record) {
             return;
         }
-        if (ev.key === "Enter" && record.data.type !== "folder") {
-            record.onClickPreview(ev);
-        }
         ev.stopPropagation();
         ev.preventDefault();
+        // Enter opens what a click on the row's icon opens; Space selects
+        if (ev.key === "Enter" && record.data.type === "folder") {
+            record.openFolder();
+            return;
+        }
+        if (ev.key === "Enter") {
+            record.onClickPreview(ev);
+        }
         this.toggleRecordSelection(record);
     }
 
@@ -119,9 +124,7 @@ export class DocumentsListRenderer extends DocumentsRendererMixin(
         const futureCell = super.findFocusFutureCell(cell, cellIsInGroupRow, direction);
         if (futureCell) {
             const dataPointId = futureCell.closest("tr").dataset.id;
-            const record = this.props.list.records.filter(
-                (x) => x.id === dataPointId,
-            )[0];
+            const record = this.props.list.records.find((x) => x.id === dataPointId);
             if (record) {
                 this.documentService.focusRecord(record);
             }

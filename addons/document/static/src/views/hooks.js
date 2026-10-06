@@ -1,12 +1,15 @@
 /** @odoo-module native */
 import { DocumentFile } from "@document/attachments/document_file";
-import { DOCUMENT_UPLOAD_MARKER } from "@document/core/document_service";
+import {
+    DOCUMENT_UPLOAD_MARKER,
+    DocumentsBusEvent,
+} from "@document/core/document_service";
 import { PdfManager } from "@document/owl/components/pdf_manager/pdf_manager";
 import {
     provideDocumentContext,
     useDocumentContext,
 } from "@document/views/document_context";
-import { EventBus, onMounted, onWillDestroy, onWillUnmount } from "@odoo/owl";
+import { EventBus, onMounted, onWillDestroy, onWillUnmount, toRaw } from "@odoo/owl";
 import { useSetupAction } from "@web/core/action_hook";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { FileUploadEvent } from "@web/core/events";
@@ -48,7 +51,7 @@ export const DOCUMENTS_VIEW_REQUIRED_FIELDS = [
 
 /**
  * Reload the search panel and the records of a documents view, in that order.
- * The one spelling behind the DOCUMENT_RELOAD bus event and the cog items.
+ * The one spelling behind the RELOAD bus event and the cog items.
  */
 export async function reloadDocumentsView(env) {
     await env.model._notifyChange();
@@ -62,7 +65,7 @@ export function preSuperSetup() {
     });
 }
 
-export function useDocumentView(component, helpers, root) {
+export function useDocumentView(component, helpers) {
     const props = component.props;
     const orm = useService("orm");
     const notification = useService("notification");
@@ -130,6 +133,29 @@ export function useDocumentView(component, helpers, root) {
         return typeof folderId === "number" ? folderId : false;
     };
 
+    /**
+     * A request or a link is made in a form over the view, in the open folder
+     * and for the record the view is scoped to; the view reloads after.
+     *
+     * @param {string} actionXmlId
+     * @param {Object} context what this form adds
+     */
+    const openCreateForm = (actionXmlId, context) =>
+        action.doAction(actionXmlId, {
+            additionalContext: {
+                default_partner_id: props.context.default_partner_id || false,
+                default_folder_id: selectedRealFolderId(),
+                default_res_id: props.context.default_res_id || false,
+                default_res_model: props.context.default_res_model || false,
+                ...context,
+            },
+            fullscreen: env.isSmall,
+            onClose: async () => {
+                await env.model.load();
+                env.model.notify();
+            },
+        });
+
     // the base controller saves and restores the scroll; this adds the selection
     useSetupAction({
         getGlobalState: () => ({
@@ -151,50 +177,26 @@ export function useDocumentView(component, helpers, root) {
     }
 
     return {
-        root,
         orm,
         notification,
         dialogService,
         actionService: action,
-        ...useDocumentsViewFilePreviewer(component, helpers),
+        documentsPreview: useDocumentsViewFilePreviewer(component, env, helpers),
         canUploadInFolder: (folder) => documentService.canUploadInFolder(folder),
-        ...useDocumentsViewFileUpload(component),
+        ...useDocumentsViewFileUpload(component, env),
         userIsInternal: documentService.userIsInternal,
         userIsDocumentManager: documentService.userIsDocumentManager,
-        onClickDocumentsRequest: () => {
-            action.doAction("document.action_request_form", {
-                additionalContext: {
-                    default_partner_id: props.context.default_partner_id || false,
-                    default_folder_id: selectedRealFolderId(),
-                    default_res_id: props.context.default_res_id || false,
-                    default_res_model: props.context.default_res_model || false,
-                    default_requestee_id: props.context.default_partner_id || false,
-                },
-                fullscreen: env.isSmall,
-                onClose: async () => {
-                    await env.model.load();
-                    env.model.notify();
-                },
-            });
-        },
-        onClickDocumentsAddUrl: () => {
-            const folderId = env.searchModel.getSelectedFolderId();
-            action.doAction("document.action_url_form", {
-                additionalContext: {
-                    default_type: "url",
-                    default_partner_id: props.context.default_partner_id || false,
-                    default_folder_id: selectedRealFolderId(),
-                    default_res_id: props.context.default_res_id || false,
-                    default_res_model: props.context.default_res_model || false,
-                    ...(folderId === "COMPANY" ? { default_owner_id: false } : {}),
-                },
-                fullscreen: env.isSmall,
-                onClose: async () => {
-                    await env.model.load();
-                    env.model.notify();
-                },
-            });
-        },
+        onClickDocumentsRequest: () =>
+            openCreateForm("document.action_request_form", {
+                default_requestee_id: props.context.default_partner_id || false,
+            }),
+        onClickDocumentsAddUrl: () =>
+            openCreateForm("document.action_url_form", {
+                default_type: "url",
+                ...(env.searchModel.getSelectedFolderId() === "COMPANY"
+                    ? { default_owner_id: false }
+                    : {}),
+            }),
         onClickAddFolder: () => {
             const currentFolder = env.searchModel.getSelectedFolderId();
             // All, Recent, Shared and Trash cannot hold a folder: it goes to My Drive
@@ -220,28 +222,55 @@ export function useDocumentView(component, helpers, root) {
     };
 }
 
+/**
+ * @param {Object} component the documents view's controller
+ * @param {Object} env what useDocumentView gathered: documentsView, model, searchModel
+ * @param {Object} helpers
+ */
 function useDocumentsViewFilePreviewer(
     component,
-    { getSelectedDocumentsElements, setPreviewStore, isRecordPreviewable = () => true },
+    env,
+    { setPreviewStore, isRecordPreviewable = () => true },
 ) {
-    const env = {
-        documentsView: useDocumentContext().documentsView,
-        model: useViewModel(),
-        searchModel: useSearchModel(),
-    };
     const bus = env.documentsView.bus;
     /** @type {import("@document/core/document_service").DocumentService} */
     const documentService = useService("document.document");
     const orm = useService("orm");
 
-    /** The list of the preview this view opened last. */
-    let openedList = null;
-    const onOpenDocumentsPreview = async ({
-        documents,
-        mainDocument,
-        isPdfSplit,
-        embeddedActions,
-    }) => {
+    const documentsViewEl = () =>
+        component.rootRef?.el?.querySelector(".o_documents_view");
+    /** The files of the preview this view shows, if it shows one. */
+    let shownFiles = null;
+    /** Whether the document the service says is previewed is one of ours. */
+    const previewsOurs = () =>
+        Boolean(shownFiles) &&
+        shownFiles.includes(
+            toRaw(documentService.rightPanelReactive.previewedDocument),
+        );
+    /**
+     * Closes this view's preview. The details panel stays on the document
+     * last shown, and the keyboard goes back to its card or row.
+     */
+    const closePreview = () => {
+        if (!shownFiles) {
+            return;
+        }
+        const lastShown = previewsOurs()
+            ? toRaw(documentService.rightPanelReactive.previewedDocument)
+            : null;
+        if (lastShown) {
+            documentService.setPreviewedDocument(null);
+        }
+        shownFiles = null;
+        documentsViewEl()?.classList.remove("overflow-hidden");
+        setPreviewStore({});
+        if (lastShown) {
+            component.rootRef?.el
+                ?.querySelector(`[data-id="${CSS.escape(lastShown.record.id)}"]`)
+                ?.focus();
+        }
+    };
+    const open = async ({ documents, mainDocument, isPdfSplit, embeddedActions }) => {
         const openPdfSplitter = (documents) => {
             let newDocumentIds = [];
             // originals every page was deleted from (none split)
@@ -318,79 +347,47 @@ function useDocumentsViewFilePreviewer(
                         documentService.loadEmailContent(documentId),
                 }),
             );
-        const documentsViewEl = () =>
-            component.root?.el?.querySelector(".o_documents_view");
         documentsViewEl()?.classList.add("overflow-hidden");
         const selectedDocument = documentsRecords.find(
             (file) => file.record.resId === (mainDocument || documents[0]).resId,
         );
-        documentService.documentList = {
-            documents: documentsRecords || [],
-            folderId: env.searchModel.getSelectedFolderId(),
-            initialRecordSelectionLength: documents.length,
-            onDeleteCallback: () => {
-                const elements = getSelectedDocumentsElements();
-                if (elements.length) {
-                    elements[0].focus();
-                    const focusedDocument = documentService.documentList.documents.find(
-                        (d) => d.record.id === elements[0].dataset.id,
-                    );
-                    documentService.focusRecord(focusedDocument?.record || null);
-                }
-                documentsViewEl()?.classList.remove("overflow-hidden");
-
-                setPreviewStore({});
-                documentService.documentList = null;
-            },
-            selectedDocument,
-        };
-        openedList = documentService.documentList;
-
-        const previewStore = {
-            documentList: documentService.documentList,
-            startIndex: documentsRecords.indexOf(selectedDocument),
-            files: documentsRecords,
-        };
-
+        shownFiles = documentsRecords;
         // published before the viewer renders, which then follows its own
         // next and previous
         documentService.setPreviewedDocument(selectedDocument);
-        setPreviewStore({ ...previewStore });
+        setPreviewStore({
+            files: documentsRecords,
+            startIndex: documentsRecords.indexOf(selectedDocument),
+            folderId: env.searchModel.getSelectedFolderId(),
+            close: closePreview,
+        });
     };
 
-    useBus(bus, "documents-open-preview", async (ev) => {
+    useBus(bus, "documents-open-preview", (ev) => {
         component.onOpenDocumentsPreview(ev.detail);
     });
-    useBus(bus, "documents-close-preview", () => {
-        documentService.setPreviewedDocument(null);
-        documentService.documentList?.onDeleteCallback();
-    });
-    // the preview's state is the service's, the view's beyond: a view left
-    // with its preview open (Back, a menu) takes that preview with it
+    useBus(bus, "documents-close-preview", closePreview);
+    // the previewed document is the service's, the preview the view's: a view
+    // left with its preview open (Back, a menu) takes that preview with it
     onWillDestroy(() => {
-        const { documentList } = documentService;
         log.lifecycle("previewer destroyed", () => ({
             controller: component.constructor.name,
-            ownsPreview: Boolean(documentList) && documentList === openedList,
+            ownsPreview: previewsOurs(),
         }));
-        if (documentList && documentList === openedList) {
-            log.lifecycle("view left with its preview open");
+        if (previewsOurs()) {
             documentService.setPreviewedDocument(null);
-            documentService.documentList = null;
         }
+        shownFiles = null;
     });
 
-    return {
-        onOpenDocumentsPreview,
-    };
+    return { open, close: closePreview };
 }
 
-function useDocumentsViewFileUpload(component) {
-    const env = {
-        documentsView: useDocumentContext().documentsView,
-        model: useViewModel(),
-        searchModel: useSearchModel(),
-    };
+/**
+ * @param {Object} component the documents view's controller
+ * @param {Object} env what useDocumentView gathered: documentsView, model, searchModel
+ */
+function useDocumentsViewFileUpload(component, env) {
     const bus = env.documentsView.bus;
     const fileUpload = useService("file_upload");
     const documentService = useService("document.document");
@@ -399,7 +396,9 @@ function useDocumentsViewFileUpload(component) {
     const isDocumentUpload = (upload) =>
         Boolean(upload.data?.get?.(DOCUMENT_UPLOAD_MARKER));
 
-    useBus(documentService.bus, "DOCUMENT_RELOAD", () => reloadDocumentsView(env));
+    useBus(documentService.bus, DocumentsBusEvent.RELOAD, () =>
+        reloadDocumentsView(env),
+    );
 
     // uploads finishing together (every cloud file is an upload of its own)
     // load the view once and leave all their documents selected, instead of

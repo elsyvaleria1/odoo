@@ -43,8 +43,7 @@ export class DocumentsKanbanCompiler extends KanbanCompiler {
         elem.setAttribute(
             "t-attf-class",
             (elem.getAttribute("t-attf-class") || "") +
-                " {{(record.type.raw_value === 'binary' && !record.attachment_id.raw_value && !record.shortcut_document_id.raw_value) ? 'oe_file_request' : ''}}" +
-                " {{__comp__.props.record.selected ? 'o_record_selected' : ''}}",
+                " {{__comp__.props.record.isRequest() ? 'oe_file_request' : ''}}",
         );
         const content = new DOMParser().parseFromString(
             `

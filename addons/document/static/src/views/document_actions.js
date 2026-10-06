@@ -70,10 +70,15 @@ export function isDownloadAllowed(data) {
  */
 
 /**
+ * @typedef {Object} FolderLookup what the folder tree tells of a folder
+ * @property {(folderId: number) => string|undefined} folderPermission
+ */
+
+/**
  * @typedef {Object} DocumentAction
  * @property {string | ((data: Object) => string)} icon
  * @property {string | ((data: Object) => string)} label
- * @property {(documentService: Object, data: Object) => boolean} isVisible
+ * @property {(documentService: Object, data: Object, folders?: FolderLookup) => boolean} isVisible
  * @property {(context: DocumentActionContext, data: Object) => any} run
  */
 
@@ -170,11 +175,17 @@ export const documentActions = {
     trash: {
         icon: "fa-regular fa-trash-can",
         label: _t("Move to Trash"),
-        isVisible: (documentService, data) =>
+        isVisible: (
+            documentService,
+            data,
+            { folderPermission = () => undefined } = {},
+        ) =>
             documentService.userIsInternal &&
-            data.active !== false &&
-            !isLockedByOther(data, documentService.userIsDocumentManager) &&
-            documentService.isEditable(data),
+            documentService.isEditable(data) &&
+            isTrashable(data, {
+                userIsDocumentManager: documentService.userIsDocumentManager,
+                folderPermission,
+            }),
         run: async ({ documentService, reload }, data) => {
             if (await documentService.moveToTrash([data.id])) {
                 await reload();

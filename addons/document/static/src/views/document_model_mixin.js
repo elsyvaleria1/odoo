@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { DocumentsBusEvent } from "@document/core/document_service";
 import {
     isDownloadAllowed,
     isLockedByOther,
@@ -50,7 +51,7 @@ export const DocumentsModelMixin = (component) =>
             // the chatter's activities show on the card and in the list columns
             useBus(
                 this.documentService.bus,
-                "DOCUMENT_CHATTER_ACTIVITY_CHANGED",
+                DocumentsBusEvent.ACTIVITY_CHANGED,
                 ({ detail }) =>
                     this.root?.records
                         ?.find((record) => record.resId === detail.recordId)
@@ -350,6 +351,24 @@ export const DocumentsModelMixin = (component) =>
                     ? _t("Links copied to clipboard!")
                     : _t("Link copied to clipboard!");
             this.notification.add(message, { type: "success" });
+        }
+
+        /**
+         * Stars or unstars each document for the current user, then refreshes
+         * what shows a star: those records, and the folder tree for a folder.
+         *
+         * @param {Object[]} records
+         */
+        async toggleFavorite(records) {
+            if (!records.length) {
+                return;
+            }
+            await this.documentService.toggleFavorite(records.map((r) => r.resId));
+            await Promise.all([
+                ...records.map((record) => record.load()),
+                records.some((record) => record.data.type === "folder") &&
+                    this.viewContext.searchModel._reloadSearchPanel(),
+            ]);
         }
 
         async onToggleLock() {

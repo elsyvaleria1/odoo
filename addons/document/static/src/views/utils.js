@@ -1,9 +1,30 @@
 /** @odoo-module native */
 import { markup } from "@odoo/owl";
+import { _t } from "@web/core/translation";
 import { htmlJoin } from "@web/core/utils/dom/html";
 /** @typedef {typeof import("@web/model/relational_model/record").RelationalRecord} RelationalModelRecord */
 
 const SAFE_URL_SCHEME = /^(https?|ftp):\/\//i;
+
+/** The folder panel's roots that are no record: `user_folder_id`'s special values. */
+const SPECIAL_FOLDER_IDS = Object.freeze([
+    "COMPANY",
+    "MY",
+    "RECENT",
+    "SHARED",
+    "TRASH",
+]);
+
+/** Where the Documents app remembers the folder it reopens on. */
+export const FOLDER_STORAGE_KEY = "searchpanel_documents_document";
+
+/**
+ * @param {unknown} folderId
+ * @returns {boolean}
+ */
+export function isSpecialFolderId(folderId) {
+    return SPECIAL_FOLDER_IDS.includes(folderId);
+}
 
 /**
  * @param {String} url
@@ -18,6 +39,13 @@ export function toSafeDocumentUrl(url) {
  */
 export function openDocumentUrl(url) {
     window.open(toSafeDocumentUrl(url), "_blank", "noopener,noreferrer");
+}
+
+/** Why a document or folder dropped on a special root (All, Recent...) does not land. */
+export function specialFolderDropRefusal() {
+    return _t(
+        "You can't create shortcuts in or move documents to this special folder.",
+    );
 }
 
 /**

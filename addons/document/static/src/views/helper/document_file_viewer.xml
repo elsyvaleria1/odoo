@@ -8,6 +8,8 @@
             <DocumentsFileViewer
                 files="this.props.previewStore.files"
                 startIndex="this.props.previewStore.startIndex"
+                folderId="this.props.previewStore.folderId"
+                close="this.props.previewStore.close"
                 modal="false"
             />
         </div>

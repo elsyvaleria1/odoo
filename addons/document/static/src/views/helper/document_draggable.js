@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { toFolderValueId } from "@document/views/utils";
+import { specialFolderDropRefusal, toFolderValueId } from "@document/views/utils";
 import { markup } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
@@ -25,9 +25,7 @@ export function dropRejectionReason({
 }) {
     // "All" (id false) holds nothing of its own
     if (!targetFolder?.id || ["RECENT", "SHARED"].includes(targetFolder.id)) {
-        return _t(
-            "You can't create shortcuts in nor move documents to this special folder.",
-        );
+        return specialFolderDropRefusal();
     }
     if (
         targetFolder.id === "TRASH" &&
@@ -332,18 +330,20 @@ export const useDraggableDocuments = makeDraggableHook({
         }
 
         if (targetFolder.id === "COMPANY") {
-            await model.documentService.moveToCompanyRoot(ctx.draggedRecords);
-            await model.viewContext.searchModel._reloadSearchModel(true);
+            if (await model.documentService.moveToCompanyRoot(ctx.draggedRecords)) {
+                await model.viewContext.searchModel._reloadSearchModel(true);
+            }
             return;
         }
 
-        await model.documentService.moveOrCreateShortcut(
+        const changed = await model.documentService.moveOrCreateShortcut(
             ctx.draggedRecords,
             targetFolder,
             ref.el.classList.contains("o_documents_dnd_shortcut"),
         );
-
-        await model._notifyChange();
+        if (changed) {
+            await model._notifyChange();
+        }
     },
 
     /**

@@ -1,5 +1,8 @@
 import { DocumentsSearchModel } from "@document/views/search/document_search_model";
+import { FOLDER_STORAGE_KEY } from "@document/views/utils";
 import { describe, expect, test } from "@odoo/hoot";
+import { patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { browser } from "@web/core/browser/browser";
 
 describe.current.tags("headless");
 
@@ -112,5 +115,51 @@ describe("folderCategory", () => {
 
         expect(model.folderCategory).toBe(folderSection);
         expect(model.folderCategory.activeValueId).toBe("TRASH");
+    });
+});
+
+describe("_updateCategoryValue", () => {
+    /**
+     * @param {string|null} stored what the browser remembers
+     * @param {Object} category
+     * @returns {Object} the model, after the update
+     */
+    function update(stored, category, valueIds) {
+        patchWithCleanup(browser.localStorage, {
+            getItem: (key) => (key === FOLDER_STORAGE_KEY ? stored : null),
+            setItem: () => {},
+        });
+        const model = Object.create(DocumentsSearchModel.prototype);
+        Object.defineProperty(model, "context", { value: {} });
+        model.documentService = { userIsInternal: false };
+        model._updateCategoryValue(category, valueIds);
+        return category;
+    }
+
+    test("a remembered special root this panel lacks opens All", () => {
+        // a portal user's panel: no COMPANY root
+        const category = makeCategory({
+            rootIds: [false],
+            folders: [
+                { id: false, childrenIds: [7] },
+                { id: 7, parentId: false, childrenIds: [] },
+            ],
+        });
+        category.activeValueId = undefined;
+        expect(update("COMPANY", category, [false, 7]).activeValueId).toBe(false);
+    });
+
+    test("a remembered folder gone out of reach opens the tree's first folder", () => {
+        const category = makeCategory({
+            rootIds: [false],
+            folders: [
+                { id: false, childrenIds: [7] },
+                { id: 7, parentId: false, childrenIds: [] },
+                // remembered, but its own parent is no longer listed
+                { id: 9, parentId: false, childrenIds: [] },
+            ],
+        });
+        category.activeValueId = undefined;
+        expect(update("9", category, [false, 7]).activeValueId).toBe(7);
     });
 });

@@ -11,6 +11,7 @@ import {
     press,
     queryAll,
     queryAllTexts,
+    queryOne,
     setInputFiles,
     waitFor,
     waitForNone,
@@ -1252,6 +1253,52 @@ test("the open folder's details count its documents' bytes, not rounded megabyte
     const { focusedRecord } = getService("document.document");
     expect(focusedRecord.isContainer).toBe(true);
     expect(focusedRecord.data.file_size).toBe(1234568);
+});
+
+test("files dragged over a card keep the drop zone; leaving the view clears it", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Doc A", { folder_id: false }),
+    ]);
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsKanbanView();
+    const view = queryOne(".o_kanban_renderer");
+    const card = queryOne(".o_kanban_record:contains('Doc A')");
+    const files = () => {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(new File(["x"], "x.txt"));
+        return dataTransfer;
+    };
+    view.dispatchEvent(
+        new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: files(),
+        }),
+    );
+    await animationFrame();
+    const overClasses = () =>
+        [...view.classList].filter((name) => name.startsWith("o_documents_drop_over"));
+    expect(overClasses()).toHaveLength(1);
+    view.dispatchEvent(
+        new DragEvent("dragleave", {
+            bubbles: true,
+            relatedTarget: card,
+            dataTransfer: files(),
+        }),
+    );
+    await animationFrame();
+    expect(overClasses()).toHaveLength(1, {
+        message: "from the view onto one of its cards: still over the view",
+    });
+    view.dispatchEvent(
+        new DragEvent("dragleave", {
+            bubbles: true,
+            relatedTarget: null,
+            dataTransfer: files(),
+        }),
+    );
+    await animationFrame();
+    expect(overClasses()).toHaveLength(0);
 });
 
 test("another feature's upload does not reload the documents", async () => {

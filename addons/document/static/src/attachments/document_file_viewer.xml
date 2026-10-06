@@ -3,7 +3,7 @@
     <t t-name="document.FileViewer" t-inherit="web.FileViewer" t-inherit-mode="primary">
         <xpath expr="//div[hasclass('o-FileViewer-headerButton')][hasclass('o-FileViewer-download')]" position="before">
             <div t-attf-class="d-flex align-items-center flex-shrink-0 {{this.ui.isSmall ? 'pe-2' : 'pe-4'}}">
-                <DocumentsAction folderId="this.folderId" targetRecords="[this.state.file?.record]" isPreview="true"/>
+                <DocumentsAction folderId="this.props.folderId" targetRecords="[this.state.file?.record]" isPreview="true"/>
             </div>
         </xpath>
         <!-- downloading is the action menu's, which knows a blocked download -->

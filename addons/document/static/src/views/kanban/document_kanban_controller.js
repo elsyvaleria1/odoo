@@ -13,5 +13,4 @@ export class DocumentsKanbanController extends DocumentsControllerMixin(
         Dropdown,
         SelectionBox: DocumentsSelectionBox,
     };
-    static selectedDocumentsSelector = ".o_kanban_record.o_record_selected";
 }

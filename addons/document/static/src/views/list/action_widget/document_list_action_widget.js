@@ -26,7 +26,13 @@ export class DocumentsListActionWidget extends Component {
         const data = this.props.record.data;
         return this.constructor.actionIds
             .map((id) => ({ id, action: documentActions[id] }))
-            .filter(({ action }) => action.isVisible(this.documentService, data))
+            .filter(({ action }) =>
+                action.isVisible(this.documentService, data, {
+                    folderPermission: (folderId) =>
+                        this.model.viewContext.searchModel.getFolderById(folderId)
+                            ?.user_permission,
+                }),
+            )
             .map(({ id, action }) => ({
                 id,
                 action,

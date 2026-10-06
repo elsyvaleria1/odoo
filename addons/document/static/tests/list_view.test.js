@@ -688,6 +688,72 @@ test("a Documents manager's menu sees through another user's lock", async functi
     });
 });
 
+test("closing a row's preview leaves the details on that row's document", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Picture", {
+            folder_id: 1,
+            mimetype: "image/png",
+            attachment_id: 1,
+        }),
+    ]);
+    serverData["ir.attachment"] = [{ id: 1, name: "Picture" }];
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsListView();
+    const documentService = getService("document.document");
+    await contains(".o_data_row:contains('Picture') .o_list_record_selector").click();
+    await contains(
+        ".o_data_row:contains('Picture') .o_field_documents_type_icon",
+    ).click();
+    await waitFor(".o-FileViewer");
+    await press("escape");
+    await waitForNone(".o-FileViewer");
+    expect(documentService.focusedRecord?.resId).toBe(2, {
+        message:
+            "the row's selector cell names no record: nothing to blank the panel with",
+    });
+});
+
+test("Enter on a folder row opens the folder, as a click on its icon does", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Sub Folder", { folder_id: 1, type: "folder" }),
+    ]);
+    onRpc("/documents/touch/*", () => ({}));
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsListView();
+    await contains(
+        ".o_data_row:contains('Folder 1') .o_field_documents_type_icon",
+    ).click();
+    await waitFor(".o_last_breadcrumb_item:contains('Folder 1')");
+    await contains(".o_data_row:contains('Sub Folder') .o_data_cell:eq(1)").focus();
+    await press("Enter");
+    await waitFor(".o_last_breadcrumb_item:contains('Sub Folder')");
+    expect(".o_data_row_selected").toHaveCount(0, {
+        message: "opened, not selected",
+    });
+});
+
+test("the row's Trash keeps away from what action_archive refuses", () => {
+    const service = {
+        userIsInternal: true,
+        userIsDocumentManager: false,
+        isEditable: (data) => data.user_permission === "edit",
+    };
+    const unowned = {
+        id: 5,
+        active: true,
+        user_permission: "edit",
+        owner_id: { id: user.userId + 1 },
+        folder_id: { id: 7 },
+    };
+    const lookup = (permission) => ({ folderPermission: () => permission });
+    expect(documentActions.trash.isVisible(service, unowned, lookup("view"))).toBe(
+        false,
+    );
+    expect(documentActions.trash.isVisible(service, unowned, lookup("edit"))).toBe(
+        true,
+    );
+});
+
 test("the folder tree is fetched without narrowing it to the open folder", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Doc A", { folder_id: 1 }),
@@ -935,6 +1001,27 @@ test("Alt+T stars the selected rows in list view too", async function () {
     await press(["alt", "t"]);
     await animationFrame();
     expect.verifySteps(["star 2,3"]);
+});
+
+test("starring reloads the starred rows, not the whole list", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Star Me", { folder_id: 1 }),
+        makeDocumentRecordData(3, "Leave Me", { folder_id: 1 }),
+    ]);
+    onRpc("document.document", "action_toggle_user_favorite", () => true);
+    onRpc("document.document", "web_search_read", () => {
+        expect.step("whole list");
+    });
+    onRpc("document.document", "web_read", ({ args }) => {
+        expect.step(`row ${args[0]}`);
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsListView();
+    expect.verifySteps(["whole list"]);
+    await contains(".o_data_row:contains('Star Me') .o_list_record_selector").click();
+    await press(["alt", "t"]);
+    await animationFrame();
+    expect.verifySteps(["row 2"]);
 });
 
 test("a shortcut to a folder outside the panel does not open a trash it lacks", async function () {

@@ -21,9 +21,6 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
         this.dialogService = useService("dialog");
         this.documentService = useService("document.document");
         this.notification = useService("notification");
-        // Hack-ish way to do this but the function is added by a hook which we can't really override.
-        this.baseOnOpenDocumentsPreview = this.onOpenDocumentsPreview.bind(this);
-        this.onOpenDocumentsPreview = this._onOpenDocumentsPreview.bind(this);
     },
 
     /**
@@ -42,7 +39,7 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
     /**
      * @override
      */
-    async _onOpenDocumentsPreview({ mainDocument }) {
+    async onOpenDocumentsPreview({ mainDocument }) {
         const mainDocumentOrTarget = mainDocument.shortcutTarget;
         log.logic("openPreview", () => ({
             documentId: mainDocumentOrTarget.resId,
@@ -97,7 +94,7 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
                 });
             }
         } else {
-            return this.baseOnOpenDocumentsPreview(...arguments);
+            return super.onOpenDocumentsPreview(...arguments);
         }
     },
 

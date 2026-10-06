@@ -1,6 +1,7 @@
 /** @odoo-module native */
+import { DocumentsBusEvent } from "@document/core/document_service";
 import { useDraggableDocuments } from "@document/views/helper/document_draggable";
-import { onMounted, onWillUnmount, onWillUpdateProps, proxy } from "@odoo/owl";
+import { onMounted, onWillUpdateProps, proxy } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
 import { elementRef } from "@web/core/utils/element_ref";
@@ -17,6 +18,58 @@ import { useSearchModel } from "@web/search/search_model";
 import { useCommand } from "@web/ui/commands";
 
 const log = makeLogger("document.renderer");
+
+const containerRecordClasses = new WeakMap();
+
+/**
+ * The current folder as a record, for the details panel: a search panel value,
+ * not a row of the view. An edit is written at once, alone, and its reload is
+ * the folder tree's (`reloadFolder`, set by the renderer making it).
+ *
+ * @param {typeof import("@web/model/relational_model").RelationalModel.Record} Record
+ */
+function containerRecordClass(Record) {
+    if (!containerRecordClasses.has(Record)) {
+        containerRecordClasses.set(
+            Record,
+            class DocumentsContainerRecord extends Record {
+                isContainer = true;
+
+                async updateLocked(changes) {
+                    this.dirty = true;
+                    const fieldsToSave = new Set(Object.keys(changes));
+                    await Promise.all([
+                        preprocessMany2oneChanges(this, changes),
+                        preprocessMany2OneReferenceChanges(this, changes),
+                        preprocessReferenceChanges(this, changes),
+                        preprocessX2manyChanges(this, changes),
+                    ]);
+                    this.applyChanges(changes);
+                    const changesToSave = Object.fromEntries(
+                        Object.entries(this.getChangesLocked()).filter(([name]) =>
+                            fieldsToSave.has(name),
+                        ),
+                    );
+                    await this.model.orm.write(
+                        "document.document",
+                        [this.data.id],
+                        changesToSave,
+                    );
+                    this.dirty = false;
+                }
+
+                async load() {
+                    await this.reloadFolder?.();
+                }
+
+                async saveLocked() {
+                    return true;
+                }
+            },
+        );
+    }
+    return containerRecordClasses.get(Record);
+}
 
 export const DocumentsRendererMixin = (component) =>
     class extends component {
@@ -78,7 +131,7 @@ export const DocumentsRendererMixin = (component) =>
                     elements: this.constructor.recordSelector,
                     preventDrag: () =>
                         this.searchModel.getSelectedFolderId() === "TRASH" ||
-                        this.getIsDomainSelected(),
+                        this.refusesDomainDrag(),
                     onTargetPointerEnter: ({ addClass, target, isInvalid }) => {
                         addClass(target, isInvalid ? invalid : hover);
                     },
@@ -99,8 +152,6 @@ export const DocumentsRendererMixin = (component) =>
             );
             this.rightPanelState = proxy(this.documentService.rightPanelReactive);
 
-            onWillUnmount(() => this.documentService.stopRightPanelScrollObserver());
-
             useCommand(_t("Move to trash"), () => this.model.onArchive(), {
                 category: "smart_action",
                 hotkey: "control+m",
@@ -108,17 +159,7 @@ export const DocumentsRendererMixin = (component) =>
             });
             useCommand(
                 _t("Toggle favorite"),
-                async () => {
-                    const records = this.selection;
-                    await this.documentService.toggleFavorite(
-                        records.map((record) => record.resId),
-                    );
-                    // a folder's star is also read from its search panel value
-                    if (records.some((record) => record.data.type === "folder")) {
-                        await this.searchModel._reloadSearchPanel();
-                    }
-                    await this.model.load();
-                },
+                () => this.model.toggleFavorite(this.selection),
                 {
                     category: "smart_action",
                     hotkey: "alt+t",
@@ -160,7 +201,7 @@ export const DocumentsRendererMixin = (component) =>
                     );
                 }
             });
-            useBus(this.documentService.bus, "UPDATE-DOCUMENT-FOLDER", () => {
+            useBus(this.documentService.bus, DocumentsBusEvent.FOCUS_FOLDER, () => {
                 this.documentService.focusRecord(this.getContainerRecord());
             });
         }
@@ -189,7 +230,7 @@ export const DocumentsRendererMixin = (component) =>
             const fileSize = this.props.list?.model.fileSize || 0;
             const cached = this._containerRecord;
             const hit = cached?.folder === folder && cached.fileSize === fileSize;
-            log.logic("containerRecord", () => ({ folderId: folder.id, reused: hit }));
+            log.logic("containerRecord", () => ({ folderId: folder?.id, reused: hit }));
             if (hit) {
                 return cached.record;
             }
@@ -213,48 +254,22 @@ export const DocumentsRendererMixin = (component) =>
                 file_size: fileSize,
             });
             const config = { ...this.model.config, resId: data.id };
-            const record = new this.model.constructor.Record(this.model, config, data);
-            record.isContainer = true;
-
-            /**
-             * @override making
-             */
-            record.updateLocked = async (changes) => {
-                record.dirty = true;
-                const fieldsToSave = new Set(Object.keys(changes));
-                await Promise.all([
-                    preprocessMany2oneChanges(record, changes),
-                    preprocessMany2OneReferenceChanges(record, changes),
-                    preprocessReferenceChanges(record, changes),
-                    preprocessX2manyChanges(record, changes),
-                ]);
-                record.applyChanges(changes);
-                const changesToSave = Object.fromEntries(
-                    Object.entries(record.getChangesLocked()).filter(([name]) =>
-                        fieldsToSave.has(name),
-                    ),
-                );
-                await this.model.orm.write(
-                    "document.document",
-                    [record.data.id],
-                    changesToSave,
-                );
-            };
-            /**
-             * @override to
-             */
-            record.load = async () => {
+            const ContainerRecord = containerRecordClass(this.model.constructor.Record);
+            const record = new ContainerRecord(this.model, config, data);
+            record.reloadFolder = async () => {
                 await this.searchModel._reloadSearchPanel();
                 this.documentService.focusRecord(this.getContainerRecord());
             };
-            /**
-             * @override skip
-             */
-            record.saveLocked = async () => true;
             return record;
         }
 
-        getIsDomainSelected() {
+        /**
+         * Whether a drag is refused for the whole domain being selected,
+         * which the user is told: only the page's documents are on screen.
+         *
+         * @returns {boolean}
+         */
+        refusesDomainDrag() {
             if (this.model.isDomainSelected) {
                 this.notificationService.add(
                     _t("Only current page items can be dragged."),

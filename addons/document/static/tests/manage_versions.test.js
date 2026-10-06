@@ -1,4 +1,5 @@
 import { DocumentsManageVersions } from "@document/components/document_manage_versions_panel/document_manage_versions_panel";
+import { DocumentsBusEvent } from "@document/core/document_service";
 import { describe, expect, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-mock";
 import { EventBus } from "@odoo/owl";
@@ -121,7 +122,7 @@ test("a restored version refreshes through its caller, not the whole app", async
         expect.step(`restore ${args[1]}`);
         return true;
     });
-    getService("document.document").bus.addEventListener("DOCUMENT_RELOAD", () =>
+    getService("document.document").bus.addEventListener(DocumentsBusEvent.RELOAD, () =>
         expect.step("app reload"),
     );
 

@@ -1,7 +1,7 @@
 /** @odoo-module native */
 import { DocumentsManageVersions } from "@document/components/document_manage_versions_panel/document_manage_versions_panel";
 import { AccessRightsUpdateConfirmationDialog } from "@document/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog";
-import { openDocumentUrl } from "@document/views/utils";
+import { FOLDER_STORAGE_KEY, openDocumentUrl } from "@document/views/utils";
 import { EventBus, markup, observe, proxy, toRaw } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { parseSearchQuery, router } from "@web/core/browser/router";
@@ -26,13 +26,24 @@ const log = makeLogger("document.service");
  */
 export const DOCUMENT_UPLOAD_MARKER = "documents_upload";
 
+/**
+ * What the service's bus carries to the mounted documents views, one name per
+ * fact; a view's own bus (`documents-open-preview`, ...) speaks within it.
+ */
+export const DocumentsBusEvent = Object.freeze({
+    /** something changed the documents: reload the tree and the records */
+    RELOAD: "documents-reload",
+    /** the selection emptied: the details panel goes back to the folder */
+    FOCUS_FOLDER: "documents-focus-folder",
+    /** an activity was scheduled or done in the chatter: `{ recordId }` */
+    ACTIVITY_CHANGED: "documents-activity-changed",
+});
+
 /** Context key asking the server to refuse a move that changes access (tools.py). */
 export const MOVE_ACCESS_CHECK = "documents_move_access_check";
 const MOVE_CHANGES_ACCESS = "odoo.addons.document.tools.MoveChangesAccess";
 
 export class DocumentService {
-    documentList;
-
     constructor(env, services) {
         this.env = env;
         this.orm = services["orm"];
@@ -68,10 +79,7 @@ export class DocumentService {
             urlSearch.documents_init_user_folder_id || documents_init?.user_folder_id;
         this._initData = { userFolderId };
         if (userFolderId) {
-            browser.localStorage.setItem(
-                "searchpanel_documents_document",
-                userFolderId,
-            );
+            browser.localStorage.setItem(FOLDER_STORAGE_KEY, userFolderId);
         }
         // The mounted view controller publishes how to build the selection's
         // actions; reactive so the control panel re-renders when the view
@@ -490,14 +498,22 @@ export class DocumentService {
         }
     }
 
+    /**
+     * @param {{all: number[], movableRecordIds: number[], nonMovableRecordIds: number[]}} records
+     * @param {Object} targetFolder
+     * @param {boolean} forceShortcut link instead of moving
+     * @returns {Promise<boolean>} whether anything moved or was linked
+     */
     async moveOrCreateShortcut(records, targetFolder, forceShortcut) {
         let message = "";
+        let changed = false;
         const userFolderId = targetFolder.id.toString();
         if (forceShortcut) {
             await this.orm.call("document.document", "action_create_shortcut", [
                 records.all,
                 userFolderId,
             ]);
+            changed = true;
             message =
                 records.all.length === 1
                     ? _t("A shortcut has been created.")
@@ -522,8 +538,9 @@ export class DocumentService {
                     targetFolder.display_name,
                 );
                 if (!moved) {
-                    return;
+                    return false;
                 }
+                changed = true;
             }
             if (records.nonMovableRecordIds.length) {
                 this.notification.add(
@@ -537,14 +554,20 @@ export class DocumentService {
         if (message) {
             this.notification.add(message, { type: "success" });
         }
+        return changed;
     }
 
+    /**
+     * @param {{movableRecordIds: number[], nonMovableRecordIds: number[]}} records
+     * @returns {Promise<boolean>} whether anything moved
+     */
     async moveToCompanyRoot(records) {
         if (!records.movableRecordIds.length) {
-            return this.notification.add(
+            this.notification.add(
                 _t("You can't move this/those folder(s) to the Company root."),
                 { type: "warning" },
             );
+            return false;
         }
         const moved = await this.moveConfirmingAccess(
             (context) =>
@@ -557,7 +580,7 @@ export class DocumentService {
             _t("Company"),
         );
         if (!moved) {
-            return;
+            return false;
         }
         let message =
             records.movableRecordIds.length === 1
@@ -572,6 +595,7 @@ export class DocumentService {
         this.notification.add(message, {
             type: records.nonMovableRecordIds.length ? "warning" : "success",
         });
+        return true;
     }
 
     /** @param {number[]} documentIds */
@@ -586,7 +610,7 @@ export class DocumentService {
     }
 
     reload() {
-        this.bus.trigger("DOCUMENT_RELOAD");
+        this.bus.trigger(DocumentsBusEvent.RELOAD);
     }
 
     /**
@@ -720,46 +744,8 @@ export class DocumentService {
         }
     }
 
-    stopRightPanelScrollObserver() {
-        this.observer?.disconnect();
-        this.observer = undefined;
-    }
-
     toggleRightPanelVisibility() {
         this.rightPanelReactive.visible = !this.rightPanelReactive.visible;
-
-        this.stopRightPanelScrollObserver();
-
-        if (this.rightPanelReactive.visible) {
-            this.observer = new MutationObserver(() => {
-                const chatterContainer = document.querySelector(".o-mail-Thread");
-                if (chatterContainer && this.env.isSmall) {
-                    chatterContainer.scrollIntoView({ behavior: "smooth" });
-                    this.observer.disconnect();
-                    return;
-                }
-                const view = this.action.currentController?.props.type;
-                if (chatterContainer && ["kanban", "list"].includes(view)) {
-                    const selectedRecordClass =
-                        view === "kanban"
-                            ? ".o_kanban_record.o_record_selected"
-                            : ".o_data_row.o_data_row_selected";
-                    const selectedRecords =
-                        document.querySelectorAll(selectedRecordClass);
-                    if (selectedRecords?.length > 0) {
-                        selectedRecords[0].scrollIntoView({
-                            behavior: "instant",
-                            block: view === "kanban" ? "start" : "center",
-                        });
-                    }
-                    this.observer.disconnect();
-                }
-            });
-            const content = document.querySelector(".o_documents_content");
-            if (content) {
-                this.observer.observe(content, { childList: true, subtree: true });
-            }
-        }
     }
 
     setPreviewedDocument(document) {
@@ -780,7 +766,7 @@ export class DocumentService {
         return (
             session.cloud_storage_min_file_size !== undefined &&
             file.size > session.cloud_storage_min_file_size &&
-            !session.cloud_storage_unsupported_models.includes("document.document")
+            !session.cloud_storage_unsupported_models?.includes("document.document")
         );
     }
 

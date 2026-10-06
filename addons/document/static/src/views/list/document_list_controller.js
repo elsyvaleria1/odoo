@@ -11,15 +11,17 @@ export class DocumentsListController extends DocumentsControllerMixin(ListContro
         Dropdown,
         SelectionBox: DocumentsSelectionBox,
     };
-    static selectedDocumentsSelector =
-        ".o_data_row.o_data_row_selected .o_list_record_selector";
 
     setup() {
         super.setup(...arguments);
         if (!this.documentService.userIsInternal) {
-            this.archInfo.columns = this.archInfo.columns.filter(
-                (col) => !this.internalOnlyColumns.includes(col.name),
-            );
+            // a copy: the parsed arch may be shared with another view of it
+            this.archInfo = {
+                ...this.archInfo,
+                columns: this.archInfo.columns.filter(
+                    (col) => !this.internalOnlyColumns.includes(col.name),
+                ),
+            };
         }
     }
 

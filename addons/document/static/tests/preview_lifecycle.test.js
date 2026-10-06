@@ -1,5 +1,6 @@
 import { DocumentFile } from "@document/attachments/document_file";
 import { DocumentsFileViewer } from "@document/attachments/document_file_viewer";
+import { DocumentsBusEvent } from "@document/core/document_service";
 import { DocumentsAction } from "@document/views/action/document_action";
 import { describe, expect, test } from "@odoo/hoot";
 import { press, waitFor, waitForNone } from "@odoo/hoot-dom";
@@ -57,26 +58,20 @@ async function mountWithPreviewableDocument({ mimetype = "image/webp" } = {}) {
     return getService("document.document");
 }
 
-test("the preview releases documentList when it closes", async () => {
+test("closing the preview releases it, the details staying on the document shown", async () => {
     const documentService = await mountWithPreviewableDocument();
-
-    expect(documentService.documentList).toBe(undefined, {
-        message: "nothing is published before a preview is opened",
-    });
-
     await contains(
         ".o_kanban_record:contains('text_file.txt') [name='document_preview']",
     ).click();
     await waitFor(".o-FileViewer");
-    expect(documentService.documentList).not.toBe(null);
-    expect(documentService.documentList.documents.length).toBeGreaterThan(0);
+    expect(documentService.rightPanelReactive.previewedDocument.record.resId).toBe(2);
 
     await press("escape");
     await waitForNone(".o-FileViewer");
 
-    expect(documentService.documentList).toBe(null, {
-        message:
-            "closing the preview releases the controller closures and the previewed records",
+    expect(documentService.rightPanelReactive.previewedDocument).toBe(null);
+    expect(documentService.focusedRecord?.resId).toBe(2, {
+        message: "the details panel stays on the document last shown",
     });
 });
 
@@ -90,9 +85,8 @@ test("closing twice is a no-op", async () => {
     await press("escape");
     await waitForNone(".o-FileViewer");
 
-    await getService("action").currentController.props.resModel;
-    expect(documentService.documentList).toBe(null);
-    expect(() => documentService.bus.trigger("DOCUMENT_RELOAD")).not.toThrow();
+    expect(documentService.rightPanelReactive.previewedDocument).toBe(null);
+    expect(() => documentService.bus.trigger(DocumentsBusEvent.RELOAD)).not.toThrow();
 });
 
 test("a text preview fetches its content once, and not again on close", async () => {
@@ -125,13 +119,8 @@ test("a preview reopened on another list shows the file asked for", async () => 
     });
     const [a, b, c] = [file(1, "a.png"), file(2, "b.png"), file(3, "c.png")];
     mockService("document.document", () => ({
-        documentList: {
-            documents: [{ record: {} }, { record: {} }, { record: {} }],
-            folderId: false,
-            onDeleteCallback() {},
-        },
         selectionActions: { provider: null },
-        rightPanelReactive: { visible: false },
+        rightPanelReactive: { visible: false, previewedDocument: null },
         setPreviewedDocument() {},
         userIsInternal: true,
     }));
@@ -274,7 +263,6 @@ test("leaving the app with a preview open takes the preview along", async () => 
     expect(documentService.rightPanelReactive.previewedDocument).toBe(null, {
         message: "the next documents view would otherwise read a preview gone",
     });
-    expect(documentService.documentList).toBe(null);
 });
 
 test("a change to the record shown after Next fetches its content no more", async () => {

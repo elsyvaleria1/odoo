@@ -1,5 +1,9 @@
 /** @odoo-module native */
-import { toFolderValueId } from "@document/views/utils";
+import {
+    FOLDER_STORAGE_KEY,
+    isSpecialFolderId,
+    toFolderValueId,
+} from "@document/views/utils";
 import { useSetupAction } from "@web/core/action_hook";
 import { browser } from "@web/core/browser/browser";
 import { router } from "@web/core/browser/router";
@@ -173,7 +177,7 @@ export class DocumentsSearchModel extends SearchModel {
 
         const selectedFolder = this.getSelectedFolder();
         if (!secondary) {
-            browser.localStorage.setItem("searchpanel_documents_document", valueId);
+            browser.localStorage.setItem(FOLDER_STORAGE_KEY, valueId);
             this.documentService.updateDocumentURL(selectedFolder);
         }
         if (typeof valueId === "number") {
@@ -321,13 +325,8 @@ export class DocumentsSearchModel extends SearchModel {
             category.activeValueId = this.context.documents_init_folder_id || false;
             return;
         }
-        const storageItem = browser.localStorage.getItem(
-            "searchpanel_documents_document",
-        );
-        if (
-            storageItem &&
-            !["COMPANY", "MY", "RECENT", "SHARED", "TRASH"].includes(storageItem)
-        ) {
+        const storageItem = browser.localStorage.getItem(FOLDER_STORAGE_KEY);
+        if (storageItem && !isSpecialFolderId(storageItem)) {
             try {
                 category.activeValueId = JSON.parse(storageItem);
             } catch {
@@ -336,10 +335,10 @@ export class DocumentsSearchModel extends SearchModel {
         } else {
             category.activeValueId = storageItem;
         }
+        // a special root counts only where this panel has it (none for a portal user)
         if (
-            ["COMPANY", "MY", "RECENT", "SHARED", "TRASH"].includes(
-                category.activeValueId,
-            ) ||
+            (isSpecialFolderId(category.activeValueId) &&
+                category.values.has(category.activeValueId)) ||
             (valueIds.includes(category.activeValueId) &&
                 this._isCategoryValueReachable(category, category.activeValueId))
         ) {
@@ -356,17 +355,16 @@ export class DocumentsSearchModel extends SearchModel {
                 newSection = category.values.get(newSection.parentId);
             }
             if (newSection) {
+                // the nearest ancestor still reachable; when that is "All"
+                // (false: a portal user's roots), the tree's first folder
                 category.activeValueId =
-                    newSection.id || valueIds[Number(valueIds.length > 1)];
+                    newSection.id || (valueIds.find((id) => id !== false) ?? false);
             } else {
                 category.activeValueId = this.documentService.userIsInternal
                     ? "COMPANY"
                     : valueIds[0];
             }
-            browser.localStorage.setItem(
-                "searchpanel_documents_document",
-                category.activeValueId,
-            );
+            browser.localStorage.setItem(FOLDER_STORAGE_KEY, category.activeValueId);
         } else {
             category.activeValueId = false;
         }

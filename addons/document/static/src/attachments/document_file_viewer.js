@@ -1,6 +1,6 @@
 /** @odoo-module native */
 import { DocumentsAction } from "@document/views/action/document_action";
-import { onWillStart, onWillUpdateProps, toRaw } from "@odoo/owl";
+import { onWillStart, onWillUpdateProps, t, toRaw } from "@odoo/owl";
 import { FileViewer as WebFileViewer } from "@web/components/file_viewer";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
@@ -13,6 +13,11 @@ export class DocumentsFileViewer extends WebFileViewer {
     static template = "document.FileViewer";
     static components = {
         DocumentsAction,
+    };
+    static props = {
+        ...WebFileViewer.props,
+        /** the folder the preview was opened from, for its action menu */
+        folderId: t.or([t.string(), t.number(), t.boolean()]).optional(false),
     };
 
     setup() {
@@ -57,11 +62,6 @@ export class DocumentsFileViewer extends WebFileViewer {
             },
             () => [this.iframeViewerPdfRef.el],
         );
-    }
-
-    /** The folder the preview was opened from, for its action menu. */
-    get folderId() {
-        return this.documentService.documentList?.folderId ?? false;
     }
 
     /**
@@ -120,12 +120,5 @@ export class DocumentsFileViewer extends WebFileViewer {
         } finally {
             end();
         }
-    }
-
-    close() {
-        this.documentService.documentList?.onDeleteCallback();
-        this._shownFile = null;
-        this.documentService.setPreviewedDocument(null);
-        super.close();
     }
 }

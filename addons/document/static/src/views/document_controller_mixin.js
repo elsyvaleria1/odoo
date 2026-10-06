@@ -39,11 +39,6 @@ export function showsSelectionActions({ previewedDocument, focusedRecord }, sele
 
 export const DocumentsControllerMixin = (component) =>
     class extends component {
-        /**
-         * Selector of the DOM elements standing for the selected documents in
-         * this view, read by the file previewer; null when the view has none.
-         */
-        static selectedDocumentsSelector = null;
         /** Whether this view carries the selection's action menus. */
         static hasSelectionActions = true;
 
@@ -55,10 +50,7 @@ export const DocumentsControllerMixin = (component) =>
 
             this.documentService = useService("document.document");
             this.uploadFileInputRef = elementRef();
-            Object.assign(
-                this,
-                useDocumentView(this, this.documentsViewHelpers(), this.rootRef),
-            );
+            Object.assign(this, useDocumentView(this, this.documentsViewHelpers()));
             this.documentStates = proxy({ previewStore: {} });
             this.rightPanelState = proxy(this.documentService.rightPanelReactive);
 
@@ -104,21 +96,25 @@ export const DocumentsControllerMixin = (component) =>
         }
 
         get hasSelectedRecords() {
-            return this.targetRecords.length;
+            return this.targetRecords.length > 0;
         }
 
         get targetRecords() {
             return this.model.targetRecords;
         }
 
+        /**
+         * Opens the preview (or the PDF splitter) the bus asks for. A method,
+         * so that a bridge can preview some documents its own way.
+         *
+         * @param {Object} detail what `documents-open-preview` carries
+         */
+        onOpenDocumentsPreview(detail) {
+            return this.documentsPreview.open(detail);
+        }
+
         documentsViewHelpers() {
             return {
-                getSelectedDocumentsElements: () => {
-                    const selector = this.constructor.selectedDocumentsSelector;
-                    return (
-                        (selector && this.root?.el?.querySelectorAll(selector)) || []
-                    );
-                },
                 setPreviewStore: (previewStore) => {
                     this.documentStates.previewStore = previewStore;
                 },

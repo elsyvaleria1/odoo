@@ -37,13 +37,8 @@ export class DocumentsKanbanRecord extends KanbanRecord {
      * @override
      */
     getRecordClasses() {
+        // selected: the base adds it; a request: its attachment block says so
         let result = super.getRecordClasses();
-        if (this.props.record.selected) {
-            result += " o_record_selected";
-        }
-        if (this.props.record.isRequest()) {
-            result += " oe_file_request";
-        }
         if (this.props.record.data.type === "folder") {
             result += " o_folder_record";
         }

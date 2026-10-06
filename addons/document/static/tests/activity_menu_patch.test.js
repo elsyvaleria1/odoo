@@ -1,3 +1,4 @@
+import { DocumentsBusEvent } from "@document/core/document_service";
 import { click } from "@mail/../tests/mail_test_helpers";
 import { expect, test } from "@odoo/hoot";
 import { waitFor } from "@odoo/hoot-dom";
@@ -96,7 +97,7 @@ test("a chained activity done on another model does not reload the documents", a
     onRpc("mail.activity", "action_feedback", () => true);
     await makeDocumentsMockEnv();
     const documentService = getService("document.document");
-    documentService.bus.addEventListener("DOCUMENT_RELOAD", () =>
+    documentService.bus.addEventListener(DocumentsBusEvent.RELOAD, () =>
         expect.step("reload"),
     );
     const store = getService("mail.store");

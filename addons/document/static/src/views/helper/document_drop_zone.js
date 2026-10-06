@@ -58,6 +58,15 @@ export class DocumentsDropZone extends Component {
             : "o_documents_drop_over_unauthorized";
     }
 
+    /** Both: the folder, so the class, may have changed while the files hovered. */
+    _clearDropOver() {
+        this.root?.el?.classList.remove(
+            "o_documents_drop_over",
+            "o_documents_drop_over_unauthorized",
+        );
+        this.state.dragOver = false;
+    }
+
     onDragOver(ev) {
         if (!ev.dataTransfer.types.includes("Files")) {
             return;
@@ -72,9 +81,11 @@ export class DocumentsDropZone extends Component {
     onDragLeave(ev) {
         ev.stopPropagation();
         ev.preventDefault();
-
-        this.root?.el?.classList.remove(this.rootDropOverClass);
-        this.state.dragOver = false;
+        // leaving a card for the next one is not leaving the view
+        if (ev.relatedTarget && this.root?.el?.contains(ev.relatedTarget)) {
+            return;
+        }
+        this._clearDropOver();
     }
 
     onDrop(ev) {
@@ -82,8 +93,7 @@ export class DocumentsDropZone extends Component {
             return;
         }
 
-        this.root?.el?.classList.remove(this.rootDropOverClass);
-        this.state.dragOver = false;
+        this._clearDropOver();
         if (this.canDrop) {
             this.documentContext.documentsView.bus.trigger("documents-upload-files", {
                 files: ev.dataTransfer.files,

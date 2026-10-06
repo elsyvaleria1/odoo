@@ -1,6 +1,6 @@
 /** @odoo-module native */
 import { useDocumentContext } from "@document/views/document_context";
-import { toFolderValueId } from "@document/views/utils";
+import { specialFolderDropRefusal, toFolderValueId } from "@document/views/utils";
 import { onWillStart, proxy } from "@odoo/owl";
 import { _t } from "@web/core/translation";
 import { useNestedSortable } from "@web/core/utils/dnd";
@@ -242,15 +242,10 @@ export class DocumentsSearchPanel extends SearchPanel {
             typeof folderId !== "number" &&
             !DND_ALLOWED_SPECIAL_DESTINATIONS.includes(folderId)
         ) {
-            this.notification.add(
-                _t(
-                    "You can't create shortcuts in or move documents to this special folder.",
-                ),
-                {
-                    title: _t("Invalid operation"),
-                    type: "warning",
-                },
-            );
+            this.notification.add(specialFolderDropRefusal(), {
+                title: _t("Invalid operation"),
+                type: "warning",
+            });
             return true;
         }
         return false;

@@ -19,8 +19,8 @@ export class DocumentsActivityController extends DocumentsControllerMixin(
      * @override
      */
     async openRecord(record) {
-        for (const record of this.model.root.selection) {
-            record.selected = false;
+        for (const selected of this.model.root.selection) {
+            selected.selected = false;
         }
         record.selected = true;
         this.model.notify();
