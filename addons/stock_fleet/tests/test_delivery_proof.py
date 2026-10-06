@@ -203,6 +203,100 @@ class TestDeliveryProof(TransactionCase):
         picking.with_user(self.clerk).delivery_proof = _photo("black")
         self.assertTrue(picking.delivery_proof_ok)
 
+    def test_the_customer_signature_counts_as_evidence(self):
+        picking = self._picking()
+        picking.with_user(self.clerk).signature = _photo("black")
+        self.assertTrue(picking.delivery_proof_ok)
+        self.assertEqual(picking.delivery_proof_uid, self.clerk)
+        self.assertTrue(picking.delivery_proof_date)
+
+    def test_a_reviewer_rejects_a_signature(self):
+        picking = self._picking()
+        picking.with_user(self.clerk).signature = _photo("black")
+        with self.assertRaises(AccessError):
+            picking.with_user(self.clerk).delivery_proof_ok = False
+        picking.with_user(self.reviewer).delivery_proof_ok = False
+        self.assertFalse(picking.delivery_proof_ok)
+        activity = picking.activity_ids.filtered(
+            lambda activity: activity.user_id == self.clerk
+        )
+        self.assertEqual(len(activity), 1, "Whoever captured it is asked again.")
+
+    def test_the_photo_keeps_who_captured_the_signature(self):
+        # The delivery dialog writes the signature, then an empty photo: the
+        # signature is still there, and so is who captured it.
+        picking = self._picking()
+        picking.with_user(self.clerk).signature = _photo("black")
+        picking.with_user(self.office).delivery_proof = False
+        self.assertEqual(picking.delivery_proof_uid, self.clerk)
+        picking.with_user(self.office).signature = False
+        self.assertFalse(picking.delivery_proof_uid)
+        self.assertFalse(picking.delivery_proof_ok)
+
+    def _kept(self, picking):
+        """The evidence a replacement or a clearing left on the chatter."""
+        return picking.message_ids.attachment_ids.filtered(
+            lambda attachment: attachment.name.startswith(f"{picking.name} - ")
+        )
+
+    def test_a_delivered_slip_is_rewritten_only_by_a_reviewer(self):
+        picking = self._delivered()
+        accepted = picking.delivery_proof
+        for vals in (
+            {"delivery_proof": _photo("black")},
+            {"delivery_proof": False},
+            {"signature": _photo("black")},
+        ):
+            with self.subTest(vals=list(vals)), self.assertRaises(AccessError):
+                picking.with_user(self.clerk).write(vals)
+        self.assertTrue(picking.delivery_proof_ok)
+        self.assertEqual(picking.delivery_proof, accepted)
+        self.assertFalse(picking.signature)
+
+        picking.with_user(self.reviewer).delivery_proof = _photo("black")
+        self.assertNotEqual(picking.delivery_proof, accepted)
+        kept = self._kept(picking)
+        self.assertEqual(len(kept), 1, "The replaced photo stays on the chatter.")
+        self.assertEqual(kept.raw, base64.b64decode(accepted))
+
+    def test_whoever_delivered_adds_the_photo_it_lacks(self):
+        picking = self._delivered()
+        picking.with_user(self.reviewer).delivery_proof = False
+        self.assertFalse(picking.delivery_proof_ok)
+        self.assertFalse(picking.delivery_proof_uid)
+        picking.with_user(self.clerk).delivery_proof = _photo("black")
+        self.assertTrue(picking.delivery_proof_ok)
+        self.assertEqual(picking.delivery_proof_uid, self.clerk)
+
+    def test_the_rejected_photo_stays_on_the_chatter(self):
+        picking = self._delivered()
+        rejected = picking.delivery_proof
+        picking.with_user(self.reviewer).delivery_proof_ok = False
+        picking.with_user(self.clerk).delivery_proof = _photo("black")
+        self.assertTrue(picking.delivery_proof_ok)
+        self.assertEqual(self._kept(picking).raw, base64.b64decode(rejected))
+
+    def test_a_rejection_lifted_by_new_evidence_is_said(self):
+        # The tick follows the evidence: a reviewer who signs over a rejected
+        # photo lifts the rejection, and the chatter says so.
+        picking = self._delivered()
+        picking.with_user(self.reviewer).delivery_proof_ok = False
+        picking.with_user(self.reviewer).signature = _photo("black")
+        self.assertTrue(picking.delivery_proof_ok)
+        said = picking.message_ids.filtered(
+            lambda message: "had rejected" in (message.body or "")
+        )
+        self.assertEqual(len(said), 1)
+
+    def test_an_undelivered_transfer_takes_any_evidence(self):
+        picking = self._picking()
+        picking.with_user(self.clerk).delivery_proof = _photo()
+        picking.with_user(self.clerk).delivery_proof = _photo("black")
+        picking.with_user(self.clerk).signature = _photo("black")
+        picking.with_user(self.clerk).delivery_proof = False
+        self.assertTrue(picking.delivery_proof_ok)
+        self.assertFalse(self._kept(picking))
+
     def test_only_a_reviewer_receives_the_paper(self):
         picking = self._delivered()
         with self.assertRaises(AccessError):

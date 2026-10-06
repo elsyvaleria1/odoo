@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime, time, timedelta
 
 from odoo import api, fields, models
@@ -14,6 +15,9 @@ DELIVERY_PROOF_RESUME = "delivery_proof_resume"
 # The photo is shrunk to this on upload: a phone photo of a sheet stays legible
 # at a fraction of its size.
 DELIVERY_PROOF_MAX_SIDE = 1920
+# What shows the customer received a delivery: the photo of the signed slip, or
+# the customer's signature captured on a screen.
+DELIVERY_EVIDENCE = ("delivery_proof", "signature")
 
 
 class StockPickingType(models.Model):
@@ -66,7 +70,7 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
     # Who reviews the evidence of a delivery is its verbs' rows
     # (security/ir_access.xml): whoever delivers uploads the photo, but may not
-    # vouch for it nor for the paper.
+    # vouch for it nor for the paper, nor rewrite the evidence once delivered.
     _access_verbs = {
         "reject_delivery_proof": models.Verb(
             transition=("delivery_proof_ok", True, False), at_create=False
@@ -79,6 +83,9 @@ class StockPicking(models.Model):
         ),
         "return_delivery_paper": models.Verb(
             transition=("delivery_paper_received", True, False), at_create=False
+        ),
+        "change_delivery_evidence": models.Verb(
+            checkpoints=("_change_delivery_evidence",),
         ),
     }
 
@@ -104,25 +111,26 @@ class StockPicking(models.Model):
     )
     delivery_proof_uid = fields.Many2one(
         comodel_name="res.users",
-        string="Photo Uploaded by",
+        string="Evidence Captured by",
         copy=False,
         readonly=True,
     )
     delivery_proof_date = fields.Datetime(
-        string="Photo Uploaded on",
+        string="Evidence Captured on",
         copy=False,
         readonly=True,
     )
     delivery_proof_ok = fields.Boolean(
-        string="Photo Uploaded",
+        string="Valid Evidence",
         compute="_compute_delivery_proof_ok",
         store=True,
         copy=False,
         readonly=False,
         tracking=True,
-        help="Ticked by itself when the photo is uploaded. A reviewer unticks it "
-        "when the photo does not show this delivery slip signed, and whoever "
-        "uploaded it is asked for another one.",
+        help="Ticked by itself when the photo of the signed slip or the customer's "
+        "signature is captured. A reviewer unticks it when the evidence does not "
+        "show this delivery signed by the customer, and whoever captured it is "
+        "asked for the photo of the signed slip.",
     )
     delivery_paper_received = fields.Boolean(
         string="Received on Paper",
@@ -142,10 +150,15 @@ class StockPicking(models.Model):
         readonly=True,
     )
 
-    @api.depends("delivery_proof")
+    # What is there, not whether it counts: whether a signature carries a name
+    # that is not ours is judged when the delivery is validated, and the stored
+    # tick must not depend on who triggers its recompute.
+    @api.depends("delivery_proof", "signature")
     def _compute_delivery_proof_ok(self):
         for picking in self:
-            picking.delivery_proof_ok = bool(picking.delivery_proof)
+            picking.delivery_proof_ok = bool(
+                picking.delivery_proof or picking.signature
+            )
 
     @api.depends(
         "date_done",
@@ -178,13 +191,14 @@ class StockPicking(models.Model):
         )
 
     def write(self, vals):
-        if "delivery_proof" in vals:
+        evidence = [fname for fname in DELIVERY_EVIDENCE if fname in vals]
+        if evidence:
+            self._guard_delivery_evidence(vals, evidence)
+        if any(vals[fname] for fname in evidence):
             vals = {
                 **vals,
-                "delivery_proof_uid": self.env.uid if vals["delivery_proof"] else False,
-                "delivery_proof_date": (
-                    fields.Datetime.now() if vals["delivery_proof"] else False
-                ),
+                "delivery_proof_uid": self.env.uid,
+                "delivery_proof_date": fields.Datetime.now(),
             }
         if "delivery_paper_received" in vals:
             received = bool(vals["delivery_paper_received"])
@@ -199,12 +213,93 @@ class StockPicking(models.Model):
         if "delivery_proof_ok" in vals and not vals["delivery_proof_ok"]:
             rejected = self.filtered("delivery_proof_ok")
         res = super().write(vals)
-        # A photo cleared together with its tick is not a rejection.
-        rejected.filtered("delivery_proof")._ask_for_another_delivery_proof()
+        if evidence and not any(vals[fname] for fname in evidence):
+            # Who captured the evidence is forgotten only with the last of it.
+            self.filtered(
+                lambda picking: (
+                    picking.delivery_proof_uid
+                    and not picking.delivery_proof
+                    and not picking.signature
+                )
+            ).write({"delivery_proof_uid": False, "delivery_proof_date": False})
+        # Evidence cleared together with its tick is not a rejection.
+        rejected.filtered(
+            lambda picking: picking.delivery_proof or picking.signature
+        )._ask_for_another_delivery_proof()
         return res
 
+    def _guard_delivery_evidence(self, vals, evidence) -> None:
+        """Keep the evidence of a delivered transfer as it was reviewed.
+
+        Once a delivery under review is done, whoever delivered may still add the
+        photo it lacks or replace one a reviewer rejected; anything else (another
+        signature, replacing or clearing what was accepted) is a reviewer's. What
+        is replaced or cleared stays on the chatter.
+
+        :param dict vals: the values being written
+        :param list evidence: the evidence fields among them
+        """
+        delivered = self.filtered(
+            lambda picking: picking.state == "done" and picking.delivery_proof_due
+        )
+        if not delivered:
+            return
+        reviewed = delivered.filtered(
+            lambda picking: not picking._adds_delivery_proof(vals, evidence)
+        )
+        reviewed._change_delivery_evidence(evidence)
+        (delivered - reviewed)._keep_delivery_evidence(evidence)
+
+    def _adds_delivery_proof(self, vals, evidence) -> bool:
+        """Whether this write only gives the transfer the photo it lacks.
+
+        :rtype: bool
+        """
+        self.check_singleton()
+        if evidence != ["delivery_proof"] or not vals["delivery_proof"]:
+            return False
+        return not self.delivery_proof or not self.delivery_proof_ok
+
+    def _change_delivery_evidence(self, evidence) -> None:
+        """A reviewer rewrites the evidence of a delivered transfer.
+
+        :param list evidence: the evidence fields being written
+        """
+        self._keep_delivery_evidence(evidence)
+
+    def _keep_delivery_evidence(self, evidence) -> None:
+        """Post on the chatter the evidence about to be replaced or cleared.
+
+        A rejection the write is about to lift, since the tick follows the
+        evidence, is said there too.
+
+        :param list evidence: the evidence fields being written
+        """
+        labels = self.fields_get(evidence, ["string"])
+        for picking in self:
+            attachments = [
+                (
+                    f"{picking.name} - {labels[fname]['string']}",
+                    base64.b64decode(picking[fname]),
+                )
+                for fname in evidence
+                if picking[fname]
+            ]
+            rejected = not picking.delivery_proof_ok and any(
+                picking[fname] for fname in DELIVERY_EVIDENCE
+            )
+            if rejected:
+                body = self.env._(
+                    "The evidence a reviewer had rejected was replaced or cleared."
+                )
+            elif attachments:
+                body = self.env._("Evidence before it was replaced or cleared.")
+            else:
+                continue
+            picking.message_post(body=body, attachments=attachments)
+
     def _ask_for_another_delivery_proof(self):
-        """Ask whoever uploaded the rejected photo for another one."""
+        """Ask whoever captured the rejected evidence for the signed slip's photo."""
         for picking in self:
             uploader = picking.delivery_proof_uid
             if not uploader.active or uploader == self.env.user:
@@ -215,8 +310,8 @@ class StockPicking(models.Model):
                 user_id=uploader.id,
                 summary=self.env._("Upload the signed delivery slip again"),
                 note=self.env._(
-                    "The photo of %(name)s was rejected: it does not show its "
-                    "delivery slip signed by the customer.",
+                    "The evidence of %(name)s was rejected: it does not show its "
+                    "delivery signed by the customer.",
                     name=picking.name,
                 ),
             )

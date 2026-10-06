@@ -110,7 +110,7 @@
                     domain="[('state', '=', 'done'), ('delivery_proof_due', '=', True), ('delivery_paper_received', '=', False)]" />
                 <filter
                     name="delivery_proof_rejected"
-                    string="Signed Slip Photo Missing or Rejected"
+                    string="Signed Slip Evidence Missing or Rejected"
                     domain="[('state', '=', 'done'), ('delivery_proof_due', '=', True), ('delivery_proof_ok', '=', False)]" />
             </xpath>
         </field>

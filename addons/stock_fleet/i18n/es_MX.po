@@ -250,6 +250,12 @@ msgstr "Cerrado"
 #. module: stock_fleet
 #. odoo-python
 #: code:addons/stock_fleet/models/stock_picking_batch_trip.py:0
+msgid "Closed at its last stop: %(delivered)s delivered."
+msgstr ""
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_batch_trip.py:0
 msgid "Closed at odometer %(odometer)s: %(delivered)s delivered, %(pending)s pending."
 msgstr "Cerrado con odómetro %(odometer)s: %(delivered)s entregados, %(pending)s pendientes."
 
@@ -311,6 +317,11 @@ msgid "Date"
 msgstr "Fecha"
 
 #. module: stock_fleet
+#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking_type__delivery_paper_days
+msgid "Days to Hand In the Signed Slip"
+msgstr "Días para entregar la OUT firmada"
+
+#. module: stock_fleet
 #: model:ir.model.fields.selection,name:stock_fleet.selection__wizard_stock_picking_delivery_proof__resume__deliver
 msgid "Deliver"
 msgstr "Entregar"
@@ -334,6 +345,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form_driver
 msgid "Delivered"
 msgstr "Entregado"
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid "Delivered on %(date)s; the signed slip was due on paper by %(due)s."
+msgstr "Entregada el %(date)s; la OUT firmada debía entregarse en papel a más tardar el %(due)s."
 
 #. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form_driver
@@ -479,9 +496,31 @@ msgid "End Date"
 msgstr "Fecha de fin"
 
 #. module: stock_fleet
+#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_proof_uid
+msgid "Evidence Captured by"
+msgstr "Evidencia capturada por"
+
+#. module: stock_fleet
+#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_proof_date
+msgid "Evidence Captured on"
+msgstr "Evidencia capturada el"
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid "Evidence before it was replaced or cleared."
+msgstr "Evidencia anterior, antes de reemplazarse o borrarse."
+
+#. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_graph
 msgid "Graph View"
 msgstr "Vista de gráfica"
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid "Hand in the signed delivery slip"
+msgstr "Entrega en papel la OUT firmada"
 
 #. module: stock_fleet
 #: model:stock.picking.unbatch.reason,name:stock_fleet.unbatch_reason_credit_hold
@@ -708,21 +747,6 @@ msgid "Pending"
 msgstr "Pendientes"
 
 #. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_proof_ok
-msgid "Photo Uploaded"
-msgstr "Foto subida"
-
-#. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_proof_uid
-msgid "Photo Uploaded by"
-msgstr "Foto subida por"
-
-#. module: stock_fleet
-#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_proof_date
-msgid "Photo Uploaded on"
-msgstr "Foto subida el"
-
-#. module: stock_fleet
 #: model:ir.model.fields,help:stock_fleet.field_stock_picking__delivery_proof
 msgid ""
 "Photo of the delivery slip signed by the customer, taken by whoever "
@@ -901,8 +925,8 @@ msgstr "OUT firmada exigida"
 
 #. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.view_picking_search_delivery_proof
-msgid "Signed Slip Photo Missing or Rejected"
-msgstr "Foto de OUT firmada faltante o rechazada"
+msgid "Signed Slip Evidence Missing or Rejected"
+msgstr "OUT firmada sin evidencia o rechazada"
 
 #. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.view_picking_search_delivery_proof
@@ -961,6 +985,20 @@ msgstr "El motivo del catálogo por el que el albarán regresó sin entregar en 
 
 #. module: stock_fleet
 #. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid "The evidence a reviewer had rejected was replaced or cleared."
+msgstr "Se reemplazó o borró la evidencia que un revisor había rechazado."
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid ""
+"The evidence of %(name)s was rejected: it does not show its delivery signed "
+"by the customer."
+msgstr "Se rechazó la evidencia de %(name)s: no muestra su entrega firmada por el cliente."
+
+#. module: stock_fleet
+#. odoo-python
 #: code:addons/stock_fleet/models/stock_picking_batch_trip.py:0
 msgid "The odometer at return (%(end)s) cannot be lower than the odometer at departure (%(start)s) on trip %(batch)s."
 msgstr "El odómetro de cierre (%(end)s) no puede ser menor que el de salida (%(start)s) en el viaje %(batch)s."
@@ -983,14 +1021,6 @@ msgid ""
 "The pending transfers that come off the trip; all of them unless some are "
 "unticked."
 msgstr "Los albaranes pendientes que salen del viaje; todos, salvo los que se quiten."
-
-#. module: stock_fleet
-#. odoo-python
-#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
-msgid ""
-"The photo of %(name)s was rejected: it does not show its delivery slip "
-"signed by the customer."
-msgstr "Se rechazó la foto de %(name)s: no muestra su OUT firmada por el cliente."
 
 #. module: stock_fleet
 #. odoo-python
@@ -1028,10 +1058,11 @@ msgstr "Este viaje ya registró su odómetro de cierre."
 #. module: stock_fleet
 #: model:ir.model.fields,help:stock_fleet.field_stock_picking__delivery_proof_ok
 msgid ""
-"Ticked by itself when the photo is uploaded. A reviewer unticks it when the "
-"photo does not show this delivery slip signed, and whoever uploaded it is "
-"asked for another one."
-msgstr "Se marca sola al subir la foto. Un revisor la desmarca cuando la foto no muestra esta OUT firmada, y a quien la subió se le pide otra."
+"Ticked by itself when the photo of the signed slip or the customer's "
+"signature is captured. A reviewer unticks it when the evidence does not show"
+" this delivery signed by the customer, and whoever captured it is asked for "
+"the photo of the signed slip."
+msgstr "Se marca sola cuando se captura la foto de la OUT firmada o la firma del cliente. Un revisor la desmarca cuando la evidencia no muestra esta entrega firmada por el cliente, y a quien la capturó se le pide la foto de la OUT firmada."
 
 #. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_filter
@@ -1224,6 +1255,11 @@ msgid "Trips"
 msgstr "Viajes"
 
 #. module: stock_fleet
+#: model:ir.actions.server,name:stock_fleet.ir_cron_remind_delivery_paper_ir_actions_server
+msgid "Trips: remind whoever delivered to hand in the signed slip"
+msgstr "Viajes: recordar a quien entregó que entregue en papel la OUT firmada"
+
+#. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_failure_reason_id
 msgid "Undelivered Reason"
 msgstr "Motivo de no entrega"
@@ -1266,6 +1302,11 @@ msgstr "Usuario que autoriza la salida. No puede ser el operador."
 #: model:ir.model.fields,help:stock_fleet.field_stock_picking_batch__departed_uid
 msgid "User who registered the departure."
 msgstr "Usuario que registró la salida."
+
+#. module: stock_fleet
+#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_proof_ok
+msgid "Valid Evidence"
+msgstr "Evidencia válida"
 
 #. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.view_stock_picking_form_batch_trip
@@ -1426,6 +1467,14 @@ msgid "Why the goods came back undelivered on the last trip."
 msgstr "Por qué la mercancía regresó sin entregar en el último viaje."
 
 #. module: stock_fleet
+#: model:ir.model.fields,help:stock_fleet.field_stock_picking_type__delivery_paper_days
+msgid ""
+"Working days, on the company's calendar, whoever delivered has to hand the "
+"signed delivery slip in on paper; past them they are reminded every day. "
+"Zero sends no reminder."
+msgstr "Días hábiles, según el calendario de la compañía, que tiene quien entregó para entregar en papel la OUT firmada; pasados, se le recuerda cada día. Cero no envía recordatorio."
+
+#. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__zip
 msgid "Zip"
 msgstr "C.P."
@@ -1444,6 +1493,29 @@ msgstr "pendientes"
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form
 msgid "semi-truck"
 msgstr "tractocamión"
+
+#~ msgid "Photo Uploaded"
+#~ msgstr "Foto subida"
+
+#~ msgid "Photo Uploaded by"
+#~ msgstr "Foto subida por"
+
+#~ msgid "Photo Uploaded on"
+#~ msgstr "Foto subida el"
+
+#~ msgid "Signed Slip Photo Missing or Rejected"
+#~ msgstr "Foto de OUT firmada faltante o rechazada"
+
+#~ msgid ""
+#~ "The photo of %(name)s was rejected: it does not show its delivery slip "
+#~ "signed by the customer."
+#~ msgstr "Se rechazó la foto de %(name)s: no muestra su OUT firmada por el cliente."
+
+#~ msgid ""
+#~ "Ticked by itself when the photo is uploaded. A reviewer unticks it when the "
+#~ "photo does not show this delivery slip signed, and whoever uploaded it is "
+#~ "asked for another one."
+#~ msgstr "Se marca sola al subir la foto. Un revisor la desmarca cuando la foto no muestra esta OUT firmada, y a quien la subió se le pide otra."
 
 #~ msgid "Planned Weight:"
 #~ msgstr "Peso planeado:"

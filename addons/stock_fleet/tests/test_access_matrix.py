@@ -37,12 +37,12 @@ class TestStockFleetAccessMatrix(AccessMatrixCase):
             "stock.picking",
             "delivery_a",
             note="whoever delivers uploads the photo of the signed slip; only a "
-            "reviewer rejects it or receives the paper",
+            "reviewer rejects it, rewrites it once delivered or receives the paper",
             stock_user_a="rwcd validate",
             driver_a="rwcd validate",
             stock_manager_a="rwcd validate",
             reviewer_a="rwcd validate reject_delivery_proof accept_delivery_proof "
-            "receive_delivery_paper return_delivery_paper",
+            "change_delivery_evidence receive_delivery_paper return_delivery_paper",
             installed={"marin": {"stock_manager_a": "validate_without_list"}},
         ),
     )
