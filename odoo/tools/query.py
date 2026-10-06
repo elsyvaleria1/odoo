@@ -604,4 +604,7 @@ class SharedOnce:
 
     def statement(self, body: SQL) -> SQL:
         """``body``, composed of this scope's selects, as the statement to run."""
+        _debug.perf.count(
+            "query.shared_once", table=self._table, expressions=len(self._expressions)
+        )
         return SQL("%s%s", _with_once(self._table, self._expressions), body)

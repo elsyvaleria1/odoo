@@ -6,12 +6,15 @@ from odoo import api, models
 from odoo.api import DomainType
 from odoo.exceptions import AccessError
 from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
 from odoo.models import regex_order
 from odoo.tools import SQL, unique
 from odoo.tools.cache_version import versioned
 from odoo.tools.query import SharedOnce
 
 from .web_read_group_helpers import AND
+
+_debug = DebugLog(__name__)
 
 MAX_NUMBER_OPENED_GROUPS = 10
 
@@ -59,14 +62,21 @@ class Base(models.AbstractModel):
         read_group_order = self._get_read_group_order(
             dict_order, first_groupby, aggregates
         )
-        groups, length = self._get_formatted_read_group_with_length(
-            domain,
-            first_groupby,
-            aggregates,
-            offset=offset,
-            limit=limit,
-            order=read_group_order,
-        )
+        with _debug.perf(
+            "web_read_group.groups",
+            cr=self.env.cr,
+            model=self._name,
+            groupby=first_groupby,
+        ) as span:
+            groups, length = self._get_formatted_read_group_with_length(
+                domain,
+                first_groupby,
+                aggregates,
+                offset=offset,
+                limit=limit,
+                order=read_group_order,
+            )
+            span.set(groups=len(groups), length=length)
 
         records_opening_info: list[dict[str, Any]] = []
 
@@ -93,7 +103,10 @@ class Base(models.AbstractModel):
                 unfold_read_specification,
             )
 
-        self._add_groupby_values(groupby_read_specification, groupby, groups)
+        with _debug.perf(
+            "web_read_group.groupby_values", cr=self.env.cr, model=self._name
+        ):
+            self._add_groupby_values(groupby_read_specification, groupby, groups)
 
         return {
             "groups": groups,
@@ -153,6 +166,9 @@ class Base(models.AbstractModel):
                 )
             if not parts:
                 continue
+            _debug.perf.count(
+                "web_read_group.opened_groups", model=self._name, parts=len(parts)
+            )
             rows = self.env.execute_query(
                 shared.statement(
                     SQL(
@@ -337,15 +353,29 @@ class Base(models.AbstractModel):
                 if order_str.strip().split(" ", 1)[0] not in groupby
             ]
 
-        recordset_groups = self._get_records_opened_groups(
-            records_opening_info, domain, ", ".join(order_specs)
-        )
+        with _debug.perf(
+            "web_read_group.records_search",
+            cr=self.env.cr,
+            model=self._name,
+            opened=len(records_opening_info),
+        ) as span:
+            recordset_groups = self._get_records_opened_groups(
+                records_opening_info, domain, ", ".join(order_specs)
+            )
+            all_records = self.browse().union(*recordset_groups)
+            span.set(records=len(all_records))
 
-        all_records = self.browse().union(*recordset_groups)
-        record_mapped = {
-            values["id"]: values
-            for values in all_records.web_read(unfold_read_specification or {})
-        }
+        with _debug.perf(
+            "web_read_group.records_read",
+            cr=self.env.cr,
+            model=self._name,
+            records=len(all_records),
+            fields=len(unfold_read_specification or ()),
+        ):
+            record_mapped = {
+                values["id"]: values
+                for values in all_records.web_read(unfold_read_specification or {})
+            }
 
         for opening, records in zip(
             records_opening_info, recordset_groups, strict=True

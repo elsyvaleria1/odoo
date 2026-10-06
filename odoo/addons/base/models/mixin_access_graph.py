@@ -6,9 +6,12 @@ from dataclasses import dataclass
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 
 from .ir_access import predicate_arguments
+
+_debug = DebugLog(__name__)
 
 if typing.TYPE_CHECKING:
     from odoo.tools import Query
@@ -436,6 +439,15 @@ class MixinAccessGraph(models.AbstractModel):
             if counted:
                 by_companies.setdefault(tuple(sorted(counted)), []).append(gid)
         with_owner = bool(graph.owner) and owner
+        _debug.pipeline(
+            "access_graph.condition",
+            model=self._name,
+            role=role,
+            bands=len(by_companies),
+            anchored=bool(anchor),
+            owner=with_owner,
+            partner=partner,
+        )
         table = SQL.identifier(self._table)
         grant_table = SQL.identifier(grant_model._table)
         resource = SQL.identifier(names.resource)
@@ -518,6 +530,12 @@ class MixinAccessGraph(models.AbstractModel):
         def condition(alias: str, query: Query | None = None) -> SQL:
             # a node carries no company to check without an anchor: every
             # group is read in the one reach, beside the partner's grants
+            _debug.logic(
+                "access_graph.reach",
+                model=self._name,
+                alias=alias,
+                shared=query is not None,
+            )
             principal = SQL("grant_row.partner_id = %s", partner_id)
             if not anchor:
                 principal = SQL(" OR ").join(
