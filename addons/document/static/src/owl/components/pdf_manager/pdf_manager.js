@@ -59,6 +59,9 @@ export class PdfManager extends Component {
     static props = {
         documents: t.array(),
         embeddedActions: t.array().optional([]),
+        // where an output made only of uploaded files goes; the server places
+        // the others where their first page came from
+        userFolderId: t.or([t.number(), t.string(), t.boolean()]).optional(false),
         onProcessDocuments: t.function(),
         close: t.function(),
     };
@@ -799,7 +802,6 @@ export class PdfManager extends Component {
             });
         }
         newFiles.reverse();
-        const sourceDocument = this.props.documents[0];
         const data = new FormData();
         data.append("csrf_token", odoo.csrf_token);
         for (const file of files) {
@@ -807,15 +809,14 @@ export class PdfManager extends Component {
         }
         data.append("new_files", JSON.stringify(newFiles));
         data.append("archive", this.state.archive);
-        data.append(
-            "vals",
-            JSON.stringify({
-                folder_id: sourceDocument.folder_id?.id ?? false,
-                tag_ids: sourceDocument.tag_ids.currentIds,
-                owner_id: sourceDocument.owner_id?.id ?? false,
-                partner_id: sourceDocument.partner_id?.id ?? false,
-            }),
-        );
+        if (this.props.userFolderId) {
+            data.append("user_folder_id", String(this.props.userFolderId));
+        }
+        log.logic("sendChanges", () => ({
+            outputs: newFiles.length,
+            uploads: files.length,
+            userFolderId: this.props.userFolderId,
+        }));
         const response = await fetch("/documents/pdf_split", {
             method: "post",
             body: data,

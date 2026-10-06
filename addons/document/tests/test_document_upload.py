@@ -6,6 +6,7 @@ from odoo.db.cursor import Cursor
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests.common import HttpCase, RecordCapturer, tagged
 from odoo.tools import mute_logger
+from odoo.tools.pdf import OdooPdfFileWriter
 
 from .test_document_common import TEXT, TransactionCaseDocuments
 from odoo.addons.base.tests.common import HttpCaseWithUserDemo
@@ -29,7 +30,6 @@ class TestDocumentsPdfSplitTargets(HttpCaseWithUserDemo):
         return self.url_open(
             "/documents/pdf_split",
             data={
-                "vals": "{}",
                 "new_files": json_dumps(
                     [
                         {
@@ -75,6 +75,139 @@ class TestDocumentsPdfSplitTargets(HttpCaseWithUserDemo):
             self.env["document.document"].search([], order="id desc", limit=1).id
         )
         self.assertIn(self._split(missing_id + 10_000).status_code, (400, 403, 404))
+
+
+def _pdf(pages=1):
+    writer = OdooPdfFileWriter()
+    for _page in range(pages):
+        writer.add_blank_page(width=200, height=200)
+    stream = BytesIO()
+    writer.write(stream)
+    return stream.getvalue()
+
+
+@tagged("post_install", "-at_install")
+class TestDocumentsPdfSplitPlacement(HttpCase, TransactionCaseDocuments):
+    """The server places a split's outputs; the client names only its view."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.doc_user.password = "doc_user_pwd"
+        cls.partner = cls.env["res.partner"].create({"name": "Split contact"})
+        cls.source_a, cls.source_b = cls.env["document.document"].create(
+            [
+                {
+                    "name": f"{name}.pdf",
+                    "raw": _pdf(2),
+                    "mimetype": "application/pdf",
+                    "folder_id": folder.id,
+                    "owner_id": cls.internal_user.id,
+                    "tag_ids": [Command.set(tags.ids)],
+                    "partner_id": partner.id,
+                    "access_ids": [
+                        Command.create(
+                            {"partner_id": cls.doc_user.partner_id.id, "role": "edit"}
+                        )
+                    ],
+                }
+                for name, folder, tags, partner in (
+                    ("a", cls.folder_a, cls.tag_b, cls.partner),
+                    ("b", cls.folder_a_a, cls.tag_b.browse(), cls.partner.browse()),
+                )
+            ]
+        )
+
+    def _split(self, outputs, uploads=(), **fields):
+        self.authenticate(self.doc_user.login, "doc_user_pwd")
+        new_files = [
+            {
+                "name": f"out {position}",
+                "new_pages": [
+                    {
+                        "old_file_type": "file"
+                        if isinstance(source, int)
+                        else "document",
+                        "old_file_index": source
+                        if isinstance(source, int)
+                        else source.id,
+                        "old_page_number": 1,
+                    }
+                    for source in sources
+                ],
+            }
+            for position, sources in enumerate(outputs)
+        ]
+        response = self.url_open(
+            "/documents/pdf_split",
+            data={
+                "csrf_token": http.Request.csrf_token(self),
+                "new_files": json_dumps(new_files),
+                **fields,
+            },
+            files=[
+                ("ufile", (f"upload{index}.pdf", BytesIO(_pdf()), "application/pdf"))
+                for index in range(len(uploads))
+            ],
+        )
+        if response.status_code != 200:
+            return response
+        return self.env["document.document"].browse(response.json())
+
+    def test_an_output_goes_where_its_first_page_came_from(self):
+        out_a, out_b = self._split(
+            [[self.source_a, self.source_b], [self.source_b, self.source_a]]
+        )
+        self.assertEqual(out_a.folder_id, self.folder_a)
+        self.assertEqual(out_a.tag_ids, self.tag_b)
+        self.assertEqual(out_a.partner_id, self.partner)
+        self.assertEqual(out_b.folder_id, self.folder_a_a)
+        self.assertFalse(out_b.tag_ids)
+        self.assertFalse(out_b.partner_id)
+        self.assertEqual((out_a | out_b).owner_id, self.doc_user)
+
+    def test_a_placement_the_client_sends_is_not_obeyed(self):
+        output = self._split(
+            [[self.source_a]],
+            vals=json_dumps({"owner_id": self.internal_user.id, "folder_id": False}),
+        )
+        self.assertEqual(output.owner_id, self.doc_user)
+        self.assertEqual(output.folder_id, self.folder_a)
+
+    def test_a_source_in_no_folder_gives_an_output_in_the_splitters_drive(self):
+        for owner in (self.internal_user, self.env["res.users"]):
+            with self.subTest(source_owner=owner.name):
+                self.source_a.sudo().write({"folder_id": False, "owner_id": owner.id})
+                output = self._split([[self.source_a]])
+                self.assertFalse(output.folder_id)
+                self.assertEqual(output.owner_id, self.doc_user)
+
+    def test_an_output_of_uploads_only_goes_to_the_view_folder(self):
+        in_folder = self._split(
+            [[0]], uploads=[0], user_folder_id=str(self.folder_a.id)
+        )
+        self.assertEqual(in_folder.folder_id, self.folder_a)
+        self.assertEqual(in_folder.owner_id, self.doc_user)
+        for view in ("RECENT", "SHARED", "TRASH", None):
+            with self.subTest(view=view):
+                fields = {"user_folder_id": view} if view else {}
+                output = self._split([[0]], uploads=[0], **fields)
+                self.assertFalse(output.folder_id)
+                self.assertEqual(output.owner_id, self.doc_user)
+
+    @mute_logger("odoo.http")
+    def test_a_view_folder_the_splitter_cannot_edit_is_refused(self):
+        theirs = self.env["document.document"].create(
+            {
+                "type": "folder",
+                "name": "theirs",
+                "owner_id": self.internal_user.id,
+                "access_internal": "view",
+            }
+        )
+        response = self._split([[0]], uploads=[0], user_folder_id=str(theirs.id))
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(theirs.children_ids)
 
 
 @tagged("post_install", "-at_install")

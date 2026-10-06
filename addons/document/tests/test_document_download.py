@@ -363,7 +363,6 @@ class TestDocumentsDownloadBlockedGenericRoutes(HttpCase):
                         }
                     ]
                 ),
-                "vals": json_dumps({"user_folder_id": "MY"}),
             },
         )
 

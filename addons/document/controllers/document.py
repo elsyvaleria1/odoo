@@ -468,15 +468,12 @@ class ShareRoute(http.Controller):
         new_files: str | None = None,
         ufile: Any = None,
         archive: Any = False,
-        vals: str | None = None,
+        user_folder_id: str | None = None,
     ) -> Any:
         with replace_exceptions(ValueError, TypeError, by=BadRequest):
-            vals = json_loads(vals or "{}")
             new_files = json_loads(new_files or "[]")
             new_files = self._parse_pdf_split_new_files(new_files)
-            if not isinstance(vals, dict):
-                e = "vals must be an object"
-                raise ValueError(e)
+            user_folder = UserFolder.parse(user_folder_id)
         document_ids = {
             page["old_file_index"]
             for new_file in new_files
@@ -515,6 +512,17 @@ class ShareRoute(http.Controller):
                 document_id_index_map[document.id] = current_index
                 current_index += 1
 
+            first_source_ids = [
+                next(
+                    (
+                        page["old_file_index"]
+                        for page in new_file["new_pages"]
+                        if page["old_file_type"] == "document"
+                    ),
+                    None,
+                )
+                for new_file in new_files
+            ]
             for new_file in new_files:
                 for page in new_file["new_pages"]:
                     if page.pop("old_file_type") == "document":
@@ -528,7 +536,10 @@ class ShareRoute(http.Controller):
                 # a malformed source is the client's error, not the server's
                 with replace_exceptions(ValueError, PdfReadError, by=BadRequest):
                     new_documents = documents._pdf_split(
-                        new_files=new_files, open_files=open_files, vals=vals
+                        new_files=new_files,
+                        open_files=open_files,
+                        first_source_ids=first_source_ids,
+                        user_folder=user_folder,
                     )
                 span.set(created=len(new_documents))
 

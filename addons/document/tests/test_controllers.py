@@ -2016,9 +2016,6 @@ class TestCaseSecurityRoutes(HttpCaseWithUserDemo):
         response = self.url_open(
             "/documents/pdf_split",
             data={
-                "vals": json_dumps(
-                    {"tag_ids": [], "owner_id": self.document_user.id, "active": True}
-                ),
                 "new_files": json_dumps(
                     [
                         {

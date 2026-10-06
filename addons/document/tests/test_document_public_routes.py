@@ -76,7 +76,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
                     "/documents/pdf_split",
                     data={
                         "new_files": payload,
-                        "vals": "{}",
                         "csrf_token": http.Request.csrf_token(self),
                     },
                 )
@@ -103,7 +102,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
                 res = self.url_open(
                     "/documents/pdf_split",
                     data={
-                        "vals": "{}",
                         "new_files": json_dumps(
                             [
                                 {
@@ -342,7 +340,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
         response = self.url_open(
             "/documents/pdf_split",
             data={
-                "vals": "{}",
                 "new_files": json_dumps(
                     [
                         {
@@ -453,7 +450,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
         res = self.url_open(
             "/documents/pdf_split",
             data={
-                "vals": json_dumps({"owner_id": self.uploader.id}),
                 "new_files": json_dumps(
                     [
                         {
@@ -495,7 +491,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
         res = self.url_open(
             "/documents/pdf_split",
             data={
-                "vals": json_dumps({"owner_id": self.uploader.id}),
                 "new_files": json_dumps(
                     [
                         {
@@ -549,7 +544,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
             return self.url_open(
                 "/documents/pdf_split",
                 data={
-                    "vals": json_dumps({"owner_id": self.uploader.id}),
                     "new_files": json_dumps(
                         [
                             {

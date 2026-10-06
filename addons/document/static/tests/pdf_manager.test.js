@@ -586,6 +586,24 @@ test(`Pdf Manager: a double click on Split sends one split`, async () => {
     expect.verifySteps(["pdf_split"]);
 });
 
+test(`Pdf Manager: a split names the view's folder and nothing about placement`, async () => {
+    await mountPdfManager({ userFolderId: "COMPANY" });
+    mockFetch((input, init) => {
+        if (String(input).includes("/documents/pdf_split")) {
+            const body = init.body;
+            expect.step(`user_folder_id:${body.get("user_folder_id")}`);
+            expect.step(`vals:${body.has("vals")}`);
+            return new Response(JSON.stringify([101]), {
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+    });
+    await contains(".o_pdf_name_display:eq(1)").click();
+    await contains(".o_pdf_manager_button:eq(0)").click();
+    await animationFrame();
+    expect.verifySteps(["user_folder_id:COMPANY", "vals:false"]);
+});
+
 test(`Pdf Manager: a failed split leaves the groups and the selection as they were`, async () => {
     const manager = await mountPdfManager();
     await contains(".o_pdf_name_display:eq(1)").click();
@@ -1174,10 +1192,6 @@ const ONE_DOCUMENT = {
             name: "yop",
             mimetype: "application/pdf",
             available_embedded_actions_ids: [],
-            folder_id: { id: 1 },
-            tag_ids: { currentIds: [] },
-            owner_id: { id: 1 },
-            partner_id: { id: 1 },
         },
     ],
 };

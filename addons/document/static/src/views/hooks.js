@@ -282,6 +282,7 @@ function useDocumentsViewFilePreviewer(
                 {
                     documents: documents.map((doc) => doc.data),
                     embeddedActions,
+                    userFolderId: env.searchModel.getSelectedFolderId(),
                     onProcessDocuments: async ({
                         documentIds,
                         actionId,

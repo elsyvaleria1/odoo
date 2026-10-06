@@ -2891,21 +2891,60 @@ class DocumentsDocument(models.Model):
         self,
         new_files: list | tuple = (),
         open_files: list | tuple = (),
-        vals: dict | None = None,
+        first_source_ids: list | tuple = (),
+        user_folder: UserFolder | None = None,
     ) -> DocumentsDocument:
-        vals = vals or {}
+        """Write each page set as a new document, owned by whoever splits.
+
+        An output goes where its first page came from: the folder, tags and
+        contact of that source document, or the splitter's My Drive when the
+        source sits in no folder. One made only of uploaded files goes to
+        `user_folder`, the folder the splitter is looking at, or their My Drive
+        when that is not a place a document can be created in.
+        """
         with _debug.perf("pdf_split", cr=self.env.cr) as span:
             new_attachments = self.env["ir.attachment"]._pdf_split(
                 new_files=new_files, open_files=open_files
             )
             span.set(attachments=len(new_attachments))
+        if user_folder is None or user_folder.kind not in (
+            UserFolder.FOLDER,
+            *UserFolder.WRITABLE_ROOTS,
+        ):
+            user_folder = UserFolder(UserFolder.MY)
+        first_source_ids = first_source_ids or [None] * len(new_attachments)
+        placements = [
+            self.browse(source_id)._pdf_split_placement()
+            if source_id
+            else {"user_folder_id": str(user_folder)}
+            for source_id in first_source_ids
+        ]
+        _debug.logic(
+            "pdf_split_placed",
+            sources=[source_id for source_id in first_source_ids if source_id],
+            uploaded_only=first_source_ids.count(None),
+            fallback=str(user_folder),
+        )
         new_documents = self.create(
-            [dict(vals, attachment_id=attachment.id) for attachment in new_attachments]
+            [
+                dict(placement, attachment_id=attachment.id)
+                for placement, attachment in zip(
+                    placements, new_attachments, strict=True
+                )
+            ]
         )
         self.env["document.access.log"]._log(
             new_documents, self.env.user.partner_id, "view"
         )
         return new_documents
+
+    def _pdf_split_placement(self) -> ValuesType:
+        self.check_singleton()
+        return {
+            "folder_id": self.folder_id.id,
+            "tag_ids": [Command.set(self.tag_ids.ids)],
+            "partner_id": self.partner_id.id,
+        }
 
     @api.autovacuum
     def _gc_clear_bin(self) -> tuple:

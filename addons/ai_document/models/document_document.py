@@ -80,11 +80,13 @@ class DocumentsDocument(models.Model):
             ("attachment_id", "!=", False),
         ]
 
-    def _pdf_split(self, new_files=(), open_files=(), vals=None):
+    def _pdf_split(
+        self, new_files=(), open_files=(), first_source_ids=(), user_folder=None
+    ):
         """Skip auto-sorting when splitting documents."""
         return super(
             DocumentsDocument, self.with_context(ai_documents_skip_autosort=True)
-        )._pdf_split(new_files, open_files, vals)
+        )._pdf_split(new_files, open_files, first_source_ids, user_folder)
 
     def _ai_action_move_in_folder(self, folder_id) -> str:
         self.check_singleton()
