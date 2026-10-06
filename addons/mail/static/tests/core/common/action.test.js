@@ -2,7 +2,8 @@
 import { Action } from "@mail/core/common/action";
 import { ComposerAction } from "@mail/core/common/composer_actions";
 import { describe, expect, test } from "@odoo/hoot";
-import { Component } from "@odoo/owl";
+import { Component, proxy, useProps, xml } from "@odoo/owl";
+import { mountWithCleanup } from "@web/../tests/web_test_helpers";
 
 describe.current.tags("desktop");
 
@@ -104,4 +105,28 @@ test("disabledCondition accepts literal booleans and callbacks", () => {
         expect(literal.disabledCondition).toBe(disabled);
         expect(callback.disabledCondition).toBe(disabled);
     }
+});
+
+test("a component owner's props read through a reactive action", async () => {
+    // Actions live in reactive state, so an owner component is read through a
+    // proxy; its getters must still reach their props (a props view raw to
+    // proxy(), OWL 80dd04cc). Without it 42 chatter tests failed.
+    class Owner extends Component {
+        static props = ["value"];
+        static template = xml`<span t-out="this.value"/>`;
+        props = useProps(this.constructor.props);
+        get value() {
+            return this.props.value;
+        }
+    }
+    const owner = await mountWithCleanup(Owner, { props: { value: "read" } });
+    const action = proxy(
+        new Action({
+            owner,
+            id: "t",
+            definition: { condition: ({ owner }) => owner.value },
+            store: /** @type {import("models").Store} */ ({}),
+        }),
+    );
+    expect(action.condition).toBe("read");
 });
