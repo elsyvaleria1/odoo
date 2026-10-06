@@ -1,0 +1,23 @@
+{
+  "branches": [
+    {
+      "name": "master"
+    },
+    {
+      "name": "changes"
+    },
+    {
+      "name": "gh-pages"
+    }
+  ],
+  "context": "default",
+  "description": null,
+  "repository": {
+    "default_branch": "master",
+    "full_name": "Codertocat/Hello-World",
+    "id": 186853002
+  },
+  "sha": "6113728f27ae82c7b1a177c8d03f9e96e0adf246",
+  "state": "success",
+  "target_url": null
+}

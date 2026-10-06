@@ -1,0 +1,30 @@
+{
+  "action": "completed",
+  "repository": {
+    "default_branch": "master",
+    "full_name": "octo-org/octo-repo",
+    "id": 300029405
+  },
+  "workflow_run": {
+    "conclusion": "success",
+    "head_branch": "master",
+    "head_sha": "3484a3fb816e0859fd6e1cea078d76385ff50625",
+    "html_url": "https://github.com/octo-org/octo-repo/actions/runs/289782451",
+    "id": 289782451,
+    "name": "",
+    "pull_requests": [
+      {
+        "base": {
+          "ref": "master",
+          "sha": "f95f852bd8fca8fcc58a9a2d6c842781e32a215e"
+        },
+        "head": {
+          "ref": "changes",
+          "sha": "ec26c3e57ca3a959ca5aad62de7213c562f8c821"
+        },
+        "number": 2
+      }
+    ],
+    "status": "completed"
+  }
+}

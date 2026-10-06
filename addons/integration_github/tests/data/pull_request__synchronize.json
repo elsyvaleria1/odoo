@@ -1,0 +1,33 @@
+{
+  "action": "synchronize",
+  "installation": {
+    "id": 1
+  },
+  "number": 2,
+  "pull_request": {
+    "base": {
+      "ref": "master",
+      "sha": "f95f852bd8fca8fcc58a9a2d6c842781e32a215e"
+    },
+    "draft": false,
+    "head": {
+      "ref": "changes",
+      "sha": "ec26c3e57ca3a959ca5aad62de7213c562f8c821"
+    },
+    "html_url": "https://github.com/Codertocat/Hello-World/pull/2",
+    "merge_commit_sha": null,
+    "merged": false,
+    "merged_at": null,
+    "number": 2,
+    "state": "open",
+    "title": "Update the README with new information.",
+    "user": {
+      "login": "Codertocat"
+    }
+  },
+  "repository": {
+    "default_branch": "master",
+    "full_name": "Codertocat/Hello-World",
+    "id": 186853002
+  }
+}

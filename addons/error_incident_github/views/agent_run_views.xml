@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_agent_run_form_github" model="ir.ui.view">
+        <field name="name">agent.run.form.github</field>
+        <field name="model">agent.run</field>
+        <field name="inherit_id" ref="agent_runner.view_agent_run_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='usage']" position="before">
+                <group string="GitHub" invisible="not github_repository">
+                    <field name="github_repository" />
+                    <field name="github_branch" />
+                    <field name="github_pull_id" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

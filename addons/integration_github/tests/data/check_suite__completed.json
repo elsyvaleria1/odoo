@@ -1,0 +1,31 @@
+{
+  "action": "completed",
+  "check_suite": {
+    "app": {
+      "name": "octocoders-linter"
+    },
+    "conclusion": "success",
+    "head_branch": "changes",
+    "head_sha": "ec26c3e57ca3a959ca5aad62de7213c562f8c821",
+    "id": 118578147,
+    "pull_requests": [
+      {
+        "base": {
+          "ref": "master",
+          "sha": "f95f852bd8fca8fcc58a9a2d6c842781e32a215e"
+        },
+        "head": {
+          "ref": "changes",
+          "sha": "ec26c3e57ca3a959ca5aad62de7213c562f8c821"
+        },
+        "number": 2
+      }
+    ],
+    "status": "completed"
+  },
+  "repository": {
+    "default_branch": "master",
+    "full_name": "Codertocat/Hello-World",
+    "id": 186853002
+  }
+}

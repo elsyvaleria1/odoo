@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_integration_github_root"
+        name="GitHub"
+        parent="integration.menu_integration_root"
+        sequence="60"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_integration_github_pull"
+        name="Pull Requests"
+        parent="menu_integration_github_root"
+        action="action_integration_github_pull"
+        sequence="10" />
+
+    <menuitem
+        id="menu_integration_github_webhook"
+        name="Webhooks"
+        parent="menu_integration_github_root"
+        action="action_integration_github_webhook"
+        sequence="20" />
+
+</odoo>

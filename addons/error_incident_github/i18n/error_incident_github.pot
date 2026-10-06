@@ -1,0 +1,148 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* error_incident_github
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 22:39+0000\n"
+"PO-Revision-Date: 2026-10-06 22:39+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: error_incident_github
+#: model:ir.model,name:error_incident_github.model_agent_run
+msgid "Agent Run"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_agent_run__github_branch
+msgid "Branch"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_agent_run__display_name
+#: model:ir.model.fields,field_description:error_incident_github.field_error_incident__display_name
+#: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model,name:error_incident_github.model_error_incident
+msgid "Error Incident"
+msgstr ""
+
+#. module: error_incident_github
+#: model_terms:ir.ui.view,arch_db:error_incident_github.view_agent_run_form_github
+msgid "GitHub"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model,name:error_incident_github.model_integration_github_pull
+msgid "GitHub Pull Request"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_agent_run__id
+#: model:ir.model.fields,field_description:error_incident_github.field_error_incident__id
+#: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__id
+msgid "ID"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__incident_id
+msgid "Incident"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__incident_notice
+msgid "Incident Notice"
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/agent_run.py:0
+msgid "No GitHub App is configured: the run gets no repository token."
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_agent_run__github_pull_id
+msgid "Pull Request"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_error_incident__pull_ids
+#: model_terms:ir.ui.view,arch_db:error_incident_github.view_error_incident_form_github
+msgid "Pull Requests"
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/integration_github_pull.py:0
+msgid "Pull request %(pull)s is open."
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/integration_github_pull.py:0
+msgid "Pull request %(pull)s was closed without merging."
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/integration_github_pull.py:0
+msgid "Pull request %(pull)s was merged."
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_agent_run__github_repository
+msgid "Repository"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__agent_run_id
+msgid "Run"
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,help:error_incident_github.field_agent_run__github_branch
+msgid "The branch the run pushed, as it reported it on completion."
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/integration_github_pull.py:0
+msgid "The checks of %(pull)s are running."
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/integration_github_pull.py:0
+msgid "The checks of %(pull)s fail."
+msgstr ""
+
+#. module: error_incident_github
+#. odoo-python
+#: code:addons/error_incident_github/models/integration_github_pull.py:0
+msgid "The checks of %(pull)s pass."
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,help:error_incident_github.field_integration_github_pull__agent_run_id
+msgid "The run that pushed this branch."
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,help:error_incident_github.field_integration_github_pull__incident_notice
+msgid "The state the incident was last told of, so it hears each change once."
+msgstr ""
+
+#. module: error_incident_github
+#: model:ir.model.fields,help:error_incident_github.field_agent_run__github_repository
+msgid "owner/name: the run is handed a token for this repository alone."
+msgstr ""

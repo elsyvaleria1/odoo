@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_error_incident_form_github" model="ir.ui.view">
+        <field name="name">error.incident.form.github</field>
+        <field name="model">error.incident</field>
+        <field name="inherit_id" ref="error_incident.view_error_incident_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='users']" position="after">
+                <page name="pull_requests" string="Pull Requests">
+                    <field name="pull_ids">
+                        <list>
+                            <field name="repository" />
+                            <field name="number" />
+                            <field name="name" />
+                            <field name="head_ref" />
+                            <field
+                                name="checks_state"
+                                widget="badge"
+                                decoration-danger="checks_state == 'failure'"
+                                decoration-success="checks_state == 'success'"
+                                decoration-warning="checks_state == 'pending'" />
+                            <field
+                                name="pull_state"
+                                widget="badge"
+                                decoration-success="pull_state == 'merged'" />
+                            <field name="url" widget="url" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

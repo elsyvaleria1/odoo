@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_integration_github_webhook_system,integration.github.webhook system,model_integration_github_webhook,base.group_system,permission,crud,,,
+access_integration_github_pull_system,integration.github.pull system,model_integration_github_pull,base.group_system,permission,crud,,,
+access_integration_github_check_system,integration.github.check system,model_integration_github_check,base.group_system,permission,crud,,,

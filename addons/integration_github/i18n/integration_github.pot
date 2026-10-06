@@ -1,0 +1,744 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* integration_github
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 22:39+0000\n"
+"PO-Revision-Date: 2026-10-06 22:39+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: integration_github
+#. odoo-python
+#: code:addons/integration_github/models/integration_github_webhook.py:0
+msgid ""
+"%(secret)s\n"
+"\n"
+"It is shown once: paste it into GitHub's webhook secret now. Deliveries signed with any earlier secret are refused."
+msgstr ""
+
+#. module: integration_github
+#: model:credential.category,description:integration_github.credential_category_github_app
+msgid ""
+"A GitHub App's id, private key and installation, stored as an encrypted JSON"
+" dict. Odoo signs a short JWT with the key and trades it for an installation"
+" token limited to one repository and one run."
+msgstr ""
+
+#. module: integration_github
+#. odoo-python
+#: code:addons/integration_github/models/integration_github_webhook.py:0
+msgid "A new signing secret was issued."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.constraint,message:integration_github.constraint_integration_github_pull_number_uniq
+msgid "A pull request is recorded once per repository."
+msgstr ""
+
+#. module: integration_github
+#. odoo-python
+#: code:addons/integration_github/models/integration_github_webhook.py:0
+msgid ""
+"A webhook secret is stored encrypted, and this server has no "
+"ODOO_API_ENCRYPTION_KEY."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_needaction
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__active
+msgid "Active"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__credential_id
+msgid "Active Credential"
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_form
+msgid "Archived"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_attachment_count
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__auth_type
+msgid "Authentication Type"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__author_login
+msgid "Author"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__base_ref
+msgid "Base Branch"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__head_ref
+msgid "Branch"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__contract_routes
+msgid "Called At"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__source__check_run
+msgid "Check Run"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__checks_state
+msgid "Checks"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__check_ids
+msgid "Checks of the Head Commit"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__pull_state__closed
+msgid "Closed"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__ip_whitelist
+msgid ""
+"Comma-separated list of allowed IPs or CIDRs (e.g., '192.168.1.0/24, "
+"10.0.0.5'). Leave empty to allow all IPs."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__head_sha
+msgid "Commit"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__source__status
+msgid "Commit Status"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__company_id
+msgid "Company"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__check_status__completed
+msgid "Completed"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__conclusion
+msgid "Conclusion"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__create_uid
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__create_uid
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__create_date
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__create_date
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__credential_fingerprint
+msgid "Credential Fingerprint"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__log_retention_days
+msgid ""
+"Delete this gate's exchange rows older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_form
+msgid "Deliveries signed with the current secret will be refused. Continue?"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__rate_limit_strict
+msgid ""
+"Deny the request when the rate-limit bucket cannot be read (lock contention,"
+" timeout, internal error) instead of allowing it. Enable wherever the limit "
+"is a security control rather than a best-effort cap."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_connection__display_name
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__display_name
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__display_name
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__is_draft
+msgid "Draft"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__rate_limit_enabled
+msgid "Enable Rate Limiting"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__rate_limit_enabled
+msgid "Enable rate limiting using token bucket algorithm"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__timestamp_verification_enabled
+msgid "Enable timestamp verification to prevent replay attacks"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__credential_id
+msgid "Encrypted credential for authentication. Managed by credential."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__checks_state__failure
+msgid "Failing"
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_pull_search
+msgid "Failing Checks"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_follower_ids
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_partner_ids
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: integration_github
+#: model:integration.service,name:integration_github.service_github
+#: model:ir.ui.menu,name:integration_github.menu_integration_github_root
+msgid "GitHub"
+msgstr ""
+
+#. module: integration_github
+#: model:credential.category,name:integration_github.credential_category_github_app
+msgid "GitHub App"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model,name:integration_github.model_integration_github_check
+msgid "GitHub Check"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model,name:integration_github.model_integration_github_pull
+msgid "GitHub Pull Request"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model,name:integration_github.model_integration_github_webhook
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_form
+msgid "GitHub Webhook"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.actions.act_window,name:integration_github.action_integration_github_webhook
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_list
+msgid "GitHub Webhooks"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.constraint,message:integration_github.constraint_integration_github_check_external_ref_uniq
+msgid "GitHub reports a check once per repository."
+msgstr ""
+
+#. module: integration_github
+#. odoo-python
+#: code:addons/integration_github/models/integration_github_webhook.py:0
+msgid "GitHub webhook secret: %(hook)s [#%(id)s]"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__signature_header
+msgid "HTTP header containing the HMAC signature"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__timestamp_header
+msgid "HTTP header containing the request timestamp"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__has_message
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__head_sha
+msgid "Head Commit"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__contract_limits
+msgid "Held To"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__hook_uuid
+msgid "Hook ID"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_connection__id
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__id
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__id
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__id
+msgid "ID"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__message_needaction
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__message_has_error
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__check_status__in_progress
+msgid "In Progress"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model,name:integration_github.model_integration_connection
+msgid "Integration Connection"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__ip_whitelist
+msgid "Ip Whitelist"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_is_follower
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_form
+msgid "Issue Secret"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__contract_last_call
+msgid "Last Call"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__date_last_event
+msgid "Last Event"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__write_uid
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__write_uid
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__write_date
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__write_date
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__rate_limit_window_seconds
+msgid "Length of the rate-limit window in seconds."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__log_request_payload_max_bytes
+msgid "Log Request Payload Max Bytes"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__log_retention_days
+msgid "Log Retention Days"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__max_payload_size
+msgid "Max Payload Size"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__rate_limit_requests
+msgid "Max Requests"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__timestamp_max_age_seconds
+msgid "Maximum age of request timestamp. Default: 5 minutes"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__max_payload_size
+msgid "Maximum allowed payload size for DoS prevention. Default: 1MB"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__rate_limit_requests
+msgid "Maximum number of requests allowed per time period"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__merge_commit_sha
+msgid "Merge Commit"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__date_merged
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__pull_state__merged
+msgid "Merged"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_has_error
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_ids
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__auth_type
+msgid "Method used for authentication"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__contract_scheme
+msgid "Must Send"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__name
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__name
+msgid "Name"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__checks_state__none
+msgid "No Checks"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__number
+msgid "Number"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_needaction_counter
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__message_has_error_counter
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__message_needaction_counter
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__message_has_error_counter
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__pull_state__open
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_pull_search
+msgid "Open"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__checks_state__success
+msgid "Passing"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__url
+msgid ""
+"Paste it into the GitHub App's or the repository's webhook settings, with "
+"content type application/json."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__url
+msgid "Payload URL"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_pull__checks_state__pending
+msgid "Pending"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__signature_prefix
+msgid "Prefix before signature value (e.g., 'sha256=')"
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_pull_form
+msgid "Pull Request"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.actions.act_window,name:integration_github.action_integration_github_pull
+#: model:ir.ui.menu,name:integration_github.menu_integration_github_pull
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_pull_list
+msgid "Pull Requests"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__verification_method
+msgid ""
+"Python method path for custom verification (format: 'model.method_name'). "
+"Method signature: method(headers: dict, body: str) -> bool"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__check_status__queued
+msgid "Queued"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__rate_limit_window_seconds
+msgid "Rate Window (s)"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__external_ref
+msgid "Reference"
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_pull_form
+msgid "Refresh from GitHub"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__repository
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__repository
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_pull_search
+msgid "Repository"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__service_user_id
+msgid "Runs As"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__credential_fingerprint
+msgid ""
+"SHA-256 of the credential's secret. Lets a presented token be verified, and "
+"its channel found, without decrypting anything."
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_form
+msgid "Secret Fingerprint"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__signature_header
+msgid "Signature Header"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__signature_prefix
+msgid "Signature Prefix"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__source
+msgid "Source"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__pull_state
+msgid "State"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__check_status
+msgid "Status"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__log_request_payload_max_bytes
+msgid ""
+"Store at most this many bytes of each request body on the integration.exchange row; 0 keeps the whole body.\n"
+"\n"
+"For an endpoint that accepts a file the body is the file: a phone posting a call recording as base64 wrote roughly 48 MB of text into a log column, beside the same audio already stored as an attachment. Duplicate detection is unaffected -- the hash of the body as received is kept either way. Ignored for an asynchronous endpoint, where the stored body is the work queue and not merely a record of it."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__rate_limit_strict
+msgid "Strict Rate Limiting"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__contract_last_call
+msgid ""
+"The body of the last call this gate admitted, as it was logged (masked, and "
+"capped at the gate's own payload limit)."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__contract_limits
+msgid "The caps a call is refused for crossing."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__contract_routes
+msgid "The routes that reach this gate, as the server serves them."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__service_user_id
+msgid ""
+"The service principal an admitted call runs as, instead of the public user: "
+"what it writes is its own, and its grants are what it may do."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__timestamp_header
+msgid "Timestamp Header"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__timestamp_max_age_seconds
+msgid "Timestamp Max Age Seconds"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__timestamp_verification_enabled
+msgid "Timestamp Verification Enabled"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__name
+msgid "Title"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.constraint,message:integration_github.constraint_integration_github_webhook_hook_uuid_uniq
+msgid "Two webhooks cannot share an address."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__url
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__url
+msgid "URL"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__date_updated
+msgid "Updated"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__verification_method
+msgid "Verification Method"
+msgstr ""
+
+#. module: integration_github
+#. odoo-python
+#: code:addons/integration_github/models/integration_github_webhook.py:0
+msgid "Webhook secret for %(hook)s"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.ui.menu,name:integration_github.menu_integration_github_webhook
+msgid "Webhooks"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_check__external_ref
+msgid "What GitHub names it by, unique in the repository."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_webhook__contract_scheme
+msgid "What the caller proves itself with."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__source__workflow_run
+msgid "Workflow Run"
+msgstr ""
+
+#. module: integration_github
+#: model_terms:ir.ui.view,arch_db:integration_github.view_integration_github_webhook_form
+msgid "e.g. Agro-Marin App"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_check__repository
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__repository
+msgid "owner/name"
+msgstr ""

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_integration_github_webhook_list" model="ir.ui.view">
+        <field name="name">integration.github.webhook.list</field>
+        <field name="model">integration.github.webhook</field>
+        <field name="arch" type="xml">
+            <list string="GitHub Webhooks">
+                <field name="name" />
+                <field name="url" />
+                <field name="auth_type" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_integration_github_webhook_form" model="ir.ui.view">
+        <field name="name">integration.github.webhook.form</field>
+        <field name="model">integration.github.webhook</field>
+        <field name="arch" type="xml">
+            <form string="GitHub Webhook">
+                <header>
+                    <button
+                        name="action_issue_secret"
+                        type="object"
+                        string="Issue Secret"
+                        confirm="Deliveries signed with the current secret will be refused. Continue?"
+                        class="btn-primary" />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Agro-Marin App" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="url" widget="CopyClipboardChar" />
+                            <field
+                                name="credential_fingerprint"
+                                string="Secret Fingerprint" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                            <field name="active" invisible="1" />
+                        </group>
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_integration_github_pull_search" model="ir.ui.view">
+        <field name="name">integration.github.pull.search</field>
+        <field name="model">integration.github.pull</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="repository" />
+                <field name="head_ref" />
+                <filter
+                    name="filter_open"
+                    string="Open"
+                    domain="[('pull_state', '=', 'open')]" />
+                <filter
+                    name="filter_failing"
+                    string="Failing Checks"
+                    domain="[('checks_state', '=', 'failure')]" />
+                <group>
+                    <filter
+                        name="group_by_repository"
+                        string="Repository"
+                        context="{'group_by': 'repository'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_integration_github_pull_list" model="ir.ui.view">
+        <field name="name">integration.github.pull.list</field>
+        <field name="model">integration.github.pull</field>
+        <field name="arch" type="xml">
+            <list string="Pull Requests" create="false">
+                <field name="repository" />
+                <field name="number" />
+                <field name="name" />
+                <field name="head_ref" optional="show" />
+                <field name="date_last_event" optional="hide" />
+                <field
+                    name="checks_state"
+                    widget="badge"
+                    decoration-danger="checks_state == 'failure'"
+                    decoration-success="checks_state == 'success'"
+                    decoration-warning="checks_state == 'pending'" />
+                <field
+                    name="pull_state"
+                    widget="badge"
+                    decoration-info="pull_state == 'open'"
+                    decoration-muted="pull_state == 'closed'"
+                    decoration-success="pull_state == 'merged'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_integration_github_pull_form" model="ir.ui.view">
+        <field name="name">integration.github.pull.form</field>
+        <field name="model">integration.github.pull</field>
+        <field name="arch" type="xml">
+            <form string="Pull Request" create="false">
+                <header>
+                    <button
+                        name="action_refresh"
+                        type="object"
+                        string="Refresh from GitHub" />
+                    <field name="pull_state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="repository" readonly="1" />
+                            <field name="number" readonly="1" />
+                            <field name="url" widget="url" readonly="1" />
+                            <field name="author_login" readonly="1" />
+                            <field name="is_draft" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="head_ref" readonly="1" />
+                            <field name="head_sha" readonly="1" />
+                            <field name="base_ref" readonly="1" />
+                            <field name="checks_state" readonly="1" />
+                            <field name="date_merged" readonly="1" />
+                            <field name="merge_commit_sha" readonly="1" />
+                        </group>
+                    </group>
+                    <field name="check_ids">
+                        <list>
+                            <field name="name" />
+                            <field name="source" />
+                            <field name="check_status" />
+                            <field name="conclusion" />
+                            <field name="url" widget="url" />
+                        </list>
+                    </field>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="action_integration_github_webhook" model="ir.actions.act_window">
+        <field name="name">GitHub Webhooks</field>
+        <field name="res_model">integration.github.webhook</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_integration_github_pull" model="ir.actions.act_window">
+        <field name="name">Pull Requests</field>
+        <field name="res_model">integration.github.pull</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_open': 1}</field>
+    </record>
+
+</odoo>

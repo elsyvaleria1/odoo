@@ -85,7 +85,7 @@
                         <h1><field name="name" readonly="1" /></h1>
                     </div>
                     <group>
-                        <group string="Work">
+                        <group name="work" string="Work">
                             <field name="kind" readonly="1" />
                             <field name="capability_id" readonly="1" />
                             <field name="priority" />
@@ -96,14 +96,14 @@
                                 name="company_id"
                                 groups="base.group_multi_company" />
                         </group>
-                        <group string="Lease">
+                        <group name="lease" string="Lease">
                             <field name="runner_id" />
                             <field name="count_attempt" />
                             <field name="date_lease_until" />
                             <field name="date_started" />
                             <field name="date_finished" />
                         </group>
-                        <group string="Usage">
+                        <group name="usage" string="Usage">
                             <field name="count_input_token" />
                             <field name="count_output_token" />
                             <field name="cost" />
