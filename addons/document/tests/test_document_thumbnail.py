@@ -1,11 +1,12 @@
 import base64
 import io
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 
 from odoo import SUPERUSER_ID, Command, http
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.libs import pdf_raster
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
@@ -476,6 +477,70 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         document._job_render_thumbnails()
 
         self.assertFalse(self._rows(document.checksum))
+        self.assertEqual(document.thumbnail_status, "pending")
+
+    def _cloud_document(self, name, mimetype):
+        types = dict(self.env["ir.attachment"]._fields["type"].selection)
+        if "cloud_storage" not in types:
+            self.skipTest("cloud_storage is not installed")
+        attachment = (
+            self.env["ir.attachment"]
+            .with_context(no_document=True)
+            .create(
+                {
+                    "name": name,
+                    "type": "cloud_storage",
+                    "url": f"https://bucket.test/{name}",
+                    "mimetype": mimetype,
+                }
+            )
+        )
+        return self.env["document.document"].create(
+            {
+                "name": name,
+                "type": "binary",
+                "folder_id": self.folder_a.id,
+                "attachment_id": attachment.id,
+            }
+        )
+
+    def test_a_file_a_provider_holds_is_rendered_by_a_job(self):
+        raw = self._png_bytes((1, 2, 3))
+        document = self._cloud_document("cloud.png", "image/png")
+        self.env.cr.flush()
+
+        key = document.thumbnail_source_checksum
+        self.assertFalse(document.checksum, "the database keeps no checksum of it")
+        self.assertTrue(key.startswith("url:"), "its address names it")
+        self.assertEqual(
+            document.thumbnail_status,
+            "pending",
+            "a provider's blob is never fetched before the upload commits",
+        )
+        self.assertEqual(len(self._jobs(key)), 1)
+
+        with patch.object(
+            type(self.env["ir.attachment"]), "_get_content", lambda att, size=None: raw
+        ):
+            document._job_render_thumbnails()
+
+        self.assertEqual(document.thumbnail_status, "present")
+        self.assertTrue(base64.b64decode(document.thumbnail).startswith(b"\x89PNG"))
+
+    def test_a_provider_out_of_reach_leaves_the_file_for_later(self):
+        document = self._cloud_document("cloud.jpg", "image/jpeg")
+        self.env.cr.flush()
+
+        def unreachable(attachment, size=None):
+            raise UserError("no provider is configured")
+
+        with (
+            mute_logger("odoo.addons.document.models.document_document_thumbnail"),
+            patch.object(type(self.env["ir.attachment"]), "_get_content", unreachable),
+        ):
+            document._job_render_thumbnails()
+
+        self.assertFalse(self._rows(document.thumbnail_source_checksum))
         self.assertEqual(document.thumbnail_status, "pending")
 
     def test_no_renderer_leaves_the_pdf_to_the_browser(self):

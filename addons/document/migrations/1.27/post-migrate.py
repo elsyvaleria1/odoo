@@ -1,8 +1,6 @@
 from odoo import SUPERUSER_ID, api
 from odoo.db import schema
 
-from odoo.addons.document.models.document_document_thumbnail import SERVER_KINDS
-
 
 def migrate(cr, version):
     if not version or not schema.column_exists(
@@ -49,27 +47,4 @@ def migrate(cr, version):
         [("res_model", "=", "document.document"), ("res_field", "=", "thumbnail")]
     ).unlink()
     schema.drop_columns(cr, "document_document", ["thumbnail_status"])
-    # the key is written past the ORM: a recompute would stamp every file
-    # with today's write_date, and nothing about them changed
-    documents = (
-        env["document.document"]
-        .with_context(active_test=False)
-        .search([("type", "=", "binary"), ("shortcut_document_id", "=", False)])
-    )
-    keyed = {
-        document.id: document.checksum
-        for document in documents
-        if document._get_thumbnail_kind() in SERVER_KINDS
-    }
-    cr.execute(
-        """
-        UPDATE document_document AS document
-           SET thumbnail_source_checksum = keyed.checksum
-          FROM unnest(%s::int[], %s::varchar[]) AS keyed(id, checksum)
-         WHERE document.id = keyed.id
-        """,
-        [list(keyed), list(keyed.values())],
-    )
-    documents.invalidate_model(["thumbnail_source_checksum"])
-    # an upgrade renders nothing itself: what no stored thumbnail covers queues
-    documents.browse(keyed)._schedule_thumbnails()
+    env["document.document"]._rekey_thumbnail_sources()

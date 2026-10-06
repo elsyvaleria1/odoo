@@ -33,8 +33,6 @@ class DocumentsDocument(models.Model):
     def _get_thumbnail_kind(self) -> str | bool:
         # an XML invoice carrying a PDF shows that PDF, as a PDF file would
         if self.has_embedded_pdf:
-            if self.attachment_id.type == "cloud_storage":
-                return "browser"
             return "pdf"
         return super()._get_thumbnail_kind()
 

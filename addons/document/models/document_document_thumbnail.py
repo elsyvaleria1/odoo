@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import logging
 import typing
 
@@ -7,6 +8,7 @@ from psycopg import errors
 
 from odoo import api, fields, models
 from odoo.api import SUPERUSER_ID
+from odoo.exceptions import UserError
 from odoo.libs import pdf_raster
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
@@ -66,14 +68,23 @@ class DocumentsDocument(models.Model):
         is_pdf = mimetype.startswith("application/pdf")
         if not is_pdf and not mimetype.startswith("image/"):
             return False
-        if self.attachment_id.type == "cloud_storage":
-            # the bytes live elsewhere, and the browser already holds them
-            return "browser"
         if is_pdf:
             return "pdf" if self.attachment_id.file_size <= MAX_PDF_BYTES else "browser"
         if mimetype.startswith("image/webp") and not features.check("webp"):
             return "browser"
         return "image"
+
+    def _get_thumbnail_content_key(self) -> str | bool:
+        # what names the content a thumbnail shows: its checksum, or for a blob
+        # a storage provider holds, of which this database keeps no checksum,
+        # its address, which a new version never reuses
+        self.check_singleton()
+        attachment = self.attachment_id
+        if attachment.checksum:
+            return attachment.checksum
+        if attachment.type == "cloud_storage" and attachment.url:
+            return "url:" + hashlib.sha256(attachment.url.encode()).hexdigest()
+        return False
 
     def _get_thumbnail_source(self) -> bytes:
         # the bytes a server-rendered thumbnail is drawn from
@@ -85,6 +96,7 @@ class DocumentsDocument(models.Model):
         "checksum",
         "mimetype",
         "attachment_id.type",
+        "attachment_id.url",
         "attachment_id.file_size",
         "shortcut_document_id",
     )
@@ -95,7 +107,7 @@ class DocumentsDocument(models.Model):
                 and document._get_thumbnail_kind() in SERVER_KINDS
             )
             document.thumbnail_source_checksum = (
-                document.checksum if rendered else False
+                document._get_thumbnail_content_key() if rendered else False
             )
         # whatever changed the content (an upload, a new version, the
         # attachment written directly), its thumbnail is asked for here, once
@@ -117,6 +129,7 @@ class DocumentsDocument(models.Model):
     @api.depends(
         "thumbnail_source_checksum",
         "checksum",
+        "attachment_id.url",
         "shortcut_document_id.thumbnail_source_checksum",
         "shortcut_document_id.checksum",
     )
@@ -137,6 +150,7 @@ class DocumentsDocument(models.Model):
         "checksum",
         "attachment_id.type",
         "attachment_id.file_size",
+        "attachment_id.url",
         "shortcut_document_id.thumbnail_source_checksum",
         "shortcut_document_id.checksum",
     )
@@ -190,7 +204,7 @@ class DocumentsDocument(models.Model):
         rows = {}
         for document_id, source in sources.items():
             row = own.get(source.id)
-            if row and row.checksum != source.checksum:
+            if row and row.checksum != source._get_thumbnail_content_key():
                 # rendered from a content the document no longer holds
                 row = row if source._get_thumbnail_kind() == "authored" else None
             if row := row or shared.get(source.thumbnail_source_checksum):
@@ -209,7 +223,11 @@ class DocumentsDocument(models.Model):
             row.unlink()
             self.invalidate_model(["thumbnail", "thumbnail_status"])
             return
-        vals = {"checksum": self.checksum or False, "image": image, "state": state}
+        vals = {
+            "checksum": self._get_thumbnail_content_key(),
+            "image": image,
+            "state": state,
+        }
         if row:
             row.write(vals)
         else:
@@ -234,7 +252,10 @@ class DocumentsDocument(models.Model):
         rendered = queued = 0
         for checksum, document in by_checksum.items():
             kind = document._get_thumbnail_kind()
-            if kind == "image" and rendered < inline:
+            # a blob a storage provider holds is fetched over the network,
+            # never before an upload commits
+            local = document.attachment_id.type != "cloud_storage"
+            if kind == "image" and local and rendered < inline:
                 document._render_thumbnail()
                 rendered += 1
                 continue
@@ -267,9 +288,10 @@ class DocumentsDocument(models.Model):
         with _debug.perf("thumbnail_render", cr=self.env.cr, kind=kind) as span:
             try:
                 content = self._get_thumbnail_source()
-            except OSError:
-                # the bytes are out of reach, which says nothing about them: no
-                # row, and the sweep asks again
+            except UserError, OSError:
+                # the bytes are out of reach (a provider unconfigured, refusing
+                # or down), which says nothing about them: no row, and the
+                # sweep asks again
                 _logger.warning(
                     "Documents: the content of %r is unreachable",
                     self.name,
@@ -309,6 +331,49 @@ class DocumentsDocument(models.Model):
             # the same content rendered by another transaction first
             _debug.logic("thumbnail_render_raced", checksum=checksum)
         self.invalidate_model(["thumbnail", "thumbnail_status"])
+
+    @api.model
+    def _rekey_thumbnail_sources(self) -> None:
+        # every file's source checksum, written past the ORM: a recompute
+        # would stamp each document with today's write_date, and nothing
+        # about them changed. What no stored thumbnail covers then queues;
+        # nothing renders here
+        documents = self.with_context(active_test=False).search(
+            [("type", "=", "binary"), ("shortcut_document_id", "=", False)]
+        )
+        keyed = {
+            document.id: document._get_thumbnail_content_key()
+            for document in documents
+            if document._get_thumbnail_kind() in SERVER_KINDS
+        }
+        self.env.cr.execute(
+            SQL(
+                """
+                UPDATE document_document AS document
+                   SET thumbnail_source_checksum = keyed.checksum
+                  FROM unnest(%s::int[], %s::varchar[]) AS keyed(id, checksum)
+                 WHERE document.id = keyed.id
+                   AND document.thumbnail_source_checksum IS DISTINCT FROM keyed.checksum
+                """,
+                list(keyed),
+                list(keyed.values()),
+            )
+        )
+        written = self.env.cr.rowcount
+        # a document's own thumbnail stored before its content had a key (a
+        # blob a provider holds has no checksum) speaks for the content it holds
+        unkeyed = self._thumbnail_store().search(
+            [("document_id", "in", documents.ids), ("checksum", "=", False)]
+        )
+        for row in unkeyed:
+            row.checksum = row.document_id._get_thumbnail_content_key()
+        documents.invalidate_model(["thumbnail_source_checksum"])
+        documents.browse(keyed)._schedule_thumbnails()
+        _debug.lifecycle(
+            "thumbnail_sources_rekeyed",
+            keyed=len(keyed),
+            written=written,
+        )
 
     @api.model
     def _cron_render_awaited_thumbnails(self) -> None:
