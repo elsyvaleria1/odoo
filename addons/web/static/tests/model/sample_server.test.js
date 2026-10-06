@@ -386,6 +386,23 @@ describe("RPC calls", () => {
         expect(result[0]).toInclude("age");
     });
 
+    test("'formatted_read_group': a datetime grouped by hour", async () => {
+        // hour is a backend interval (a view's interval="hour"): the sample
+        // group label is formatted like any other interval's
+        const server = new DeterministicSampleServer("hobbit", fields.hobbit);
+        const result = await server.mockRpc({
+            method: "formatted_read_group",
+            model: "hobbit",
+            groupBy: ["arrival_date:hour"],
+            aggregates: ["__count"],
+        });
+        expect(result.length).toBeGreaterThan(0);
+        for (const group of result) {
+            const [, label] = group["arrival_date:hour"];
+            expect(label).toMatch(/^\d{2}:00 \d{2} \w+$/);
+        }
+    });
+
     test("'formatted_read_group': multiple groupBys among which a many2many", async () => {
         const server = new DeterministicSampleServer("res.users", fields["res.users"]);
         const result = await server.mockRpc({

@@ -15,6 +15,7 @@ export const FLOAT_PRECISION = 2;
 
 /** @type {Record<string, string>} */
 export const FORMATS = {
+    hour: "hh:00 dd MMM",
     day: "yyyy-MM-dd",
     week: "'W'WW kkkk",
     month: "MMMM yyyy",
