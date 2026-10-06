@@ -21,10 +21,6 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
         onPasteLinks: t.function(),
         /** where the attachment copies are made: resModel, resId, isPublic */
         attachTo: t.object().optional(),
-        resModel: t.string(),
-        title: t.string(),
-        domain: t.array().optional(),
-        context: t.object().optional(),
     };
 
     setup() {
@@ -42,14 +38,31 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
         };
     }
 
+    /**
+     * Runs once whatever the clicks (a double click, the hotkey twice would
+     * copy the attachments twice), then closes; a failure is told, not thrown.
+     *
+     * @param {string} failurePrefix
+     * @param {() => Promise<void>} callback
+     */
+    _runOnceAndClose(failurePrefix, callback) {
+        return this.executeOnceAndClose(async () => {
+            try {
+                await callback();
+            } catch (error) {
+                this._notifyFailure(failurePrefix, error);
+            }
+        });
+    }
+
     /** @param {number[]} resIds */
-    async addAttachments(resIds) {
-        const {
-            resModel = "wizard.mail.message.send",
-            resId = 0,
-            isPublic = false,
-        } = this.props.attachTo || {};
-        try {
+    addAttachments(resIds) {
+        return this._runOnceAndClose(_t("Failed to add document(s): "), async () => {
+            const {
+                resModel = "wizard.mail.message.send",
+                resId = 0,
+                isPublic = false,
+            } = this.props.attachTo || {};
             const attachmentRecords = await this.orm.call(
                 "document.document",
                 "add_documents_attachment",
@@ -62,25 +75,19 @@ export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
                 resModel,
             }));
             await this.props.onAddAttachments(attachments);
-        } catch (error) {
-            this._notifyFailure(_t("Failed to add document(s): "), error);
-        }
-        this.props.close();
+        });
     }
 
     /** @param {number[]} resIds */
-    async pasteLinks(resIds) {
-        try {
+    pasteLinks(resIds) {
+        return this._runOnceAndClose(_t("Failed to paste link(s): "), async () => {
             const links = await this.orm.read("document.document", resIds, [
                 "display_name",
                 "access_url",
             ]);
             await this.props.onPasteLinks(links);
             this.notification.add(_t("Link(s) pasted!"), { type: "success" });
-        } catch (error) {
-            this._notifyFailure(_t("Failed to paste link(s): "), error);
-        }
-        this.props.close();
+        });
     }
 
     /**

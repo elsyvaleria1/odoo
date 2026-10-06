@@ -543,6 +543,56 @@ class TestDocumentsPublicRouteHardening(HttpCase):
             source.active, "archive=true must still send the original to the trash"
         )
 
+    @mute_logger("odoo.http")
+    def test_pdf_split_archives_through_the_trash(self):
+        def split(source):
+            return self.url_open(
+                "/documents/pdf_split",
+                data={
+                    "vals": json_dumps({"owner_id": self.uploader.id}),
+                    "new_files": json_dumps(
+                        [
+                            {
+                                "name": "part",
+                                "new_pages": [
+                                    {
+                                        "old_file_type": "document",
+                                        "old_file_index": source.id,
+                                        "old_page_number": 1,
+                                    }
+                                ],
+                            }
+                        ]
+                    ),
+                    "archive": "true",
+                    "csrf_token": http.Request.csrf_token(self),
+                },
+            )
+
+        source = self._make_pdf_document(pages=1)
+        self.authenticate("round4_uploader", "round4_uploader")
+        split(source).raise_for_status()
+        self.assertFalse(source.active)
+        self.assertIn(
+            "sent to the trash",
+            source.message_ids[:1].body or "",
+            "the original goes to the trash as action_archive sends it there",
+        )
+
+        locked = self._make_pdf_document(pages=1)
+        locked.sudo().lock_uid = self.env.ref("base.user_admin")
+        parts_before = self.env["document.document"].search_count(
+            [("name", "=", "part.pdf")]
+        )
+        res = split(locked)
+        self.assertNotEqual(res.status_code, 200)
+        self.assertTrue(locked.active, "another user's lock keeps it out of the trash")
+        self.assertEqual(
+            self.env["document.document"].search_count([("name", "=", "part.pdf")]),
+            parts_before,
+            "the refused split leaves nothing behind",
+        )
+
     def test_company_root_upload_grants_the_uploader_edit(self):
         self.authenticate("round4_uploader", "round4_uploader")
         res = self.url_open(

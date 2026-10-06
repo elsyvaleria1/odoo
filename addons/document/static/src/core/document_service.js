@@ -590,11 +590,6 @@ export class DocumentService {
     }
 
     /**
-     * @param {object} folderChange
-     * @param {object[]} inspectedDocuments
-     * @param {boolean} forceInspected
-     */
-    /**
      * The URL is the Documents app's: only a view of it (not a picker opened
      * over another app) writes a document's token there.
      *
@@ -605,6 +600,11 @@ export class DocumentService {
         return () => this._urlOwners--;
     }
 
+    /**
+     * @param {Object|false} [folderChange] the folder just opened
+     * @param {Object[]|null} [inspectedDocuments]
+     * @param {boolean} [forceInspected]
+     */
     updateDocumentURL(folderChange, inspectedDocuments, forceInspected) {
         let accessToken = undefined;
         if (folderChange) {

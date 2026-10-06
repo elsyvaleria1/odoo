@@ -357,7 +357,11 @@ test("Drag and Drop - After selecting multiple documents", async function () {
 test("Drag and Drop - Check permission when dropping documents", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Test Document 1"),
-        makeDocumentRecordData(3, "Test Document 2", { user_permission: "view" }),
+        // what the server computes for a viewer who does not own it
+        makeDocumentRecordData(3, "Test Document 2", {
+            user_permission: "view",
+            user_can_move: false,
+        }),
     ]);
     await makeDocumentsMockEnv({ serverData });
     await mountDocumentsKanbanView();
@@ -555,10 +559,40 @@ test("Drag and Drop - Check access rights confirmation popup when moving from se
     ]);
 });
 
+test("Drag and Drop - a drop moves what the server says may move, not every editable", async function () {
+    // an editor's document on the company root: user_can_move keeps it to managers
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Company Root Doc", {
+            user_permission: "edit",
+            user_can_move: false,
+        }),
+    ]);
+    onRpc("document.document", "write", () => {
+        expect.step("write");
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsKanbanView();
+
+    const { drop, moveTo } = await contains(
+        ".o_kanban_record[data-value-id='2']",
+    ).drag();
+    await moveTo(".o_kanban_record[data-value-id='1']");
+    await drop();
+    await waitFor(".o_notification");
+    expect(".o_notification_content:eq(-1)").toHaveText(
+        "At least one document could not be moved due to access rights.",
+    );
+    expect.verifySteps([]);
+});
+
 test("Drag and Drop - Drop multiple documents at once", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Test Document 1"),
-        makeDocumentRecordData(3, "Test Document 2", { user_permission: "view" }),
+        // what the server computes for a viewer who does not own it
+        makeDocumentRecordData(3, "Test Document 2", {
+            user_permission: "view",
+            user_can_move: false,
+        }),
     ]);
     await makeDocumentsMockEnv({ serverData });
     await mountDocumentsKanbanView();
@@ -994,17 +1028,16 @@ test("Name in previewer is correct without attachment", async function () {
     });
 
     const previewedAttachments = [];
-    mockService("document.document", {
-        setPreviewedDocument: (file) => {
+    await makeDocumentsMockEnv({ serverData });
+    patchWithCleanup(getService("document.document"), {
+        setPreviewedDocument(file) {
             if (file) {
                 previewedAttachments.push({ id: file.id, name: file.name });
                 expect.step(`preview_${file.name}`);
             }
+            return super.setPreviewedDocument(...arguments);
         },
-        documentList: null,
     });
-
-    await makeDocumentsMockEnv({ serverData });
     await mountDocumentsKanbanView();
 
     await contains(
@@ -1184,6 +1217,41 @@ test("the cog menu's star follows the folder, and a cancelled trash reloads noth
     await contains(".modal .btn-secondary:contains('Discard')").click();
     await animationFrame();
     expect.verifySteps([]);
+});
+
+test("a folder the user may only view is starred from the cog all the same", async function () {
+    const serverData = getDocumentsTestServerModelsData([]);
+    serverData["document.document"][0].user_permission = "view";
+    onRpc("/documents/touch/*", () => ({}));
+    onRpc("document.document", "action_toggle_user_favorite", ({ args }) => {
+        expect.step(`toggle favorite ${args[0]}`);
+        return true;
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsKanbanView();
+    await contains(".o_kanban_record:contains('Folder 1')").click();
+    await waitFor(".o_last_breadcrumb_item:contains('Folder 1')");
+    await contains(
+        ".o_cp_action_menus .o_cog_menu_toggler, .o_cp_action_menus button",
+    ).click();
+    await contains(".o-dropdown-item:contains('Add Star')").click();
+    await animationFrame();
+    expect.verifySteps(["toggle favorite 1"]);
+});
+
+test("the open folder's details count its documents' bytes, not rounded megabytes", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Big", { folder_id: 1, file_size: 1234567 }),
+        makeDocumentRecordData(3, "Tiny", { folder_id: 1, file_size: 1 }),
+    ]);
+    onRpc("/documents/touch/*", () => ({}));
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsKanbanView();
+    await contains(".o_kanban_record:contains('Folder 1')").click();
+    await waitFor(".o_last_breadcrumb_item:contains('Folder 1')");
+    const { focusedRecord } = getService("document.document");
+    expect(focusedRecord.isContainer).toBe(true);
+    expect(focusedRecord.data.file_size).toBe(1234568);
 });
 
 test("another feature's upload does not reload the documents", async () => {

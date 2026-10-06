@@ -718,9 +718,13 @@ export class PdfManager extends Component {
             : Math.min(canvas.width / viewPort.width, canvas.height / viewPort.height);
         await page.render({
             canvasContext: canvas.getContext("2d"),
+            // getViewport takes an absolute rotation: a landscape page turns
+            // a quarter on top of the /Rotate it already carries
             viewport: page.getViewport({
                 scale,
-                rotation: isLandscape ? 270 : viewPort.rotation,
+                rotation: isLandscape
+                    ? (viewPort.rotation + 270) % 360
+                    : viewPort.rotation,
             }),
         }).promise;
         // the canvas holds the picture now: pdf.js would otherwise keep the
@@ -1015,13 +1019,7 @@ export class PdfManager extends Component {
      */
     _onPushExit() {
         if (this.state.viewedPage || this._previewPending) {
-            this._previewRequest++;
-            this._previewPending = false;
-            if (this.state.viewedPage) {
-                this.store.focusedPage = this.state.viewedPage;
-            }
-            this.previewCanvas = undefined;
-            this.state.viewedPage = undefined;
+            this._closePreview();
             return;
         }
         if (this.selectedPageIds.length) {
@@ -1186,26 +1184,23 @@ export class PdfManager extends Component {
         let messageInput = _t(
             "Are you sure that you want to delete the selected page(s)",
         );
-        let nextFocusedPageId = pagesToDelete.includes(this.store.focusedPage)
-            ? false
-            : this.store.focusedPage;
+        let nextFocusedPageId = this.store.focusedPage;
+        // a preview deletes the page it shows: the focus may already be on
+        // the next one, still rendering
+        const shownPage = this.state.viewedPage;
         if (
+            shownPage ||
             pagesToDelete.length === 0 ||
-            this.state.viewedPage ||
             (this.store.focusedPage && !pagesToDelete.includes(this.store.focusedPage))
         ) {
-            pagesToDelete = [this.store.focusedPage];
-            messageInput = this.state.viewedPage
+            const pageId = shownPage || this.store.focusedPage;
+            pagesToDelete = [pageId];
+            messageInput = shownPage
                 ? _t("Are you sure that you want to delete this page ?")
                 : _t("Are you sure that you want to delete the focused page ?");
-            const focusedPageIndex = sortedPagesIds.indexOf(this.store.focusedPage);
-            if (focusedPageIndex + 1 < sortedPagesIds.length) {
-                nextFocusedPageId = sortedPagesIds[focusedPageIndex + 1];
-            } else if (focusedPageIndex - 1 >= 0) {
-                nextFocusedPageId = sortedPagesIds[focusedPageIndex - 1];
-            } else {
-                nextFocusedPageId = undefined;
-            }
+            const pageIndex = sortedPagesIds.indexOf(pageId);
+            nextFocusedPageId =
+                sortedPagesIds[pageIndex + 1] ?? sortedPagesIds[pageIndex - 1];
         }
         this.dialog.add(ConfirmationDialog, {
             body: messageInput,
@@ -1228,11 +1223,11 @@ export class PdfManager extends Component {
                     await this.props.close();
                 }
                 this._displayNumberDeletedPages(pagesToDelete.length);
-                this.store.focusedPage = nextFocusedPageId;
-                if (this.state.viewedPage && nextFocusedPageId) {
+                if (shownPage && nextFocusedPageId) {
                     await this.onClickPage(nextFocusedPageId);
                 } else {
-                    this.state.viewedPage = undefined;
+                    this._closePreview();
+                    this.store.focusedPage = nextFocusedPageId;
                 }
             },
             cancel: () => {},
@@ -1313,14 +1308,25 @@ export class PdfManager extends Component {
         this._previewPending = true;
         const ratio = 18 / 13;
         const width = this.pagePreview.el.clientWidth - (30 * window.innerWidth) / 100;
-        const canvas = await this._renderCanvas(toRaw(page), {
-            width: width,
-            height: width * ratio,
-        });
-        if (request !== this._previewRequest || this._isDestroyed) {
+        let canvas;
+        try {
+            canvas = await this._renderCanvas(toRaw(page), {
+                width: width,
+                height: width * ratio,
+            });
+        } finally {
+            if (request === this._previewRequest) {
+                this._previewPending = false;
+            }
+        }
+        // a newer request, a close, or the page deleted meanwhile
+        if (
+            request !== this._previewRequest ||
+            this._isDestroyed ||
+            !this.store.getPage(pageId)
+        ) {
             return;
         }
-        this._previewPending = false;
         this.previewCanvas = canvas;
         this.state.viewedPage = pageId;
         const targetGroup = this.store.getGroupOfPage(pageId);
@@ -1354,10 +1360,21 @@ export class PdfManager extends Component {
             ev.target.classList.contains("o_documents_pdf_page_preview") ||
             ev.target.closest(".o_close_button")
         ) {
-            this.store.focusedPage = this.state.viewedPage;
-            this.previewCanvas = undefined;
-            this.state.viewedPage = undefined;
+            this._closePreview();
         }
+    }
+    /**
+     * Closes the preview, and any render still on its way to it: the focus
+     * stays on the page that was shown.
+     */
+    _closePreview() {
+        this._previewRequest++;
+        this._previewPending = false;
+        if (this.state.viewedPage) {
+            this.store.focusedPage = this.state.viewedPage;
+        }
+        this.previewCanvas = undefined;
+        this.state.viewedPage = undefined;
     }
     /**
      * @public

@@ -1,6 +1,6 @@
 /** @odoo-module native */
 import { DocumentsAction } from "@document/views/action/document_action";
-import { observe, onWillStart, onWillUpdateProps } from "@odoo/owl";
+import { onWillStart, onWillUpdateProps, toRaw } from "@odoo/owl";
 import { FileViewer as WebFileViewer } from "@web/components/file_viewer";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
@@ -20,17 +20,6 @@ export class DocumentsFileViewer extends WebFileViewer {
         /** @type {import("@document/core/document_service").DocumentService} */
         this.documentService = useService("document.document");
         this.notification = useService("notification");
-        this.previewed = observe(
-            { document: this.documentService.documentList.documents[this.state.index] },
-            async () => {
-                this.documentService.setPreviewedDocument(this.previewed.document);
-                // null is the viewer closing: nothing is shown any more
-                if (this.previewed.document) {
-                    await this._loadFileContent();
-                }
-            },
-        );
-        this.folderId = this.documentService.documentList?.folderId;
         onWillUpdateProps((nextProps) => {
             // new props are a new preview opened: show the file it asks for,
             // not the one the base kept by re-anchoring on the previous file
@@ -44,10 +33,8 @@ export class DocumentsFileViewer extends WebFileViewer {
                 }));
                 this.activateFile(nextProps.startIndex, nextProps.files);
             }
-            this.previewed.document =
-                this.documentService.documentList.documents[nextProps.startIndex];
         });
-        onWillStart(() => this._loadFileContent());
+        onWillStart(() => this._showFile(this.state.file));
         // a key pressed in the PDF viewer stays in its iframe: Escape closes
         // the preview from there too. Keyed on the iframe, which next/previous
         // replace without re-rendering any host
@@ -72,9 +59,44 @@ export class DocumentsFileViewer extends WebFileViewer {
         );
     }
 
+    /** The folder the preview was opened from, for its action menu. */
+    get folderId() {
+        return this.documentService.documentList?.folderId ?? false;
+    }
+
+    /**
+     * @override every file shown (next, previous, a preview reopened) comes
+     * through here: it is the previewed document, and its content is fetched
+     */
+    activateFile(index, files = this.props.files) {
+        super.activateFile(index, files);
+        this._showFile(files[index]);
+    }
+
+    /** @param {import("@document/attachments/document_file").DocumentFile} [file] */
+    async _showFile(file) {
+        log.logic("showFile", () => ({
+            documentId: file?.id,
+            shown: this._shownFile?.id,
+            same: file === this._shownFile,
+        }));
+        if (file === this._shownFile) {
+            return;
+        }
+        this._shownFile = file;
+        // the view publishes the first file before rendering this viewer: a
+        // write here, mid-render, would restart its parent's render
+        const { previewedDocument } = this.documentService.rightPanelReactive;
+        if (toRaw(previewedDocument) !== toRaw(file ?? null)) {
+            this.documentService.setPreviewedDocument(file ?? null);
+        }
+        if (file) {
+            await this._loadFileContent(file);
+        }
+    }
+
     /** Email and textual files are fetched on demand; the others are streamed. */
-    async _loadFileContent() {
-        const file = this.state.file;
+    async _loadFileContent(file) {
         const kind = file.isEmail ? "email" : file.isTextual ? "text" : null;
         log.logic("loadFileContent", () => ({ documentId: file.id, kind }));
         if (!kind) {
@@ -100,24 +122,10 @@ export class DocumentsFileViewer extends WebFileViewer {
         }
     }
 
-    _syncPreviewedDocument() {
-        this.previewed.document =
-            this.documentService.documentList.documents[this.state.index];
-    }
-
     close() {
         this.documentService.documentList?.onDeleteCallback();
-        this.previewed.document = null;
+        this._shownFile = null;
+        this.documentService.setPreviewedDocument(null);
         super.close();
-    }
-
-    next() {
-        super.next();
-        this._syncPreviewedDocument();
-    }
-
-    previous() {
-        super.previous();
-        this._syncPreviewedDocument();
     }
 }

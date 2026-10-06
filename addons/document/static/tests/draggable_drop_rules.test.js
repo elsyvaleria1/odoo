@@ -7,14 +7,17 @@ describe.current.tags("headless");
  * @param {Object} [param0]
  * @param {number[]} [param0.movable]
  * @param {number[]} [param0.nonMovable]
+ * @param {number[]} [param0.trashable] all of them unless said
  * @returns {Object}
  */
-function makeCtx({ movable = [1], nonMovable = [] } = {}) {
+function makeCtx({ movable = [1], nonMovable = [], trashable } = {}) {
+    const all = [...movable, ...nonMovable];
     return {
         draggedRecords: {
             movableRecordIds: movable,
             nonMovableRecordIds: nonMovable,
-            all: [...movable, ...nonMovable],
+            trashableRecordIds: trashable ?? all,
+            all,
         },
     };
 }
@@ -66,10 +69,17 @@ describe("_dropRejectionReason", () => {
         expect(reject({ id: "MY" })).toBe("");
     });
 
-    test("rejects trashing a selection holding an immovable document", () => {
-        const ctx = makeCtx({ movable: [1], nonMovable: [2] });
+    test("rejects trashing a selection holding an untrashable document", () => {
+        const ctx = makeCtx({ movable: [1, 2], trashable: [1] });
         expect(reject({ id: "TRASH" }, { ctx })).not.toBe("");
         expect(reject({ id: "TRASH" }, { ctx: makeCtx() })).toBe("");
+    });
+
+    test("trash judges what may be trashed, not what may be moved", () => {
+        // an editor's document on the company root: the server refuses its
+        // move (user_can_move) and accepts its trashing
+        const ctx = makeCtx({ movable: [], nonMovable: [1], trashable: [1] });
+        expect(reject({ id: "TRASH" }, { ctx })).toBe("");
     });
 
     test("rejects dropping a folder into itself or a descendant", () => {

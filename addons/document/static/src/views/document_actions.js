@@ -1,5 +1,48 @@
 /** @odoo-module native */
 import { _t } from "@web/core/translation";
+import { user } from "@web/core/user";
+
+/**
+ * Mirrors `document.document._locked_by_other`: a lock stops everyone but the
+ * user who took it, and a Documents manager.
+ *
+ * @param {Object} data a `document.document` read
+ * @param {boolean} userIsDocumentManager
+ * @returns {boolean}
+ */
+export function isLockedByOther(data, userIsDocumentManager) {
+    return (
+        !userIsDocumentManager &&
+        Boolean(data.lock_uid) &&
+        data.lock_uid.id !== user.userId
+    );
+}
+
+/**
+ * Mirrors what `document.document.action_archive` accepts: an active document
+ * the user may edit, not under another user's lock, and either theirs or in a
+ * folder they may edit. A folder the caller cannot tell is the server's to judge.
+ *
+ * @param {Object} data a `document.document` read
+ * @param {Object} params
+ * @param {boolean} params.userIsDocumentManager
+ * @param {(folderId: number) => string|undefined} params.folderPermission
+ * @returns {boolean}
+ */
+export function isTrashable(data, { userIsDocumentManager, folderPermission }) {
+    if (
+        data.active === false ||
+        data.user_permission !== "edit" ||
+        isLockedByOther(data, userIsDocumentManager)
+    ) {
+        return false;
+    }
+    const folderId = data.folder_id?.id;
+    if (data.owner_id?.id === user.userId || !folderId) {
+        return true;
+    }
+    return (folderPermission(folderId) ?? "edit") === "edit";
+}
 
 /**
  * Mirrors `document.document._is_download_allowed`: a blocked document is still
@@ -116,7 +159,9 @@ export const documentActions = {
         icon: (data) =>
             data.is_user_favorite ? "fa-solid fa-star" : "fa-regular fa-star",
         label: (data) => (data.is_user_favorite ? _t("Remove Star") : _t("Add Star")),
-        isVisible: (documentService, data) => documentService.isEditable(data),
+        // a star is the user's own, not a change to the document: reading it is enough
+        isVisible: (documentService, data) =>
+            isRealDocument(data) && data.active !== false,
         run: async ({ documentService, reload }, data) => {
             await documentService.toggleFavorite([data.id]);
             await reload();
@@ -126,7 +171,10 @@ export const documentActions = {
         icon: "fa-regular fa-trash-can",
         label: _t("Move to Trash"),
         isVisible: (documentService, data) =>
-            documentService.userIsInternal && documentService.isEditable(data),
+            documentService.userIsInternal &&
+            data.active !== false &&
+            !isLockedByOther(data, documentService.userIsDocumentManager) &&
+            documentService.isEditable(data),
         run: async ({ documentService, reload }, data) => {
             if (await documentService.moveToTrash([data.id])) {
                 await reload();

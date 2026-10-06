@@ -1080,3 +1080,76 @@ test(`Pdf Manager: the area selection takes a page on the move that reaches it`,
     );
     mouse("mouseup", 0, 0);
 });
+
+/** A manager whose preview renders (wider than a thumbnail) wait for `gate`. */
+function slowPreviewManager(gate) {
+    return class SlowPreviewPdfManager extends PdfManagerForTest {
+        async _renderCanvas(page, size) {
+            if (size.width > 160) {
+                await gate.current;
+            }
+            return super._renderCanvas(page, size);
+        }
+    };
+}
+
+test(`Pdf Manager: the preview's trash deletes the page shown, not one still arriving`, async () => {
+    const gate = { current: Promise.resolve() };
+    const manager = await mountPdfManager({}, slowPreviewManager(gate));
+    await animationFrame();
+    const [shown, next] = manager.store.sortedPageIds;
+    await manager.onClickPage(shown);
+    expect(manager.state.viewedPage).toBe(shown);
+
+    gate.current = new Deferred();
+    manager.onClickPage(next); // the focus moves now, the preview when it renders
+    expect(manager.store.focusedPage).toBe(next);
+    manager.onArchive();
+    await contains(".modal-footer .btn-primary").click();
+    gate.current.resolve();
+    await animationFrame();
+
+    expect(listedPageIds(manager)).not.toInclude(shown, {
+        message: "the page on screen is the one deleted",
+    });
+    expect(listedPageIds(manager)).toInclude(next);
+});
+
+test(`Pdf Manager: closing the preview by its button cancels a render on its way`, async () => {
+    const gate = { current: new Deferred() };
+    const manager = await mountPdfManager({}, slowPreviewManager(gate));
+    await animationFrame();
+    const [pageId] = manager.store.sortedPageIds;
+    manager.onClickPage(pageId);
+    const backdrop = document.createElement("div");
+    backdrop.classList.add("o_documents_pdf_page_preview");
+    manager.onClickExitPreview({ target: backdrop });
+    gate.current.resolve();
+    await animationFrame();
+    expect(manager.state.viewedPage).toBe(undefined, {
+        message: "the preview closed does not open when its page arrives",
+    });
+    expect(manager._previewPending).toBe(false, {
+        message: "the next Escape is not swallowed by a preview that never came",
+    });
+});
+
+test(`Pdf Manager: a landscape turn adds to the page's own /Rotate`, async () => {
+    const rotations = [];
+    // a portrait scan stored with /Rotate 90: pdf.js reports it landscape
+    const page = {
+        getViewport: ({ rotation = 90 } = {}) => {
+            rotations.push(rotation);
+            return { width: 140, height: 100, rotation: 90 };
+        },
+        render: () => ({ promise: Promise.resolve() }),
+        cleanup: () => {},
+    };
+    await PdfManager.prototype._renderCanvas.call({}, page, {
+        width: 160,
+        height: 230,
+    });
+    expect(rotations.at(-1)).toBe(0, {
+        message: "90 + 270: the page drawn upright, not turned from scratch",
+    });
+});

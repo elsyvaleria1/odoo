@@ -1,5 +1,6 @@
 import { DocumentFile } from "@document/attachments/document_file";
 import { DocumentsFileViewer } from "@document/attachments/document_file_viewer";
+import { DocumentsAction } from "@document/views/action/document_action";
 import { describe, expect, test } from "@odoo/hoot";
 import { press, waitFor, waitForNone } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
@@ -12,7 +13,9 @@ import {
     mockService,
     mountWithCleanup,
     onRpc,
+    patchWithCleanup,
 } from "@web/../tests/web_test_helpers";
+import { registry } from "@web/core/registry";
 import { WebClient } from "@web/webclient/webclient";
 
 import { DocumentsModels, getDocumentsTestServerModelsData } from "./helpers/data.js";
@@ -247,4 +250,160 @@ test("Escape inside a PDF reached by Next closes the preview", async () => {
         new KeyboardEvent("keydown", { key: "Escape" }),
     );
     await waitForNone(".o-FileViewer");
+});
+
+test("leaving the app with a preview open takes the preview along", async () => {
+    class Elsewhere extends Component {
+        static template = xml`<div class="o_elsewhere"/>`;
+        static props = ["*"];
+    }
+    registry.category("actions").add("document_test_elsewhere", Elsewhere);
+    const documentService = await mountWithPreviewableDocument();
+    await contains(
+        ".o_kanban_record:contains('text_file.txt') [name='document_preview']",
+    ).click();
+    await waitFor(".o-FileViewer");
+    expect(documentService.rightPanelReactive.previewedDocument).not.toBe(null);
+
+    // not closed: left, as a menu or Back leaves it
+    await getService("action").doAction("document_test_elsewhere", {
+        clearBreadcrumbs: true,
+    });
+    await waitFor(".o_elsewhere");
+
+    expect(documentService.rightPanelReactive.previewedDocument).toBe(null, {
+        message: "the next documents view would otherwise read a preview gone",
+    });
+    expect(documentService.documentList).toBe(null);
+});
+
+test("a change to the record shown after Next fetches its content no more", async () => {
+    const serverData = getDocumentsTestServerModelsData(
+        [2, 3].map((id) => ({
+            attachment_id: id,
+            id,
+            name: `note_${id}.txt`,
+            user_permission: "edit",
+            mimetype: "text/plain",
+        })),
+    );
+    serverData["ir.attachment"] = [2, 3].map((id) => ({
+        id,
+        name: `note_${id}.txt`,
+        mimetype: "text/plain",
+    }));
+    DocumentsModels.DocumentsDocument._views = {
+        kanban: basicDocumentsKanbanArch,
+        [["search", false]]: getEnrichedSearchArch(),
+    };
+    onRpc("/web/content/*", ({ url }) => {
+        expect.step(`content ${new URL(url).pathname.split("/").at(-1)}`);
+        return "plain";
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountWithCleanup(WebClient);
+    await getService("action").doAction(1);
+    const documentService = getService("document.document");
+    await contains(
+        ".o_kanban_record:contains('note_2') [name='document_preview']",
+    ).click();
+    await waitFor(".o-FileViewer pre.o_text");
+    await press("ArrowRight");
+    await animationFrame();
+    const shown = documentService.rightPanelReactive.previewedDocument;
+    expect(shown.record.resId).not.toBe(2);
+    expect.verifySteps(["content 2", `content ${shown.record.resId}`]);
+
+    // reselecting it, as a click in the view behind does
+    shown.record.toggleSelection();
+    await animationFrame();
+    expect.verifySteps([]);
+});
+
+test("the preview's action menu runs on the document shown, not the selection", () => {
+    const action = Object.create(DocumentsAction.prototype);
+    const shown = { resId: 7 };
+    action.props = { isPreview: true, targetRecords: [shown], folderId: 1 };
+    action.selectionActions = {
+        provider: () => ({
+            getMenuProps: () => ({
+                getActiveIds: () => [1, 2, 3],
+                isDomainSelected: true,
+                items: { action: [{ key: "export" }, { key: "server" }] },
+            }),
+        }),
+    };
+    const props = action.actionMenuProps;
+    expect(props.getActiveIds()).toEqual([7]);
+    expect(props.isDomainSelected).toBe(false);
+    expect(props.items.action.map((item) => item.key)).toEqual(["server"]);
+});
+
+test("back in the app after leaving a preview open, the selection has its actions", async () => {
+    class Elsewhere extends Component {
+        static template = xml`<div class="o_elsewhere"/>`;
+        static props = ["*"];
+    }
+    registry.category("actions").add("document_test_away", Elsewhere);
+    await mountWithPreviewableDocument();
+    await contains(
+        ".o_kanban_record:contains('text_file.txt') [name='document_preview']",
+    ).click();
+    await waitFor(".o-FileViewer");
+    await getService("action").doAction("document_test_away", {
+        clearBreadcrumbs: true,
+    });
+    await waitFor(".o_elsewhere");
+
+    await getService("action").doAction(1, { clearBreadcrumbs: true });
+    await waitFor(".o_kanban_record:contains('text_file.txt')");
+    await contains(".o_kanban_record:contains('text_file.txt')").click();
+    await animationFrame();
+    expect(".o_control_panel button:contains('Download')").toHaveCount(1, {
+        message: "the selection's actions show: no preview gone is read as open",
+    });
+});
+
+test("opening a preview sets the viewer up once", async () => {
+    patchWithCleanup(DocumentsFileViewer.prototype, {
+        setup() {
+            expect.step("viewer setup");
+            return super.setup(...arguments);
+        },
+    });
+    await mountWithPreviewableDocument();
+    await contains(
+        ".o_kanban_record:contains('text_file.txt') [name='document_preview']",
+    ).click();
+    await waitFor(".o-FileViewer");
+    await animationFrame();
+    expect.verifySteps(["viewer setup"]);
+});
+
+test("an image preview offers no download but the action menu's", async () => {
+    await mountWithPreviewableDocument({ mimetype: "image/png" });
+    await contains(
+        ".o_kanban_record:contains('text_file.txt') [name='document_preview']",
+    ).click();
+    await waitFor(".o-FileViewer [role='toolbar']");
+    expect(".o-FileViewer .o-FileViewer-download").toHaveCount(0, {
+        message: "the toolbar's button knows nothing of a blocked download",
+    });
+});
+
+test("an upload of a new version closes the preview showing the old one", async () => {
+    const documentService = await mountWithPreviewableDocument();
+    onRpc("/documents/upload/*", () => [2]);
+    await contains(
+        ".o_kanban_record:contains('text_file.txt') [name='document_preview']",
+    ).click();
+    await waitFor(".o-FileViewer");
+    const { record } = documentService.rightPanelReactive.previewedDocument;
+    await documentService.uploadDocument(
+        [new File(["v2"], "text_file.txt", { type: "text/plain" })],
+        record.data.access_token,
+        { document_id: 2 },
+    );
+    await waitForNone(".o-FileViewer");
+    expect(documentService.rightPanelReactive.previewedDocument).toBe(null);
 });

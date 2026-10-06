@@ -6,9 +6,10 @@ import {
     provideDocumentContext,
     useDocumentContext,
 } from "@document/views/document_context";
-import { EventBus, onMounted, onWillUnmount } from "@odoo/owl";
+import { EventBus, onMounted, onWillDestroy, onWillUnmount } from "@odoo/owl";
 import { useSetupAction } from "@web/core/action_hook";
 import { makeLogger } from "@web/core/debug/debug_logger";
+import { FileUploadEvent } from "@web/core/events";
 import { useSearchModel } from "@web/core/search_model_hooks";
 import { _t } from "@web/core/translation";
 import { user } from "@web/core/user";
@@ -19,8 +20,10 @@ import { PromoteStudioAutomationDialog } from "@web/webclient/promote_studio/pro
 
 const log = makeLogger("document.hooks");
 
-export const DETAIL_PANEL_REQUIRED_FIELDS = [
+/** Read by the views' own logic (details panel, action menus, drag and drop), whatever the arch shows. */
+export const DOCUMENTS_VIEW_REQUIRED_FIELDS = [
     "lock_uid",
+    "user_can_move",
     "shortcut_document_id",
     "res_name",
     "res_model_name",
@@ -231,6 +234,8 @@ function useDocumentsViewFilePreviewer(
     const documentService = useService("document.document");
     const orm = useService("orm");
 
+    /** The list of the preview this view opened last. */
+    let openedList = null;
     const onOpenDocumentsPreview = async ({
         documents,
         mainDocument,
@@ -339,6 +344,7 @@ function useDocumentsViewFilePreviewer(
             },
             selectedDocument,
         };
+        openedList = documentService.documentList;
 
         const previewStore = {
             documentList: documentService.documentList,
@@ -346,8 +352,9 @@ function useDocumentsViewFilePreviewer(
             files: documentsRecords,
         };
 
+        // published before the viewer renders, which then follows its own
+        // next and previous
         documentService.setPreviewedDocument(selectedDocument);
-
         setPreviewStore({ ...previewStore });
     };
 
@@ -357,6 +364,20 @@ function useDocumentsViewFilePreviewer(
     useBus(bus, "documents-close-preview", () => {
         documentService.setPreviewedDocument(null);
         documentService.documentList?.onDeleteCallback();
+    });
+    // the preview's state is the service's, the view's beyond: a view left
+    // with its preview open (Back, a menu) takes that preview with it
+    onWillDestroy(() => {
+        const { documentList } = documentService;
+        log.lifecycle("previewer destroyed", () => ({
+            controller: component.constructor.name,
+            ownsPreview: Boolean(documentList) && documentList === openedList,
+        }));
+        if (documentList && documentList === openedList) {
+            log.lifecycle("view left with its preview open");
+            documentService.setPreviewedDocument(null);
+            documentService.documentList = null;
+        }
     });
 
     return {
@@ -397,7 +418,7 @@ function useDocumentsViewFileUpload(component) {
         documentService.focusRecord(newRecords[0]);
     }, 150);
 
-    useBus(fileUpload.bus, "FILE_UPLOAD_LOADED", (ev) => {
+    useBus(fileUpload.bus, FileUploadEvent.LOADED, (ev) => {
         const { upload } = ev.detail;
         if (!isDocumentUpload(upload)) {
             return;

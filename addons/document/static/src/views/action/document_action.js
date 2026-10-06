@@ -53,7 +53,16 @@ export class DocumentsAction extends Component {
         actionMenuProps.items.action = actionMenuProps.items.action.filter(
             this.isPreviewAction,
         );
-        return actionMenuProps;
+        // a server action run from a preview runs on the document shown,
+        // not on the selection (nor the domain) the preview was opened from
+        const previewedIds = this.props.targetRecords
+            .filter(Boolean)
+            .map((record) => record.resId);
+        return {
+            ...actionMenuProps,
+            getActiveIds: () => previewedIds,
+            isDomainSelected: false,
+        };
     }
 
     get visibleTopbarActions() {

@@ -191,7 +191,7 @@ class TestDocumentsClientFieldLists(TransactionCase):
         )
 
     def test_the_details_panel_asks_for_fields_that_exist(self):
-        """Every name in `DETAIL_PANEL_REQUIRED_FIELDS` must be a real field.
+        """Every name in `DOCUMENTS_VIEW_REQUIRED_FIELDS` must be a real field.
 
         The list is injected into `activeFields` for every documents view, and
         the web client dereferences the field definition while building the read
@@ -200,13 +200,13 @@ class TestDocumentsClientFieldLists(TransactionCase):
         """
         source = self._read_js("static/src/views/hooks.js")
         required = self._js_string_list(
-            source, "DETAIL_PANEL_REQUIRED_FIELDS", "DETAIL_PANEL_REQUIRED_FIELDS"
+            source, "DOCUMENTS_VIEW_REQUIRED_FIELDS", "DOCUMENTS_VIEW_REQUIRED_FIELDS"
         )
         self.assertTrue(required, "the list was parsed as empty")
         unknown = required - set(self.env["document.document"]._fields)
         self.assertFalse(
             unknown,
-            f"DETAIL_PANEL_REQUIRED_FIELDS names fields that do not exist: "
+            f"DOCUMENTS_VIEW_REQUIRED_FIELDS names fields that do not exist: "
             f"{sorted(unknown)}",
         )
 

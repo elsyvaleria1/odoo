@@ -1,5 +1,9 @@
 /** @odoo-module native */
-import { isDownloadAllowed } from "@document/views/document_actions";
+import {
+    isDownloadAllowed,
+    isLockedByOther,
+    isTrashable,
+} from "@document/views/document_actions";
 import { useDocumentContext } from "@document/views/document_context";
 import {
     getCommonEmbeddedActions,
@@ -162,21 +166,12 @@ export const DocumentsModelMixin = (component) =>
             delete this.originalSelection;
         }
 
+        /** The bytes the loaded page weighs: what the folder's details show. */
         _computeFileSize() {
-            let size = 0;
-            if (this.root.groups) {
-                size = this.root.groups.reduce(
-                    (size, group) => size + group.aggregates.file_size,
-                    0,
-                );
-            } else if (this.root.records) {
-                size = this.root.records.reduce(
-                    (size, rec) => size + rec.data.file_size,
-                    0,
-                );
-            }
-            size /= 1000 * 1000;
-            this.fileSize = Math.round(size * 100) / 100;
+            const items = this.root.groups
+                ? this.root.groups.map((group) => group.aggregates.file_size)
+                : (this.root.records ?? []).map((record) => record.data.file_size);
+            this.fileSize = items.reduce((total, size) => total + (size || 0), 0);
         }
 
         /**
@@ -271,18 +266,33 @@ export const DocumentsModelMixin = (component) =>
                 currentFolder?.id !== "TRASH" &&
                 singleSelection.data.type === "binary" &&
                 singleSelection.data.attachment_id &&
-                !singleSelection.data.lock_uid &&
+                !this.isLockedByOther(singleSelection.data) &&
                 isDownloadAllowed(singleSelection.data)
             );
         }
 
-        /** What onArchive trashes: an active, unlocked document, all of them editable. */
+        /** @param {Object} data */
+        isLockedByOther(data) {
+            return isLockedByOther(data, this.documentService.userIsDocumentManager);
+        }
+
+        /** @param {Object} data */
+        isTrashable(data) {
+            const { searchModel } = this.viewContext;
+            return isTrashable(data, {
+                userIsDocumentManager: this.documentService.userIsDocumentManager,
+                folderPermission: (folderId) =>
+                    searchModel.getFolderById(folderId)?.user_permission,
+            });
+        }
+
+        /** What onArchive trashes: the trashable ones, all of them editable. */
         get canArchiveRecords() {
             const documents = this.targetRecords.map((r) => r.data);
             return (
                 this.documentService.userIsInternal &&
                 documents.every((d) => d.user_permission === "edit") &&
-                documents.some((d) => d.active && !d.lock_uid)
+                documents.some((d) => this.isTrashable(d))
             );
         }
 
@@ -309,7 +319,7 @@ export const DocumentsModelMixin = (component) =>
                 this.documentService.hasFolderEditorAccess &&
                 this.targetRecords.every(
                     (r) =>
-                        !r.data.lock_uid &&
+                        !this.isLockedByOther(r.data) &&
                         r.data.active &&
                         // the copy would be its copier's to download
                         (r.data.type !== "binary" || isDownloadAllowed(r.data)),
@@ -376,18 +386,34 @@ export const DocumentsModelMixin = (component) =>
             await this.documentService.toggleRightPanelVisibility();
         }
 
-        async onCreateShortcut() {
-            const documents = this.targetRecords;
+        /**
+         * What an operation wizard acts on: every matching document when the
+         * domain is selected (unnamed: the wizard titles them by count).
+         *
+         * @param {Object[]} records
+         * @returns {Promise<{id: number, name?: string}[]>}
+         */
+        async _operationDocuments(records) {
+            if (this.isDomainSelected) {
+                return (await this.getResIds()).map((id) => ({ id }));
+            }
+            return records.map((record) => ({
+                id: record.data.id,
+                name: record.data.name,
+            }));
+        }
+
+        /** @param {"shortcut"|"copy"|"move"} operation */
+        async _openOperationDialog(operation, records) {
             await this.documentService.openOperationDialog({
-                documents: this.isDomainSelected
-                    ? (await this.getResIds()).map((d) => ({ id: d }))
-                    : documents.map((d) => ({
-                          id: d.data.id,
-                          name: d.data.name,
-                      })),
-                operation: "shortcut",
-                onClose: async () => this._notifyChange(),
+                documents: await this._operationDocuments(records),
+                operation,
+                onClose: () => this._notifyChange(),
             });
+        }
+
+        async onCreateShortcut() {
+            await this._openOperationDialog("shortcut", this.targetRecords);
         }
 
         async onDelete() {
@@ -403,7 +429,7 @@ export const DocumentsModelMixin = (component) =>
                 const dialogProps = {
                     title: _t("Delete permanently"),
                     body:
-                        this.root.isDomainSelected || this.root.selection.length > 1
+                        !records || records.length > 1
                             ? _t(
                                   "Are you sure you want to permanently erase the selected documents?",
                               )
@@ -433,12 +459,21 @@ export const DocumentsModelMixin = (component) =>
             await this._notifyChange();
         }
 
+        /** @returns {Array} what a lock leaves this user to trash, as a domain */
+        get _notLockedByOtherDomain() {
+            if (this.documentService.userIsDocumentManager) {
+                return [];
+            }
+            return Domain.or([
+                [["lock_uid", "=", false]],
+                [["lock_uid", "=", user.userId]],
+            ]).toList();
+        }
+
         async onArchive() {
-            const records = this.targetRecords.filter(
-                (r) => r.data.active && !r.data.lock_uid,
-            );
+            const records = this.targetRecords.filter((r) => this.isTrashable(r.data));
             const recordIds = this.isDomainSelected
-                ? await this.getResIds([["lock_uid", "=", false]])
+                ? await this.getResIds(this._notLockedByOtherDomain)
                 : records.map((rec) => rec.data.id);
             if (await this.documentService.moveToTrash(recordIds)) {
                 await this._notifyChange();
@@ -446,18 +481,7 @@ export const DocumentsModelMixin = (component) =>
         }
 
         async onDuplicate() {
-            const documents = this.targetRecords;
-            await this.documentService.openOperationDialog({
-                documents: this.isDomainSelected
-                    ? (await this.getResIds()).map((d) => ({ id: d }))
-                    : documents.map((d) => ({
-                          id: d.data.id,
-                          name: d.data.name,
-                      })),
-                operation: "copy",
-                onClose: async () =>
-                    this.viewContext.searchModel._reloadSearchModel(true),
-            });
+            await this._openOperationDialog("copy", this.targetRecords);
         }
 
         onManageVersions() {
@@ -529,18 +553,10 @@ export const DocumentsModelMixin = (component) =>
         }
 
         async onMove() {
-            const documents = this.targetRecords.filter((r) => r.data.user_can_move);
-            await this.documentService.openOperationDialog({
-                documents: this.isDomainSelected
-                    ? (await this.getResIds()).map((d) => ({ id: d }))
-                    : documents.map((d) => ({
-                          id: d.data.id,
-                          name: d.data.name,
-                      })),
-                operation: "move",
-                onClose: async () =>
-                    this.viewContext.searchModel._reloadSearchModel(true),
-            });
+            await this._openOperationDialog(
+                "move",
+                this.targetRecords.filter((r) => r.data.user_can_move),
+            );
         }
 
         async onDoAction(actionId) {

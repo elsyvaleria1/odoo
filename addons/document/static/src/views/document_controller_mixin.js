@@ -2,7 +2,7 @@
 import { rememberDocumentsViewType } from "@document/core/document_client_action";
 import { isDownloadAllowed } from "@document/views/document_actions";
 import {
-    DETAIL_PANEL_REQUIRED_FIELDS,
+    DOCUMENTS_VIEW_REQUIRED_FIELDS,
     preSuperSetup,
     useDocumentView,
 } from "@document/views/hooks";
@@ -143,7 +143,10 @@ export const DocumentsControllerMixin = (component) =>
                 return;
             }
             this.model.pendingPreviewId = undefined;
-            doc.onClickPreview(new Event("click"));
+            // a file the viewer cannot show (an archive) stays selected only
+            if (doc.isViewable()) {
+                doc.openPreview();
+            }
         }
 
         get modelParams() {
@@ -156,7 +159,7 @@ export const DocumentsControllerMixin = (component) =>
 
             const activeFields = Object.keys(modelParams.config.activeFields);
 
-            DETAIL_PANEL_REQUIRED_FIELDS.forEach((field) => {
+            DOCUMENTS_VIEW_REQUIRED_FIELDS.forEach((field) => {
                 if (!activeFields.includes(field)) {
                     modelParams.config.activeFields[field] = makeActiveField();
                 }
@@ -260,7 +263,6 @@ export const DocumentsControllerMixin = (component) =>
                 (r) => r.data.user_permission === "edit",
             );
             const someArchived = this.targetRecords.some((r) => !r.data.active);
-            const someUnlocked = this.targetRecords.some((r) => !r.data.lock_uid);
             const menuItems = super.getStaticActionMenuItems();
             const topBarActions = this.ui.isSmall
                 ? this.getTopBarActionMenuItems()
@@ -288,7 +290,10 @@ export const DocumentsControllerMixin = (component) =>
                 },
                 rename: {
                     isAvailable: () =>
-                        editMode && singleSelection && someUnlocked && !isInTrash,
+                        editMode &&
+                        singleSelection &&
+                        !this.model.isLockedByOther(singleSelection.data) &&
+                        !isInTrash,
                     sequence: 20,
                     description: _t("Rename…"),
                     icon: "fa-regular fa-pen-to-square",
@@ -368,7 +373,9 @@ export const DocumentsControllerMixin = (component) =>
                         selectionCount &&
                         editMode &&
                         this.targetRecords.every(
-                            (record) => record.isPdf() && !record.data.lock_uid,
+                            (record) =>
+                                record.isPdf() &&
+                                !this.model.isLockedByOther(record.data),
                         ) &&
                         !isInTrash,
                     sequence: 10,

@@ -1,6 +1,7 @@
 /** @odoo-module native */
 
 import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
+import { FileUploadEvent } from "@web/core/events";
 import { deserializeDateTime, formatDateTime } from "@web/core/l10n/dates";
 import { download } from "@web/core/network";
 import { _t } from "@web/core/translation";
@@ -37,7 +38,7 @@ export class DocumentsManageVersions extends Component {
         });
 
         onWillStart(async () => await this.load());
-        useBus(this.fileUploadService.bus, "FILE_UPLOAD_LOADED", async (ev) => {
+        useBus(this.fileUploadService.bus, FileUploadEvent.LOADED, async (ev) => {
             const uploadedFor = ev.detail.upload.data?.get("document_id");
             if (Number(uploadedFor) !== this.props.documentId) {
                 return;

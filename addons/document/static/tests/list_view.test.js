@@ -1,4 +1,10 @@
-import { isDownloadAllowed } from "@document/views/document_actions";
+import {
+    documentActions,
+    isDownloadAllowed,
+    isLockedByOther,
+    isTrashable,
+} from "@document/views/document_actions";
+import { DocumentsListModel } from "@document/views/list/document_list_model";
 import { DocumentsSearchModel } from "@document/views/search/document_search_model";
 import { describe, expect, test } from "@odoo/hoot";
 import { press, queryAll, queryOne, waitFor, waitForNone } from "@odoo/hoot-dom";
@@ -411,6 +417,96 @@ test("isDownloadAllowed mirrors the server's download gate", () => {
     }
 });
 
+test("isLockedByOther mirrors the server's _locked_by_other", () => {
+    const other = { lock_uid: { id: user.userId + 1 } };
+    expect(isLockedByOther({ lock_uid: false }, false)).toBe(false);
+    expect(isLockedByOther({ lock_uid: { id: user.userId } }, false)).toBe(false);
+    expect(isLockedByOther(other, false)).toBe(true);
+    expect(isLockedByOther(other, true)).toBe(false, {
+        message: "a Documents manager is stopped by no lock",
+    });
+});
+
+test("isTrashable mirrors what action_archive accepts", () => {
+    const params = (permissions = {}, isManager = false) => ({
+        userIsDocumentManager: isManager,
+        folderPermission: (id) => permissions[id],
+    });
+    const unowned = {
+        active: true,
+        user_permission: "edit",
+        owner_id: { id: user.userId + 1 },
+        folder_id: { id: 7 },
+        lock_uid: false,
+    };
+    expect(isTrashable(unowned, params({ 7: "edit" }))).toBe(true);
+    expect(isTrashable(unowned, params({ 7: "view" }))).toBe(false, {
+        message: "_raise_if_unauthorized_archive: unowned, in a folder not editable",
+    });
+    expect(
+        isTrashable(
+            { ...unowned, owner_id: { id: user.userId } },
+            params({ 7: "view" }),
+        ),
+    ).toBe(true, {
+        message: "the owner's own document goes whatever its folder",
+    });
+    expect(isTrashable(unowned, params({}))).toBe(true, {
+        message: "a folder the panel does not hold is the server's to judge",
+    });
+    expect(isTrashable({ ...unowned, folder_id: false }, params({}))).toBe(true);
+    expect(
+        isTrashable({ ...unowned, user_permission: "view" }, params({ 7: "edit" })),
+    ).toBe(false);
+    expect(isTrashable({ ...unowned, active: false }, params({ 7: "edit" }))).toBe(
+        false,
+    );
+    const locked = { ...unowned, lock_uid: { id: user.userId + 1 } };
+    expect(isTrashable(locked, params({ 7: "edit" }))).toBe(false);
+    expect(isTrashable(locked, params({ 7: "edit" }, true))).toBe(true);
+});
+
+test("Move to Trash with the whole domain selected leaves out only other users' locks", () => {
+    const model = Object.create(DocumentsListModel.prototype);
+    model.documentService = { userIsDocumentManager: false };
+    expect(model._notLockedByOtherDomain).toEqual([
+        "|",
+        ["lock_uid", "=", false],
+        ["lock_uid", "=", user.userId],
+    ]);
+    model.documentService = { userIsDocumentManager: true };
+    expect(model._notLockedByOtherDomain).toEqual([]);
+});
+
+test("a star needs the document read, not edited; the trash needs no one else's lock", () => {
+    const service = {
+        userIsInternal: true,
+        userIsDocumentManager: false,
+        isEditable: (data) => data.user_permission === "edit",
+    };
+    const viewer = { id: 4, user_permission: "view", active: true };
+    expect(documentActions.star.isVisible(service, viewer)).toBe(true, {
+        message: "_check_user_favorite_access asks for read",
+    });
+    expect(documentActions.star.isVisible(service, { id: "MY" })).toBe(false, {
+        message: "a panel root is no document to star",
+    });
+    const editable = { id: 5, user_permission: "edit", active: true };
+    expect(documentActions.trash.isVisible(service, editable)).toBe(true);
+    expect(
+        documentActions.trash.isVisible(service, {
+            ...editable,
+            lock_uid: { id: user.userId + 1 },
+        }),
+    ).toBe(false);
+    expect(
+        documentActions.trash.isVisible(service, {
+            ...editable,
+            lock_uid: { id: user.userId },
+        }),
+    ).toBe(true);
+});
+
 test("a blocked document a viewer cannot download is not offered for duplication", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Blocked.pdf", {
@@ -521,10 +617,10 @@ test("focusing the open folder again is the same focus", async function () {
 
 test("Move to Trash is offered only when something would move", async function () {
     const serverData = getDocumentsTestServerModelsData([
-        makeDocumentRecordData(2, "Locked", {
+        makeDocumentRecordData(2, "Theirs", {
             folder_id: 1,
             user_permission: "edit",
-            lock_uid: serverState.userId,
+            lock_uid: serverState.odoobotId,
         }),
         makeDocumentRecordData(3, "Unlocked", {
             folder_id: 1,
@@ -532,15 +628,64 @@ test("Move to Trash is offered only when something would move", async function (
         }),
     ]);
     await makeDocumentsMockEnv({ serverData });
+    // the mock user passes every group check: a manager sees through locks
+    patchWithCleanup(getService("document.document"), { userIsDocumentManager: false });
     await mountDocumentsListView();
-    await contains(".o_data_row:contains('Locked') .o_list_record_selector").click();
+    await contains(".o_data_row:contains('Theirs') .o_list_record_selector").click();
     await contains(".o_cp_action_menus button").click();
     expect(".o-dropdown-item:contains('Move to Trash')").toHaveCount(0, {
-        message: "a locked document is not trashed: nothing would move",
+        message: "another user's lock refuses the trash: nothing would move",
     });
     await contains(".o_data_row:contains('Unlocked') .o_list_record_selector").click();
     await contains(".o_cp_action_menus button").click();
     expect(".o-dropdown-item:contains('Move to Trash')").toHaveCount(1);
+});
+
+test("a lock never narrows what the user who took it may do", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Mine", {
+            folder_id: 1,
+            user_permission: "edit",
+            lock_uid: serverState.userId,
+            mimetype: "application/pdf",
+            attachment_id: 1,
+        }),
+    ]);
+    serverData["ir.attachment"] = [{ id: 1, name: "Mine.pdf" }];
+    onRpc("document.document", "action_archive", ({ args }) => {
+        expect.step(["action_archive", args[0]]);
+        return true;
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsListView();
+    await contains(".o_data_row:contains('Mine') .o_list_record_selector").click();
+    await contains(".o_cp_action_menus button").click();
+    for (const item of ["Rename", "Move to Trash", "Split PDF", "Manage Versions"]) {
+        expect(`.o-dropdown-item:contains('${item}')`).toHaveCount(1, {
+            message: `${item}: the server refuses it only under another user's lock`,
+        });
+    }
+    await contains(".o-dropdown-item:contains('Move to Trash')").click();
+    await contains(".modal-footer .btn-primary").click();
+    expect.verifySteps([["action_archive", [2]]]);
+});
+
+test("a Documents manager's menu sees through another user's lock", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Theirs", {
+            folder_id: 1,
+            user_permission: "edit",
+            lock_uid: serverState.odoobotId,
+        }),
+    ]);
+    await makeDocumentsMockEnv({ serverData });
+    patchWithCleanup(getService("document.document"), { userIsDocumentManager: true });
+    await mountDocumentsListView();
+    await contains(".o_data_row:contains('Theirs') .o_list_record_selector").click();
+    await contains(".o_cp_action_menus button").click();
+    expect(".o-dropdown-item:contains('Move to Trash')").toHaveCount(1, {
+        message: "_locked_by_other answers nothing for a manager",
+    });
 });
 
 test("the folder tree is fetched without narrowing it to the open folder", async function () {

@@ -167,7 +167,10 @@ test("a preview asked with the document opens once it is rendered, once", async 
     documentService.requestFocus(6, { openPreview: true });
     patchWithCleanup(documentService, {
         setPreviewedDocument(document) {
-            expect.step(`preview ${document?.record.resId ?? "closed"}`);
+            // the view closes it at teardown: only the openings count here
+            if (document) {
+                expect.step(`preview ${document.record.resId}`);
+            }
             return super.setPreviewedDocument(...arguments);
         },
     });

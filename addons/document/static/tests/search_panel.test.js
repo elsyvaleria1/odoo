@@ -88,3 +88,75 @@ test("the template follows the viewport instead of freezing at import", () => {
         { message: "one category template: nothing differs on a small screen" },
     );
 });
+
+describe("onFolderDrop", () => {
+    /**
+     * @param {{isManager?: boolean}} [options]
+     * @returns {{panel: Object, steps: Array}}
+     */
+    function makeDropPanel({ isManager = false } = {}) {
+        const steps = [];
+        const panel = makePanel([
+            { id: "COMPANY", rootId: "COMPANY", display_name: "Company" },
+            { id: "MY", rootId: "MY", display_name: "My Drive" },
+            { id: 1, folder_id: "COMPANY", rootId: "COMPANY", display_name: "Shared" },
+            { id: 2, folder_id: 1, rootId: "COMPANY", display_name: "Sub" },
+            { id: 3, user_folder_id: "MY", rootId: "MY", display_name: "Mine" },
+        ]);
+        panel.searchModel._reloadSearchModel = async () => steps.push("reload");
+        panel.notification = {
+            add: (message) => steps.push(["notify", String(message)]),
+        };
+        panel.orm = {
+            call: async (model, method, args, kwargs) => {
+                steps.push([method, args, kwargs?.location_user_folder_id]);
+            },
+        };
+        panel.documentService = {
+            userIsDocumentManager: isManager,
+            moveConfirmingAccess: async (move) => {
+                await move({});
+                return true;
+            },
+        };
+        return { panel, steps };
+    }
+    const li = (valueId) => ({ dataset: { valueId: String(valueId) } });
+
+    test("a non-manager moves a folder under a company folder they may edit", async () => {
+        const { panel, steps } = makeDropPanel();
+        await panel.onFolderDrop({ element: li(3), parent: li(1), next: li(2) });
+        expect(steps).toEqual([
+            ["action_move_folder", [[3], "1", 2], undefined],
+            "reload",
+        ]);
+    });
+
+    test("the company root itself is said to be the managers'", async () => {
+        const { panel, steps } = makeDropPanel();
+        await panel.onFolderDrop({ element: li(3), parent: li("COMPANY") });
+        expect(steps.length).toBe(1);
+        expect(steps[0][0]).toBe("notify", {
+            message: "refused aloud, not dropped in silence",
+        });
+
+        const manager = makeDropPanel({ isManager: true });
+        await manager.panel.onFolderDrop({ element: li(3), parent: li("COMPANY") });
+        expect(manager.steps).toEqual([
+            ["action_move_folder", [[3], "COMPANY", false], undefined],
+            "reload",
+        ]);
+    });
+
+    test("into My Drive from the company tree, a folder is linked, not moved", async () => {
+        const { panel, steps } = makeDropPanel();
+        await panel.onFolderDrop({ element: li(2), parent: li("MY") });
+        expect(steps).toEqual([["action_create_shortcut", [2], "MY"], "reload"]);
+    });
+
+    test("a root entry after the drop place is no sibling to sort against", async () => {
+        const { panel, steps } = makeDropPanel({ isManager: true });
+        await panel.onFolderDrop({ element: li(3), parent: li(1), next: li("MY") });
+        expect(steps[0]).toEqual(["action_move_folder", [[3], "1", false], undefined]);
+    });
+});

@@ -210,7 +210,7 @@ export const DocumentsRendererMixin = (component) =>
                 folder_id: folderId,
                 name: folder.display_name,
                 type: "folder",
-                file_size: fileSize * 1e6,
+                file_size: fileSize,
             });
             const config = { ...this.model.config, resId: data.id };
             const record = new this.model.constructor.Record(this.model, config, data);

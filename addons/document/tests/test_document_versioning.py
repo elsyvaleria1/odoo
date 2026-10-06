@@ -152,6 +152,28 @@ class TestDocumentsVersionDeletion(TransactionCaseDocuments):
         )
         self.assertTrue(old_version.sudo().exists())
 
+    def test_delete_from_history_refused_under_another_users_lock(self):
+        document = self.env["document.document"].create(
+            {
+                "name": "locked.txt",
+                "type": "binary",
+                "access_internal": "edit",
+                "raw": base64.b64encode(b"v1"),
+            }
+        )
+        document.write({"raw": base64.b64encode(b"v2")})
+        old_version = document.previous_attachment_ids
+        document.lock_uid = self.document_manager
+        as_user = document.with_user(self.doc_user)
+        self.assertEqual(as_user.user_permission, "edit")
+        with self.assertRaises(UserError):
+            as_user.action_delete_from_history(old_version.id)
+        self.assertTrue(old_version.exists())
+
+        document.lock_uid = self.doc_user
+        as_user.action_delete_from_history(old_version.id)
+        self.assertFalse(old_version.exists(), "the lock's own taker still may")
+
     def test_delete_current_version_is_logged(self):
         document = self.env["document.document"].create(
             {

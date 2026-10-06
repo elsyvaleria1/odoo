@@ -100,61 +100,67 @@ export class DocumentsSearchPanel extends SearchPanel {
                     prevPos.parent.classList.remove("o_has_treeEntry");
                 }
             },
-            onDrop: async ({ element, parent, next }) => {
-                const draggingFolderId = parseInt(element.dataset.valueId);
-                const draggingFolder = this.searchModel.getFolderById(draggingFolderId);
-                const draggingFolderRootId = draggingFolder.rootId;
-                let parentFolderId = parent ? parent.dataset.valueId : false;
-                const beforeFolderId = next ? parseInt(next.dataset.valueId) : false;
-                if (
-                    draggingFolderId === parseInt(parentFolderId) ||
-                    isNaN(draggingFolderId) ||
-                    !parentFolderId ||
-                    this._notifyWrongDropDestination(parentFolderId)
-                ) {
-                    return;
-                }
-                const parentFolderRootId = this.searchModel.getFolderById(
-                    toFolderValueId(parentFolderId),
-                ).rootId;
-                if (
-                    !this.documentService.userIsDocumentManager &&
-                    (!parentFolderRootId || parentFolderRootId === "COMPANY")
-                ) {
-                    return;
-                }
-                if (parentFolderRootId === "MY" && draggingFolderRootId !== "MY") {
-                    await this.orm.call(
-                        "document.document",
-                        "action_create_shortcut",
-                        [draggingFolderId],
-                        { location_user_folder_id: parentFolderId.toString() },
-                    );
-                    return this.searchModel._reloadSearchModel(true);
-                }
-                if (!DND_ALLOWED_SPECIAL_DESTINATIONS.includes(parentFolderId)) {
-                    parentFolderId = parseInt(parentFolderId);
-                }
-                const parentFolder = this.searchModel.getFolderById(parentFolderId);
-                const moved = await this.documentService.moveConfirmingAccess(
-                    (context) =>
-                        this.orm.call(
-                            "document.document",
-                            "action_move_folder",
-                            [
-                                [draggingFolderId],
-                                parentFolderId.toString(),
-                                beforeFolderId,
-                            ],
-                            { context },
-                        ),
-                    parentFolder.display_name,
-                );
-                if (moved) {
-                    await this.searchModel._reloadSearchModel(true);
-                }
-            },
+            onDrop: (params) => this.onFolderDrop(params),
         });
+    }
+
+    /**
+     * A folder dropped in the tree: moved under its new parent, before `next`.
+     * Into My Drive from elsewhere it is linked, not moved: a shortcut.
+     *
+     * @param {{element: HTMLElement, parent?: HTMLElement, next?: HTMLElement}} params
+     */
+    async onFolderDrop({ element, parent, next }) {
+        const draggingFolderId = toFolderValueId(element.dataset.valueId);
+        const parentFolderId = parent ? toFolderValueId(parent.dataset.valueId) : false;
+        // a root entry (MY, COMPANY) holds no sequence to sort against
+        const nextId = next ? toFolderValueId(next.dataset.valueId) : false;
+        const beforeFolderId = typeof nextId === "number" ? nextId : false;
+        if (
+            typeof draggingFolderId !== "number" ||
+            !parentFolderId ||
+            draggingFolderId === parentFolderId ||
+            this._notifyWrongDropDestination(parentFolderId)
+        ) {
+            return;
+        }
+        // the company root takes folders from managers only; a folder under
+        // it is judged by its own permission, server side
+        if (
+            parentFolderId === "COMPANY" &&
+            !this.documentService.userIsDocumentManager
+        ) {
+            this.notification.add(
+                _t("Only Documents Managers can create in company folder."),
+                { type: "warning" },
+            );
+            return;
+        }
+        const parentFolder = this.searchModel.getFolderById(parentFolderId);
+        const draggingFolder = this.searchModel.getFolderById(draggingFolderId);
+        if (parentFolder.rootId === "MY" && draggingFolder.rootId !== "MY") {
+            await this.orm.call(
+                "document.document",
+                "action_create_shortcut",
+                [draggingFolderId],
+                { location_user_folder_id: String(parentFolderId) },
+            );
+            await this.searchModel._reloadSearchModel(true);
+            return;
+        }
+        const moved = await this.documentService.moveConfirmingAccess(
+            (context) =>
+                this.orm.call(
+                    "document.document",
+                    "action_move_folder",
+                    [[draggingFolderId], String(parentFolderId), beforeFolderId],
+                    { context },
+                ),
+            parentFolder.display_name,
+        );
+        if (moved) {
+            await this.searchModel._reloadSearchModel(true);
+        }
     }
 
     /**
@@ -227,8 +233,15 @@ export class DocumentsSearchPanel extends SearchPanel {
         }
     }
 
+    /**
+     * @param {number|String} folderId
+     * @returns {boolean} whether the destination was refused (and said so)
+     */
     _notifyWrongDropDestination(folderId) {
-        if (isNaN(folderId) && !DND_ALLOWED_SPECIAL_DESTINATIONS.includes(folderId)) {
+        if (
+            typeof folderId !== "number" &&
+            !DND_ALLOWED_SPECIAL_DESTINATIONS.includes(folderId)
+        ) {
             this.notification.add(
                 _t(
                     "You can't create shortcuts in or move documents to this special folder.",
@@ -240,5 +253,6 @@ export class DocumentsSearchPanel extends SearchPanel {
             );
             return true;
         }
+        return false;
     }
 }

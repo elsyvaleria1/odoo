@@ -116,18 +116,27 @@ export const DocumentsRecordMixin = (component) =>
             } else if (this.isViewable()) {
                 ev.stopPropagation();
                 ev.preventDefault();
-                const selection = this.model.root.selection;
-                const documents = (selection.length > 1 &&
-                    selection.find((rec) => rec === this) &&
-                    selection.filter((rec) => rec.isViewable())) || [this];
-
-                this.model.viewContext.documentsView.bus.trigger(
-                    "documents-open-preview",
-                    { documents, mainDocument: this, isPdfSplit: false },
-                );
+                this.openPreview();
             } else if (this.isURL()) {
                 openDocumentUrl(this.data.url);
             }
+        }
+
+        /**
+         * Previews this document; when it is part of a wider selection, the
+         * viewer pages through the selection's viewable documents.
+         */
+        openPreview() {
+            const selection = this.model.root.selection;
+            const documents =
+                selection.length > 1 && selection.includes(this)
+                    ? selection.filter((rec) => rec.isViewable())
+                    : [this];
+            this.model.viewContext.documentsView.bus.trigger("documents-open-preview", {
+                documents,
+                mainDocument: this,
+                isPdfSplit: false,
+            });
         }
 
         async openFolder() {

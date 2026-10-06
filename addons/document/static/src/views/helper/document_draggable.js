@@ -11,7 +11,7 @@ const log = makeLogger("document.dnd");
 
 /**
  * @param {Object} params
- * @param {{movableRecordIds: number[], nonMovableRecordIds: number[]}} params.draggedRecords
+ * @param {{movableRecordIds: number[], nonMovableRecordIds: number[], trashableRecordIds: number[], all: number[]}} params.draggedRecords
  * @param {Object|false} params.targetFolder
  * @param {boolean} params.userIsDocumentManager
  * @param {(folder: Object) => Object[]} params.getFolderAndParents
@@ -29,7 +29,10 @@ export function dropRejectionReason({
             "You can't create shortcuts in nor move documents to this special folder.",
         );
     }
-    if (draggedRecords.nonMovableRecordIds.length && targetFolder.id === "TRASH") {
+    if (
+        targetFolder.id === "TRASH" &&
+        draggedRecords.trashableRecordIds.length < draggedRecords.all.length
+    ) {
         return _t(
             "There is at least one document you cannot move to trash in your selection.",
         );
@@ -310,21 +313,17 @@ export const useDraggableDocuments = makeDraggableHook({
         }
 
         if (targetFolder.id === "TRASH") {
+            const { trashableRecordIds } = ctx.draggedRecords;
             const trashed =
-                ctx.draggedRecords.movableRecordIds.length &&
-                (await model.documentService.moveToTrash(
-                    ctx.draggedRecords.movableRecordIds,
-                ));
+                trashableRecordIds.length &&
+                (await model.documentService.moveToTrash(trashableRecordIds));
             log.logic("drop on trash", () => ({
-                movable: ctx.draggedRecords.movableRecordIds.length,
+                trashable: trashableRecordIds.length,
                 trashed: Boolean(trashed),
             }));
             if (trashed) {
                 model.viewContext.services.notification.add(
-                    _t(
-                        "%s document(s) sent to trash.",
-                        ctx.draggedRecords.movableRecordIds.length,
-                    ),
+                    _t("%s document(s) sent to trash.", trashableRecordIds.length),
                     { type: "success" },
                 );
                 await model.viewContext.searchModel._reloadSearchModel(true);
@@ -347,22 +346,25 @@ export const useDraggableDocuments = makeDraggableHook({
         await model._notifyChange();
     },
 
-    _getMovableRecords(model) {
-        return model.root.selection.filter(
-            (record) => !record.data.lock_uid && record.data.user_permission === "edit",
-        );
-    },
-
+    /**
+     * Movable as the server answers it (`user_can_move`: the owner, or an
+     * editor where the folder allows, the company root kept to managers),
+     * and not under someone else's lock. Trashable as `action_archive`
+     * answers it (`isTrashable`).
+     */
     _setDraggedRecords(ctx, model) {
-        const movableRecordIds = this._getMovableRecords(model).map(
-            (record) => record.data.id,
+        const ids = (predicate) =>
+            model.root.selection.filter(predicate).map((record) => record.data.id);
+        const movableRecordIds = ids(
+            ({ data }) => data.user_can_move && !model.isLockedByOther(data),
         );
-        const nonMovableRecordIds = model.root.selection
-            .filter((record) => !movableRecordIds.includes(record.data.id))
-            .map((record) => record.data.id);
+        const nonMovableRecordIds = ids(
+            ({ data }) => !movableRecordIds.includes(data.id),
+        );
         ctx.draggedRecords = {
             movableRecordIds,
             nonMovableRecordIds,
+            trashableRecordIds: ids(({ data }) => model.isTrashable(data)),
             all: [...movableRecordIds, ...nonMovableRecordIds],
         };
     },

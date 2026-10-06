@@ -16,6 +16,7 @@ import {
 import { composerActionsRegistry } from "@mail/core/common/composer_actions";
 import { describe, expect, test } from "@odoo/hoot";
 import { animationFrame, press, waitFor } from "@odoo/hoot-dom";
+import { Deferred } from "@odoo/hoot-mock";
 import {
     contains,
     defineActions,
@@ -300,6 +301,41 @@ test("Add from Documents copies the documents and hands the caller the attachmen
             message: "no chatter thread is made up from the wizard's ids",
         },
     );
+});
+
+test("Add from Documents clicked twice copies the documents once", async function () {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Contract.pdf", {
+            owner_id: serverState.userId,
+            mimetype: "application/pdf",
+        }),
+    ]);
+    const copied = new Deferred();
+    onRpc("document.document", "add_documents_attachment", async () => {
+        expect.step("copy");
+        await copied;
+        return [{ id: 7, name: "Contract.pdf", mimetype: "application/pdf" }];
+    });
+    await makeDocumentsMockEnv({ serverData });
+    await mountWithCleanup(WebClient);
+    await getService("action").doAction(1);
+    getService("dialog").add(SelectAddDocumentCreateDialog, {
+        resModel: "document.document",
+        title: "Search: Documents",
+        noCreate: true,
+        context: { documents_view_secondary: true },
+        onAddAttachments: async () => expect.step("link"),
+        onPasteLinks: () => {},
+    });
+    await contains(
+        ".modal .o_data_row:contains('Contract.pdf') .o_list_record_selector",
+    ).click();
+    await contains(".modal button:contains('Add from Documents')").click();
+    await contains(".modal button:contains('Add from Documents')").click();
+    copied.resolve();
+    await animationFrame();
+    expect.verifySteps(["copy", "link"]);
+    expect(".modal").toHaveCount(0);
 });
 
 test("dismissing the access warning with Escape leaves the wizard usable", async function () {

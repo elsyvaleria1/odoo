@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates>
     <t t-name="document.FileViewer" t-inherit="web.FileViewer" t-inherit-mode="primary">
-        <xpath expr="//div[hasclass('o-FileViewer-download')]" position="before">
+        <xpath expr="//div[hasclass('o-FileViewer-headerButton')][hasclass('o-FileViewer-download')]" position="before">
             <div t-attf-class="d-flex align-items-center flex-shrink-0 {{this.ui.isSmall ? 'pe-2' : 'pe-4'}}">
-                <DocumentsAction folderId="this.folderId" targetRecords="[this.previewed.document?.record]" isPreview="true"/>
+                <DocumentsAction folderId="this.folderId" targetRecords="[this.state.file?.record]" isPreview="true"/>
             </div>
         </xpath>
-        <xpath expr="//div[hasclass('o-FileViewer-download')]" position="replace"/>
-        <xpath expr="//div[hasclass('o-FileViewer-navigation')][@aria-label='Previous']" position="attributes">
-            <attribute name="class" add="bg-dark" separator=" "/>
-        </xpath>
-        <xpath expr="//div[hasclass('o-FileViewer-navigation')][@aria-label='Next']" position="attributes">
-            <attribute name="class" add="bg-dark" separator=" "/>
-        </xpath>
+        <!-- downloading is the action menu's, which knows a blocked download -->
+        <xpath expr="//div[hasclass('o-FileViewer-headerButton')][hasclass('o-FileViewer-download')]" position="replace"/>
+        <xpath expr="//div[hasclass('o-FileViewer-toolbarButton')][hasclass('o-FileViewer-download')]" position="replace"/>
         <xpath expr="//span[hasclass('oi-chevron-left')]" position="attributes">
-            <attribute name="class" add="pe-1 text-white" separator=" "/>
+            <attribute name="class" add="pe-1" separator=" "/>
         </xpath>
         <xpath expr="//span[hasclass('oi-chevron-right')]" position="attributes">
-            <attribute name="class" add="ps-1 text-white" separator=" "/>
+            <attribute name="class" add="ps-1" separator=" "/>
         </xpath>
         <xpath expr="//div[hasclass('o-FileViewer-main')]" position="inside">
             <t t-if="this.state.file.emailContent">
