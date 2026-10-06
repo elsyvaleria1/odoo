@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_error_incident_root"
+        name="Error Incidents"
+        parent="base.menu_custom"
+        sequence="110"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_error_incident"
+        name="Incidents"
+        parent="menu_error_incident_root"
+        action="action_error_incident"
+        sequence="10" />
+
+    <menuitem
+        id="menu_error_incident_rule"
+        name="Rules"
+        parent="menu_error_incident_root"
+        action="action_error_incident_rule"
+        sequence="20" />
+
+</odoo>

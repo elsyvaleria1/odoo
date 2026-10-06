@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_error_occurrence_gc" model="ir.cron">
+        <field name="name">Error Incidents: Forget Old Occurrences</field>
+        <field name="model_id" ref="model_error_occurrence" />
+        <field name="state">code</field>
+        <field name="code">model._gc_occurrences()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="repeat_interval" eval="1" />
+        <field name="repeat_unit">day</field>
+        <field
+            name="nextcall"
+            eval="(DateTime.now() + timedelta(days=1)).replace(hour=3, minute=30, second=0)" />
+        <field name="priority" eval="60" />
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

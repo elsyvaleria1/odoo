@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_error_incident_search" model="ir.ui.view">
+        <field name="name">error.incident.search</field>
+        <field name="model">error.incident</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="exception_type" />
+                <field name="origin_module" />
+                <field name="fingerprint" />
+                <field name="user_ids" />
+                <filter
+                    name="filter_open"
+                    string="Open"
+                    domain="[('incident_state', 'in', ('new', 'acknowledged', 'regressed'))]" />
+                <filter
+                    name="filter_regressed"
+                    string="Regressed"
+                    domain="[('incident_state', '=', 'regressed')]" />
+                <filter
+                    name="filter_set_aside"
+                    string="Set Aside"
+                    domain="[('incident_state', '=', 'set_aside')]" />
+                <separator />
+                <filter
+                    name="filter_request"
+                    string="Requests"
+                    domain="[('source', '=', 'request')]" />
+                <filter
+                    name="filter_cron"
+                    string="Scheduled Actions"
+                    domain="[('source', '=', 'cron')]" />
+                <filter
+                    name="filter_job"
+                    string="Background Jobs"
+                    domain="[('source', '=', 'job')]" />
+                <group>
+                    <filter
+                        name="group_by_state"
+                        string="State"
+                        context="{'group_by': 'incident_state'}" />
+                    <filter
+                        name="group_by_module"
+                        string="Module"
+                        context="{'group_by': 'origin_module'}" />
+                    <filter
+                        name="group_by_exception"
+                        string="Exception"
+                        context="{'group_by': 'exception_type'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_error_incident_list" model="ir.ui.view">
+        <field name="name">error.incident.list</field>
+        <field name="model">error.incident</field>
+        <field name="arch" type="xml">
+            <list string="Error Incidents" create="false">
+                <field name="date_last_seen" />
+                <field name="name" />
+                <field name="origin_module" optional="show" />
+                <field name="source" optional="show" />
+                <field name="count_occurrence" sum="Occurrences" />
+                <field name="count_regression" optional="hide" />
+                <field name="date_first_seen" optional="hide" />
+                <field
+                    name="incident_state"
+                    widget="badge"
+                    decoration-danger="incident_state == 'regressed'"
+                    decoration-muted="incident_state == 'set_aside'"
+                    decoration-success="incident_state == 'resolved'"
+                    decoration-warning="incident_state == 'new'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_error_incident_form" model="ir.ui.view">
+        <field name="name">error.incident.form</field>
+        <field name="model">error.incident</field>
+        <field name="arch" type="xml">
+            <form string="Error Incident" create="false">
+                <header>
+                    <button
+                        name="action_acknowledge"
+                        type="object"
+                        string="Acknowledge"
+                        invisible="incident_state not in ('new', 'regressed')"
+                        class="btn-primary" />
+                    <button
+                        name="action_resolve"
+                        type="object"
+                        string="Resolve"
+                        invisible="incident_state in ('resolved', 'set_aside')" />
+                    <button
+                        name="action_set_aside"
+                        type="object"
+                        string="Set Aside"
+                        invisible="incident_state in ('resolved', 'set_aside')" />
+                    <button
+                        name="action_reopen"
+                        type="object"
+                        string="Reopen"
+                        invisible="incident_state not in ('resolved', 'set_aside')" />
+                    <field
+                        name="incident_state"
+                        widget="statusbar"
+                        statusbar_visible="new,acknowledged,resolved" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" /></h1>
+                    </div>
+                    <group>
+                        <group string="Origin">
+                            <field name="exception_type" />
+                            <field name="origin_module" />
+                            <field name="origin_path" />
+                            <field name="origin_function" />
+                            <field name="source" />
+                            <field name="rule_id" invisible="not rule_id" />
+                        </group>
+                        <group string="Frequency">
+                            <field name="count_occurrence" />
+                            <field name="count_regression" />
+                            <field name="date_first_seen" />
+                            <field name="date_last_seen" />
+                            <field name="fingerprint" groups="base.group_no_one" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="occurrences" string="Occurrences">
+                            <field name="occurrence_ids">
+                                <list>
+                                    <field name="date_occurred" />
+                                    <field name="user_id" />
+                                    <field name="location" />
+                                    <field name="message" />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="users" string="Affected Users">
+                            <field name="user_ids" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="action_error_incident" model="ir.actions.act_window">
+        <field name="name">Error Incidents</field>
+        <field name="res_model">error.incident</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No error incidents</p>
+            <p>Unexpected errors raised by requests, scheduled actions and
+                background jobs are recorded here, grouped by where they
+                start.</p>
+        </field>
+    </record>
+
+</odoo>

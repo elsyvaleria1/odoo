@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_error_incident_system,error.incident system,model_error_incident,base.group_system,permission,crud,,,
+access_error_occurrence_system,error.occurrence system,model_error_occurrence,base.group_system,permission,crud,,,
+access_error_incident_rule_system,error.incident.rule system,model_error_incident_rule,base.group_system,permission,crud,,,

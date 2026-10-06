@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_error_incident_rule_list" model="ir.ui.view">
+        <field name="name">error.incident.rule.list</field>
+        <field name="model">error.incident.rule</field>
+        <field name="arch" type="xml">
+            <list string="Error Incident Rules" editable="bottom">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="source" />
+                <field name="exception_type" />
+                <field name="origin_module" />
+                <field name="active" widget="boolean_toggle" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_error_incident_rule" model="ir.actions.act_window">
+        <field name="name">Error Incident Rules</field>
+        <field name="res_model">error.incident.rule</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No rules</p>
+            <p>A rule sets new incidents aside instead of leaving them open:
+                every incident it matches is still recorded and counted.</p>
+        </field>
+    </record>
+
+</odoo>

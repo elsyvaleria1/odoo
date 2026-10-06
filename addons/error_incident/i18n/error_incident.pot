@@ -1,0 +1,530 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* error_incident
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 19:18+0000\n"
+"PO-Revision-Date: 2026-10-06 19:18+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: error_incident
+#: model_terms:ir.actions.act_window,help:error_incident.action_error_incident_rule
+msgid ""
+"A rule sets new incidents aside instead of leaving them open:\n"
+"                every incident it matches is still recorded and counted."
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Acknowledge"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__incident_state__acknowledged
+msgid "Acknowledged"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__active
+msgid "Active"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__user_ids
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Affected Users"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.constraint,message:error_incident.constraint_error_incident_fingerprint_uniq
+msgid "An incident with this fingerprint already exists."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.constraint,message:error_incident.constraint_error_occurrence_occurrence_ref_uniq
+msgid "An occurrence with this reference already exists."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model,name:error_incident.model_ir_job
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__source__job
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident_rule__source__job
+#: model:ir.model.fields.selection,name:error_incident.selection__error_occurrence__source__job
+msgid "Background Job"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Background Jobs"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__company_id
+msgid "Company"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__create_uid
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__create_date
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__display_name
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__display_name
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__display_name
+#: model:ir.model.fields,field_description:error_incident.field_ir_cron__display_name
+#: model:ir.model.fields,field_description:error_incident.field_ir_http__display_name
+#: model:ir.model.fields,field_description:error_incident.field_ir_job__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model,name:error_incident.model_error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Error Incident"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model,name:error_incident.model_error_incident_rule
+msgid "Error Incident Rule"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.actions.act_window,name:error_incident.action_error_incident_rule
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_rule_list
+msgid "Error Incident Rules"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.actions.act_window,name:error_incident.action_error_incident
+#: model:ir.ui.menu,name:error_incident.menu_error_incident_root
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_list
+msgid "Error Incidents"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.actions.server,name:error_incident.ir_cron_error_occurrence_gc_ir_actions_server
+msgid "Error Incidents: Forget Old Occurrences"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model,name:error_incident.model_error_occurrence
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_occurrence_form
+msgid "Error Occurrence"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Exception"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__exception_type
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__exception_type
+msgid "Exception Type"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__origin_path
+msgid "File"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__fingerprint
+msgid "Fingerprint"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__fingerprint_version
+msgid "Fingerprint Version"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__date_first_seen
+msgid "First Seen"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Frequency"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__origin_function
+msgid "Function"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model,name:error_incident.model_ir_http
+msgid "HTTP Routing"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_occurrence__occurrence_ref
+msgid ""
+"Handed to the browser with the error, so it can name this occurrence back."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__count_regression
+msgid "How many times it occurred again after being resolved."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__id
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__id
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__id
+#: model:ir.model.fields,field_description:error_incident.field_ir_cron__id
+#: model:ir.model.fields,field_description:error_incident.field_ir_http__id
+#: model:ir.model.fields,field_description:error_incident.field_ir_job__id
+msgid "ID"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__incident_id
+msgid "Incident"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__incident_ids
+#: model:ir.ui.menu,name:error_incident.menu_error_incident
+msgid "Incidents"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: error_incident
+#. odoo-python
+#: code:addons/error_incident/models/error_incident.py:0
+msgid "It occurred again after it was resolved."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__date_last_seen
+msgid "Last Seen"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__write_uid
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__write_date
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__origin_line
+msgid "Line"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__location
+msgid "Location"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__message
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_occurrence_form
+msgid "Message"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__origin_module
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__origin_module
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Module"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__name
+msgid "Name"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__incident_state__new
+msgid "New"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.actions.act_window,help:error_incident.action_error_incident
+msgid "No error incidents"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.actions.act_window,help:error_incident.action_error_incident_rule
+msgid "No rules"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__date_occurred
+msgid "Occurred"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__count_occurrence
+msgid "Occurrence Count"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__occurrence_ids
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_list
+msgid "Occurrences"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident_rule__source
+msgid "Only incidents first seen here. Empty: any."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident_rule__origin_module
+msgid "Only incidents whose origin is in this module. Empty: any."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident_rule__exception_type
+msgid ""
+"Only this exception, as a traceback prints it (ValueError, "
+"psycopg.errors.UniqueViolation). Empty: any."
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Open"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Origin"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__occurrence_ref
+msgid "Reference"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__incident_state__regressed
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Regressed"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__count_regression
+msgid "Regressions"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Reopen"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__request_ref
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__source__request
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident_rule__source__request
+#: model:ir.model.fields.selection,name:error_incident.selection__error_occurrence__source__request
+msgid "Request"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Requests"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+msgid "Resolve"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__incident_state__resolved
+msgid "Resolved"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.ui.menu,name:error_incident.menu_error_incident_rule
+msgid "Rules"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__source__cron
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident_rule__source__cron
+#: model:ir.model.fields.selection,name:error_incident.selection__error_occurrence__source__cron
+msgid "Scheduled Action"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model,name:error_incident.model_ir_cron
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Scheduled Actions"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_occurrence__traceback
+msgid "Secrets masked before storage."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__incident_state__set_aside
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "Set Aside"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__rule_id
+msgid "Set Aside By"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__source
+#: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__source
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__source
+msgid "Source"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__incident_state
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_search
+msgid "State"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_occurrence__request_ref
+msgid "The request's X-Request-Id, as the server log carries it."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_occurrence__location
+msgid "The route, scheduled action or job that failed."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__name
+msgid "Title"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__traceback
+#: model_terms:ir.ui.view,arch_db:error_incident.view_error_occurrence_form
+msgid "Traceback"
+msgstr ""
+
+#. module: error_incident
+#: model_terms:ir.actions.act_window,help:error_incident.action_error_incident
+msgid ""
+"Unexpected errors raised by requests, scheduled actions and\n"
+"                background jobs are recorded here, grouped by where they\n"
+"                start."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_occurrence__user_id
+msgid "User"
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__fingerprint
+msgid ""
+"What makes two occurrences one incident: the exception's type and the "
+"innermost frame of our own code, without its line number."
+msgstr ""
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__source
+msgid "Where the incident was first seen."
+msgstr ""

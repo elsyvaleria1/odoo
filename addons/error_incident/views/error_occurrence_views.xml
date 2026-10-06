@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_error_occurrence_form" model="ir.ui.view">
+        <field name="name">error.occurrence.form</field>
+        <field name="model">error.occurrence</field>
+        <field name="arch" type="xml">
+            <form string="Error Occurrence" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="incident_id" />
+                            <field name="date_occurred" />
+                            <field name="source" />
+                            <field name="location" />
+                        </group>
+                        <group>
+                            <field name="user_id" />
+                            <field name="company_id" />
+                            <field name="request_ref" />
+                            <field name="origin_line" />
+                            <field name="occurrence_ref" groups="base.group_no_one" />
+                        </group>
+                    </group>
+                    <group string="Message">
+                        <field name="message" colspan="2" nolabel="1" />
+                    </group>
+                    <group string="Traceback">
+                        <field
+                            name="traceback"
+                            colspan="2"
+                            nolabel="1"
+                            class="font-monospace" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>
