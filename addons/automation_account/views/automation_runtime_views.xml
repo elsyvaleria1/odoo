@@ -98,6 +98,16 @@
                         <field name="workflow_auto_post" />
                     </group>
                 </group>
+                <group
+                    name="workflow_source_step"
+                    invisible="state not in ('workflow_reconcile_statement', 'workflow_apply_credit_note', 'workflow_change_partner') and not (state == 'workflow_create_document' and workflow_date_source == 'document')">
+                    <group>
+                        <field
+                            name="workflow_source_step_id"
+                            placeholder="The only document made before it"
+                            options="{'no_create': True}" />
+                    </group>
+                </group>
                 <div
                     name="workflow_register_statement_help"
                     class="text-muted"
@@ -108,7 +118,7 @@
                     name="workflow_reconcile_statement_help"
                     class="text-muted"
                     invisible="state != 'workflow_reconcile_statement'">
-                    Reconciles the run's bank statement line with the nearest document a previous step created.
+                    Reconciles the run's bank statement line with the document of the step it acts on, or the only document a previous step created.
                 </div>
                 <group
                     name="workflow_change_partner"
@@ -117,14 +127,14 @@
                         <field name="workflow_partner_source" />
                     </group>
                     <div class="text-muted" colspan="2">
-                        Issues the nearest document a previous step created to this partner instead, keeping its number and date. It refuses a document already applied to others, or one whose electronic invoice the tax authority must cancel first.
+                        Issues the document of the step it acts on, or the only document a previous step created, to this partner instead, keeping its number and date. It refuses a document already applied to others, or one whose electronic invoice the tax authority must cancel first.
                     </div>
                 </group>
                 <div
                     name="workflow_apply_credit_note_help"
                     class="text-muted"
                     invisible="state != 'workflow_apply_credit_note'">
-                    Applies the nearest credit note a previous step created to its partner's open invoices, oldest first.
+                    Applies the credit note of the step it acts on, or the only document a previous step created, to its partner's open invoices, oldest first.
                 </div>
             </xpath>
         </field>

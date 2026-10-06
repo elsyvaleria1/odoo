@@ -1,4 +1,5 @@
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tests.common import tagged
 
@@ -55,7 +56,7 @@ class TestPredecessorWalks(AutomationAccountCommon):
         self._link_lines(second, first)
         self._link_lines(first, second)
 
-        self.assertFalse(first._get_nearest_move())
+        self.assertFalse(first._get_nearest_moves())
         self.assertFalse(first._get_nearest_payment())
         self.assertFalse(first._get_nearest_document_date())
 
@@ -71,15 +72,15 @@ class TestPredecessorWalks(AutomationAccountCommon):
             previous = join
 
         visits = []
-        original = type(root)._get_nearest_move
+        original = type(root)._get_nearest_moves
 
         def counted(record, visited=None):
             visits.append(record.id)
             return original(record, visited)
 
-        self.patch(type(root), "_get_nearest_move", counted)
+        self.patch(type(root), "_get_nearest_moves", counted)
 
-        self.assertFalse(previous._get_nearest_move())
+        self.assertFalse(previous._get_nearest_moves())
         self.assertEqual(len(visits), len(lines))
         self.assertEqual(len(set(visits)), len(visits))
 
@@ -89,7 +90,24 @@ class TestPredecessorWalks(AutomationAccountCommon):
         middle = self._make_line("middle", predecessors=source)
         sink = self._make_line("sink", predecessors=middle)
 
-        self.assertEqual(sink._get_nearest_move(), move)
+        self.assertEqual(sink._get_source_move(), move)
+
+    def test_two_branches_reaching_one_document_agree(self):
+        move = self._make_move("shared source")
+        source = self._make_line("with move", created_record=move)
+        left = self._make_line("left", predecessors=source)
+        right = self._make_line("right", predecessors=source)
+        join = self._make_line("join", predecessors=left | right)
+
+        self.assertEqual(join._get_source_move(), move)
+
+    def test_two_branches_with_two_documents_are_refused(self):
+        first = self._make_line("first", created_record=self._make_move("first"))
+        second = self._make_line("second", created_record=self._make_move("second"))
+        join = self._make_line("join", predecessors=first | second)
+
+        with self.assertRaisesRegex(UserError, "Acts On"):
+            join._get_source_move()
 
     def test_the_document_date_walk_still_reaches_a_predecessor(self):
         move = self._make_move("date source")

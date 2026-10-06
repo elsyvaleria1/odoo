@@ -2,15 +2,28 @@ import logging
 from typing import Any
 
 from odoo import api, fields, models
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.tools.misc import format_amount, format_date
+
+from odoo.addons.automation.models.ir_actions_server import STEP_REFERENCE_DEPENDS
 
 _logger = logging.getLogger(__name__)
 
 OPEN_ITEM_TYPES = ("asset_receivable", "liability_payable")
 
 STATEMENT_STATES = ("workflow_register_statement", "workflow_reconcile_statement")
+ACTS_ON_STATES = (
+    "workflow_reconcile_statement",
+    "workflow_apply_credit_note",
+    "workflow_change_partner",
+)
+DOCUMENT_STATES = (
+    "workflow_register_statement",
+    "workflow_create_document",
+    "workflow_change_partner",
+    "workflow_apply_credit_note",
+)
 WORKFLOW_STATES = (
     *STATEMENT_STATES,
     "workflow_create_document",
@@ -102,6 +115,16 @@ class IrActionsServer(models.Model):
         help="When set, every line of the document carries these taxes "
         "instead of its product's. In another company, the tax of the same "
         "name and use is taken.",
+    )
+    workflow_source_step_id = fields.Many2one(
+        comodel_name="ir.actions.server",
+        string="Acts On",
+        domain="[('automation_rule_id', '=', automation_rule_id), ('id', '!=', id)]",
+        ondelete="set null",
+        help="The step whose document this one works on: the invoice a "
+        "reconciliation settles, the credit note applied, the document issued "
+        "again. Required when documents are made on more than one branch "
+        "before it; it must run before this step.",
     )
     workflow_auto_post = fields.Boolean(
         string="Post the Document",
@@ -339,7 +362,7 @@ class IrActionsServer(models.Model):
         self.check_singleton()
         runtime_line.check_singleton()
 
-        move = runtime_line._get_nearest_move()
+        move = runtime_line._get_source_move()
         if not move:
             raise UserError(
                 self.env._(
@@ -444,7 +467,7 @@ class IrActionsServer(models.Model):
                 ),
             )
 
-        move = runtime_line._get_nearest_move()
+        move = runtime_line._get_source_move()
         if not move:
             raise UserError(
                 self.env._(
@@ -681,7 +704,7 @@ class IrActionsServer(models.Model):
         self.check_singleton()
         runtime_line.check_singleton()
 
-        move = runtime_line._get_nearest_move()
+        move = runtime_line._get_source_move()
         if not move:
             raise UserError(
                 self.env._(
@@ -865,9 +888,84 @@ class IrActionsServer(models.Model):
             taxes |= match
         return taxes
 
-    def _get_workflow_document_step(self) -> models.Model:
-        """Return the nearest step upstream of this one that creates a document."""
+    def _acts_on_a_document(self) -> bool:
         self.check_singleton()
+        return self.state in ACTS_ON_STATES or (
+            self.state == "workflow_create_document"
+            and self.workflow_date_source == "document"
+        )
+
+    @api.depends(
+        *STEP_REFERENCE_DEPENDS,
+        "workflow_date_source",
+        "workflow_source_step_id",
+    )
+    def _compute_step_reference_warning(self) -> None:
+        return super()._compute_step_reference_warning()
+
+    @api.depends(
+        "automation_rule_id",
+        "code",
+        "state",
+        "workflow_source_step_id",
+        "workflow_source_step_id.step_key",
+    )
+    def _compute_step_references(self) -> None:
+        return super()._compute_step_references()
+
+    def _collect_step_references(self):
+        refs = super()._collect_step_references()
+        if self.workflow_source_step_id.step_key:
+            refs.keys.add(self.workflow_source_step_id.step_key)
+        return refs
+
+    def _get_nearest_document_steps(self, seen=None) -> models.Model:
+        """Return the nearest document-making step on every branch above this one."""
+        self.check_singleton()
+        seen = self.browse() if seen is None else seen
+        found = self.browse()
+        for predecessor in self._get_predecessors() - seen:
+            seen |= predecessor
+            if predecessor.state in DOCUMENT_STATES:
+                found |= predecessor
+            else:
+                found |= predecessor._get_nearest_document_steps(seen)
+        return found
+
+    def _get_step_reference_problems(self) -> list[str]:
+        problems = super()._get_step_reference_problems()
+        if not self._acts_on_a_document():
+            return problems
+        source = self.workflow_source_step_id
+        if source and source.state not in (*DOCUMENT_STATES, "code"):
+            problems.append(
+                self.env._(
+                    "Step '%(step)s' acts on the document of '%(source)s', "
+                    "which makes none.",
+                    step=self.name,
+                    source=source.name,
+                )
+            )
+        if not source:
+            candidates = self._get_nearest_document_steps()
+            if len(candidates) > 1:
+                problems.append(
+                    self.env._(
+                        "Step '%(step)s' could act on the document of %(steps)s, "
+                        "on different branches before it. Name the one in its "
+                        "Acts On.",
+                        step=self.name,
+                        steps=", ".join(f"'{step.name}'" for step in candidates),
+                    )
+                )
+        return problems
+
+    def _get_workflow_document_step(self) -> models.Model:
+        """Return the step whose document this one works on: the one named in
+        Acts On, else the nearest upstream step that creates a document."""
+        self.check_singleton()
+        if self.workflow_source_step_id:
+            return self.workflow_source_step_id
         seen = self.browse()
         frontier = self._get_predecessors()
         while frontier:
@@ -1022,10 +1120,11 @@ class IrActionsServer(models.Model):
             ).get(self[field_name], "")
             for field_name in ("workflow_company_source", "workflow_partner_source")
         }
-        try:
-            template = self.workflow_template_id.display_name
-        except AccessError:
-            # Whoever may see the workflow drawn may not read its templates.
+        # Whoever may see the workflow drawn may not read its templates.
+        template = self.workflow_template_id._visible_display_names().get(
+            self.workflow_template_id.id
+        )
+        if not template:
             return super()._workflow_step_detail()
         return self.env._(
             "%(template)s. In: %(company)s. To: %(partner)s",
@@ -1116,7 +1215,7 @@ class IrActionsServer(models.Model):
 
     def _run_action_workflow_change_partner(self, eval_context=None) -> None:
         line = self._get_workflow_line()
-        move = line._get_nearest_move()
+        move = line._get_source_move()
         if not move:
             raise UserError(
                 self.env._(
@@ -1199,7 +1298,7 @@ class IrActionsServer(models.Model):
 
     def _run_action_workflow_reconcile_statement(self, eval_context=None) -> None:
         line = self._get_workflow_line()
-        move = line._get_nearest_move()
+        move = line._get_source_move()
         open_before = self._get_open_amount(move) if move else 0.0
         self.reconcile_statement_with_latest_move(line)
         still_open = self._get_open_amount(move)
@@ -1215,7 +1314,7 @@ class IrActionsServer(models.Model):
 
     def _run_action_workflow_apply_credit_note(self, eval_context=None) -> None:
         line = self._get_workflow_line()
-        move = line._get_nearest_move()
+        move = line._get_source_move()
         open_before = self._get_open_amount(move) if move else 0.0
         invoices = self.reconcile_latest_move_with_open_invoices(line)
         open_credit = self._get_open_amount(move)
