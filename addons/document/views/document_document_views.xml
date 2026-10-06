@@ -198,6 +198,7 @@
                 <field name="activity_state" />
                 <field name="is_multipage" />
                 <field name="thumbnail_status" />
+                <field name="thumbnail_unique" />
                 <field name="user_permission" />
                 <field name="access_token" />
                 <field name="document_type_id" />
@@ -299,15 +300,12 @@
                                             scrolling="no"
                                             class="overflow-hidden o_documents_thumbnail_iframe"
                                             loading="lazy"
-                                            t-attf-src="/documents/thumbnail_textual/#{encodeURIComponent(record.access_token.raw_value)}?unique=#{record.checksum.raw_value ? record.checksum.raw_value.slice(-8) : ''}"
+                                            t-attf-src="/documents/thumbnail_textual/#{encodeURIComponent(record.access_token.raw_value)}?unique=#{record.thumbnail_unique.raw_value || ''}"
                                             sandbox="" />
                                     </div>
                                     <t t-elif="hasStoredThumbnail">
-                                        <t
-                                            t-set="unique"
-                                            t-value="record.checksum.value ? record.checksum.value.slice(-8) : ''" />
                                         <img
-                                            t-attf-src="/documents/thumbnail/#{window.encodeURIComponent(record.access_token.raw_value)}?unique=#{unique}"
+                                            t-attf-src="/documents/thumbnail/#{window.encodeURIComponent(record.access_token.raw_value)}?unique=#{record.thumbnail_unique.raw_value || ''}"
                                             alt="Document preview" />
                                     </t>
                                     <div

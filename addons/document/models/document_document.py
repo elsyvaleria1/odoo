@@ -2467,7 +2467,12 @@ class DocumentsDocument(models.Model):
         )
 
     def _get_is_multipage(self) -> bool | None:
-        decoded = self.attachment_id._get_pdf_raw() if self.attachment_id else None
+        attachment = self.attachment_id
+        if not attachment or attachment.type == "cloud_storage":
+            # a blob a provider holds is not downloaded inside the write that
+            # files it: its page count reads as unknown
+            return None
+        decoded = attachment._get_pdf_raw()
         if decoded is None:
             return None
         if modules.module.current_test and not decoded.lstrip().startswith(b"%PDF"):

@@ -55,6 +55,10 @@ class DocumentsDocument(models.Model):
         ],
         compute="_compute_thumbnail_status",
     )
+    thumbnail_unique = fields.Char(
+        export_string_translation=False,
+        compute="_compute_thumbnail_status",
+    )
 
     def _get_thumbnail_kind(self) -> str | bool:
         # who renders this document's thumbnail: the server, in process
@@ -157,11 +161,22 @@ class DocumentsDocument(models.Model):
     def _compute_thumbnail_status(self) -> None:
         rows = self._get_thumbnail_rows()
         for document in self:
+            source = document.shortcut_document_id or document
             row = rows.get(document._origin.id)
+            # what a preview's URL is cached under: the rendering it serves, or
+            # the content a textual preview reads
+            version = (
+                f"{row.id}:{row.write_date}"
+                if row
+                else source._get_thumbnail_content_key()
+            )
+            document.thumbnail_unique = (
+                hashlib.sha256(version.encode()).hexdigest()[:16] if version else False
+            )
             if row:
                 document.thumbnail_status = row.state
                 continue
-            kind = (document.shortcut_document_id or document)._get_thumbnail_kind()
+            kind = source._get_thumbnail_kind()
             if kind == "pdf" and not pdf_raster.available():
                 kind = "browser"
             document.thumbnail_status = {
@@ -221,7 +236,7 @@ class DocumentsDocument(models.Model):
         row = store.search([("document_id", "=", self.id)])
         if not image and state == "present":
             row.unlink()
-            self.invalidate_model(["thumbnail", "thumbnail_status"])
+            self.invalidate_model(["thumbnail", "thumbnail_status", "thumbnail_unique"])
             return
         vals = {
             "checksum": self._get_thumbnail_content_key(),
@@ -232,7 +247,7 @@ class DocumentsDocument(models.Model):
             row.write(vals)
         else:
             store.create({**vals, "document_id": self.id})
-        self.invalidate_model(["thumbnail", "thumbnail_status"])
+        self.invalidate_model(["thumbnail", "thumbnail_status", "thumbnail_unique"])
 
     @api.model
     def _render_awaited_thumbnails(self) -> None:
@@ -330,7 +345,7 @@ class DocumentsDocument(models.Model):
         except errors.UniqueViolation:
             # the same content rendered by another transaction first
             _debug.logic("thumbnail_render_raced", checksum=checksum)
-        self.invalidate_model(["thumbnail", "thumbnail_status"])
+        self.invalidate_model(["thumbnail", "thumbnail_status", "thumbnail_unique"])
 
     @api.model
     def _rekey_thumbnail_sources(self) -> None:

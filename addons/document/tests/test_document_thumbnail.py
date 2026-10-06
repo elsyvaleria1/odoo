@@ -527,6 +527,45 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         self.assertEqual(document.thumbnail_status, "present")
         self.assertTrue(base64.b64decode(document.thumbnail).startswith(b"\x89PNG"))
 
+    def test_a_preview_is_cached_under_what_it_shows(self):
+        raw = self._png_bytes((4, 5, 6))
+        document = self._cloud_document("cached.png", "image/png")
+        self.env.cr.flush()
+        before = document.thumbnail_unique
+        self.assertTrue(
+            before, "a provider's blob has no checksum, yet its preview a key"
+        )
+
+        with patch.object(
+            type(self.env["ir.attachment"]), "_get_content", lambda att, size=None: raw
+        ):
+            document._job_render_thumbnails()
+
+        self.assertTrue(document.thumbnail_unique)
+        self.assertNotEqual(
+            document.thumbnail_unique, before, "the rendering is a new answer"
+        )
+        shortcut = document.action_create_shortcut(self.folder_b.id)
+        self.assertEqual(shortcut.thumbnail_unique, document.thumbnail_unique)
+
+    def test_filing_a_pdf_a_provider_holds_downloads_nothing(self):
+        # the fixtures' own images are rendered first, from their local bytes
+        self.env.cr.flush()
+        Attachment = type(self.env["ir.attachment"])
+        read = Attachment._get_content
+
+        def download(attachment, size=None):
+            if attachment.type == "cloud_storage":
+                raise AssertionError("downloaded while filing")
+            return read(attachment, size)
+
+        with patch.object(Attachment, "_get_content", download):
+            document = self._cloud_document("filed.pdf", "application/pdf")
+            self.env.cr.flush()
+
+        self.assertFalse(document.is_multipage)
+        self.assertEqual(document.thumbnail_status, "pending")
+
     def test_a_provider_out_of_reach_leaves_the_file_for_later(self):
         document = self._cloud_document("cloud.jpg", "image/jpeg")
         self.env.cr.flush()
