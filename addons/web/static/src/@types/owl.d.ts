@@ -32,6 +32,7 @@ declare module "@odoo/owl" {
     }
 
     export class TemplateSet {
+        static compiler: { compile: Function; parseXML: Function } | null;
         constructor(config?: TemplateSetConfig);
         dev: boolean;
         addTemplate(name: string, template: string | Element): void;
@@ -249,9 +250,6 @@ declare module "@odoo/owl" {
     export class Portal extends Component {}
     export class Suspense extends Component {}
     export class ErrorBoundary extends Component {}
-    export class TemplateSet {
-        [key: string]: any;
-    }
     export const globalTemplates: any;
     export function useApp(): App;
 
