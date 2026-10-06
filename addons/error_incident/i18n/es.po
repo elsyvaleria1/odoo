@@ -103,6 +103,13 @@ msgid "Background Jobs"
 msgstr "Trabajos en segundo plano"
 
 #. module: error_incident
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident__source__client
+#: model:ir.model.fields.selection,name:error_incident.selection__error_incident_rule__source__client
+#: model:ir.model.fields.selection,name:error_incident.selection__error_occurrence__source__client
+msgid "Browser"
+msgstr "Navegador"
+
+#. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_occurrence__company_id
 msgid "Company"
 msgstr "Empresa"

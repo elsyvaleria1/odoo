@@ -92,27 +92,31 @@ class TestNodeToolchainManifest(BaseCase):
             json_loads((root / "package-lock.json").read_text()),
         )
 
-    def test_rtlcss_is_declared(self):
+    def test_rtlcss_is_a_runtime_dependency(self):
+        # the server runs it to build every RTL stylesheet: a deployment
+        # installing with `npm ci --omit=dev` must still get it
         manifest, _ = self._manifests()
-        self.assertIn("rtlcss", manifest["devDependencies"])
+        self.assertIn("rtlcss", manifest["dependencies"])
+        self.assertNotIn("rtlcss", manifest["devDependencies"])
 
     def test_every_declared_dependency_is_locked(self):
         manifest, lock = self._manifests()
-        declared = manifest["devDependencies"]
         packages = lock["packages"]
-        locked_root = packages[""].get("devDependencies", {})
-        self.assertEqual(
-            declared,
-            locked_root,
-            "package.json and package-lock.json disagree; `npm ci` refuses to "
-            "install. Regenerate with `npm install --package-lock-only`.",
-        )
-        for name in declared:
-            self.assertIn(
-                f"node_modules/{name}",
-                packages,
-                f"{name} is declared and root-locked but has no resolved entry",
+        for section in ("dependencies", "devDependencies"):
+            declared = manifest.get(section, {})
+            self.assertEqual(
+                declared,
+                packages[""].get(section, {}),
+                f"package.json and package-lock.json disagree on {section}; "
+                "`npm ci` refuses to install. Regenerate with "
+                "`npm install --package-lock-only`.",
             )
+            for name in declared:
+                self.assertIn(
+                    f"node_modules/{name}",
+                    packages,
+                    f"{name} is declared and root-locked but has no resolved entry",
+                )
 
 
 class TestPipelineFingerprint(BaseCase):

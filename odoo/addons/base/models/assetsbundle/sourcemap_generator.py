@@ -1,8 +1,9 @@
 __all__ = ["SourceMapGenerator"]
 
-from typing import Final, NamedTuple
+from typing import NamedTuple
 
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
+from odoo.libs.sourcemap import encode_vlq
 
 
 class _Mapping(NamedTuple):
@@ -24,7 +25,7 @@ class SourceMapGenerator:
         previous_generated_line = 1
         previous_original_line = 0
         previous_source = 0
-        encoded_column = base64vlq_encode(0)
+        encoded_column = encode_vlq(0)
         parts: list[str] = []
 
         for generated_line, original_line, source in self._mappings:
@@ -43,8 +44,8 @@ class SourceMapGenerator:
             if cache_key not in self._cache:
                 self._cache[cache_key] = (
                     encoded_column
-                    + base64vlq_encode(source_delta)
-                    + base64vlq_encode(line_delta)
+                    + encode_vlq(source_delta)
+                    + encode_vlq(line_delta)
                     + encoded_column
                 )
 
@@ -88,22 +89,3 @@ class SourceMapGenerator:
 
         for i in range(1, source_line_count + 1):
             append(_Mapping(last_index + i + start_offset, i, source_name))
-
-
-B64CHARS: Final = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-SHIFTSIZE: Final[int] = 5
-FLAG: Final[int] = 1 << SHIFTSIZE
-MASK: Final[int] = FLAG - 1
-
-
-def base64vlq_encode(*values: int) -> str:
-    results: list[int] = []
-    add = results.append
-    for v in values:
-        v = (abs(v) << 1) | int(v < 0)
-        while True:
-            toencode, v = v & MASK, v >> SHIFTSIZE
-            add(toencode | (v and FLAG))
-            if not v:
-                break
-    return bytes(map(B64CHARS.__getitem__, results)).decode()

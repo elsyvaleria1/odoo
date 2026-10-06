@@ -94,7 +94,8 @@
         border-color: $primary;
         background: $primary;
         // A slow token, so it stops wherever the reader asked for less motion.
-        animation: o_error_incident_pulse calc(#{$o-duration-slow} * 5) ease-in-out infinite;
+        animation: o_error_incident_pulse calc(#{$o-duration-slow} * 5) ease-in-out
+            infinite;
     }
 
     .o_error_incident_label {

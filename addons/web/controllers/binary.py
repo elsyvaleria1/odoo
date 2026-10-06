@@ -412,7 +412,19 @@ class Binary(http.Controller):
         readonly=True,
     )
     def content_esm_assets(self, unique: str, filename: str) -> Response:
+        if filename.endswith(".map") and not self._source_map_published():
+            _debug.logic("esm_source_map_withheld", filename=filename)
+            raise request.prepare_not_found_error()
         return self._serve_generated_esm(f"/web/assets/esm/{unique}/{filename}")
+
+    @staticmethod
+    def _source_map_published() -> bool:
+        # an "external" map carries every bundled source, comments included:
+        # it is written for the server's own use and for administrators, and
+        # only "linked" hands it to whoever loads the bundle
+        env = request.env
+        mode = env.registry.settings.get(env, "web.esbuild.source_maps", "")
+        return mode == "linked" or env.user._is_system()
 
     @http.route(
         ["/web/assets/lib/<string:unique>/<path:path>"],

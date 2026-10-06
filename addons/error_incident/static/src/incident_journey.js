@@ -1,11 +1,17 @@
 // @ts-check
 /** @odoo-module native */
 
-import {onWillDestroy, proxy} from "@odoo/owl";
-import {makeLogger} from "@web/core/debug/debug_logger";
-import {rpc} from "@web/core/network";
-import {useService} from "@web/core/utils/hooks";
-import {countText, journeyHeadline, journeyNote, stepLabel} from "@error_incident/incident_words";
+import {
+    countText,
+    journeyHeadline,
+    journeyNote,
+    stepLabel,
+} from "@error_incident/incident_words";
+import { onWillDestroy, proxy } from "@odoo/owl";
+import { browser } from "@web/core/browser/browser";
+import { makeLogger } from "@web/core/debug/debug_logger";
+import { rpc } from "@web/core/network";
+import { useService } from "@web/core/utils/hooks";
 
 const log = makeLogger("error_incident");
 
@@ -61,7 +67,7 @@ export class IncidentJourney {
             steps: [],
             step: null,
             outcome: null,
-            details: {count: 0, regressed: false},
+            details: { count: 0, regressed: false },
         });
         this.alive = true;
         this.timer = null;
@@ -83,8 +89,8 @@ export class IncidentJourney {
         try {
             answer = await rpc(
                 "/error_incident/journey",
-                {occurrence: this.occurrence},
-                {silent: true}
+                { occurrence: this.occurrence },
+                { silent: true },
             );
         } catch {
             // Opening the dialog must never fail because of this lookup; a
@@ -111,6 +117,35 @@ export class IncidentJourney {
             return;
         }
         this.timer = setTimeout(() => this.ask(attempt + 1), delay);
+    }
+
+    /* An error the browser raised on its own: no server named it, so the
+     * dialog records it and follows the incident it lands in.
+     *
+     * @param {string} stack */
+    async report(stack) {
+        this.state.stage = "waiting";
+        this.bus.subscribe(JOURNEY_NOTIFICATION, this.onNotification);
+        let answer = null;
+        try {
+            answer = await rpc(
+                "/error_incident/report",
+                { stack, location: browser.location.pathname },
+                { silent: true },
+            );
+        } catch {
+            // Reporting must never fail the dialog that shows the error.
+        }
+        log.logic("report", answer?.state, answer?.incident);
+        if (!this.alive || this.state.stage !== "waiting") {
+            return;
+        }
+        if (answer?.state === "found") {
+            this.occurrence = answer.occurrence;
+            this.apply(answer);
+            return;
+        }
+        this.state.stage = "idle";
     }
 
     /** @param {Journey} journey */

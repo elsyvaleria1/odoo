@@ -6,8 +6,16 @@ def _raise(exc):
     raise exc
 
 
+class ProbeCase(TransactionCase):
+    def _probed(self, source, location):
+        # the probe's own incidents: the database may hold real ones
+        return self.env["error.incident"].search(
+            [("source", "=", source), ("occurrence_ids.location", "=", location)]
+        )
+
+
 @tagged("post_install", "-at_install")
-class TestScheduledActionFailure(TransactionCase):
+class TestScheduledActionFailure(ProbeCase):
     def _cron(self, code):
         return self.env["ir.cron"].create(
             {
@@ -21,7 +29,7 @@ class TestScheduledActionFailure(TransactionCase):
     def test_a_failing_scheduled_action_is_an_incident(self):
         cron = self._cron("1 / 0")
         cron.method_direct_trigger()
-        incident = self.env["error.incident"].search([("source", "=", "cron")])
+        incident = self._probed("cron", "Incident Probe")
         self.assertEqual(len(incident), 1)
         self.assertEqual(incident.exception_type, "ZeroDivisionError")
         self.assertEqual(incident.occurrence_ids.location, "Incident Probe")
@@ -29,11 +37,11 @@ class TestScheduledActionFailure(TransactionCase):
     def test_a_refusal_raised_for_the_user_is_not(self):
         cron = self._cron("raise UserError('not allowed')")
         cron.method_direct_trigger()
-        self.assertFalse(self.env["error.incident"].search([("source", "=", "cron")]))
+        self.assertFalse(self._probed("cron", "Incident Probe"))
 
 
 @tagged("post_install", "-at_install")
-class TestBackgroundJobFailure(TransactionCase):
+class TestBackgroundJobFailure(ProbeCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -59,7 +67,7 @@ class TestBackgroundJobFailure(TransactionCase):
     def test_a_job_that_fails_for_good_is_an_incident(self):
         IrJob = type(self.env["ir.job"])
         IrJob._notify_failed(self.env.cr, self._job(), self._exception(KeyError("k")))
-        incident = self.env["error.incident"].search([("source", "=", "job")])
+        incident = self._probed("job", "res.partner._x")
         self.assertEqual(incident.exception_type, "KeyError")
         self.assertEqual(incident.occurrence_ids.location, "res.partner._x")
         self.assertEqual(incident.user_ids, self.user)
@@ -67,7 +75,7 @@ class TestBackgroundJobFailure(TransactionCase):
     def test_a_terminal_refusal_is_not(self):
         IrJob = type(self.env["ir.job"])
         IrJob._notify_failed(self.env.cr, self._job(), self._exception(UserError("u")))
-        self.assertFalse(self.env["error.incident"].search([("source", "=", "job")]))
+        self.assertFalse(self._probed("job", "res.partner._x"))
 
 
 @tagged("post_install", "-at_install")

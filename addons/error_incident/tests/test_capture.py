@@ -50,12 +50,11 @@ class TestCapture(TransactionCase):
 
     def test_a_burst_is_one_incident_and_a_count(self):
         payload = _payload()
-        for _ in range(1000):
-            incident_id = self.Incident._capture(
-                dict(payload, occurrence_ref=None) | {"occurrence_ref": f"k{_}"}
-            )
+        before = self.Incident.search_count([])
+        for n in range(1000):
+            incident_id = self.Incident._capture(payload | {"occurrence_ref": f"k{n}"})
         incident = self.Incident.browse(incident_id)
-        self.assertEqual(self.Incident.search_count([]), 1)
+        self.assertEqual(self.Incident.search_count([]), before + 1)
         self.assertEqual(incident.count_occurrence, 1000)
 
     def test_everyone_who_hit_it_is_known(self):

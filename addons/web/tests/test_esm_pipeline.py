@@ -24,7 +24,7 @@ from odoo.libs.asset_log import ASSET_ROOT, get_asset_logger, log_event
 from odoo.libs.hashing import cache_hash
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
-from odoo.tests.common import HttpCase, TransactionCase, tagged
+from odoo.tests.common import HttpCase, TransactionCase, new_test_user, tagged
 from odoo.tools.assets import esbuild_process, esm_bridges
 from odoo.tools.assets.constants import ESM_LIB_URL_PREFIX
 from odoo.tools.assets.esbuild import EsbuildCompiler, EsbuildResult
@@ -4954,3 +4954,42 @@ class TestImportDiscovery(TransactionCase):
             self.assertIsNotNone(m, f"binding import must match: {binding}")
             self.assertIsNone(m.group("side"), binding)
             self.assertTrue(m.group("spec"), binding)
+
+
+@tagged("post_install", "-at_install")
+class TestSourceMapAccess(HttpCase):
+    def setUp(self):
+        super().setUp()
+        self.map_url = (
+            self.env["ir.qweb"]._save_esm_attachment(
+                "test.sm.access",
+                "/* bundle */",
+                sourcemap='{"version":3,"sources":["s.js"],"sourcesContent":["x"],"mappings":""}',
+            )
+            + ".map"
+        )
+
+    def _mode(self, mode):
+        self.env["ir.config_parameter"].set_param("web.esbuild.source_maps", mode)
+
+    def _status(self):
+        return self.url_open(self.map_url).status_code
+
+    def test_an_external_map_is_withheld_from_the_public(self):
+        self._mode("external")
+        self.assertEqual(self._status(), 404)
+
+    def test_an_external_map_is_withheld_from_an_internal_user(self):
+        self._mode("external")
+        new_test_user(self.env, "sm.internal", groups="base.group_user")
+        self.authenticate("sm.internal", "sm.internal")
+        self.assertEqual(self._status(), 404)
+
+    def test_an_administrator_reads_an_external_map(self):
+        self._mode("external")
+        self.authenticate("admin", "admin")
+        self.assertEqual(self._status(), 200)
+
+    def test_a_linked_map_is_served_with_its_bundle(self):
+        self._mode("linked")
+        self.assertEqual(self._status(), 200)

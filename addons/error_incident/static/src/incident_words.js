@@ -4,7 +4,7 @@
 /* Every sentence the dialog shows about an incident. The server sends ids
  * only; this is the one file the translators touch. */
 
-import {_t} from "@web/core/translation";
+import { _t } from "@web/core/translation";
 
 /** @param {string} id */
 export function stepLabel(id) {
@@ -50,7 +50,9 @@ export function journeyNote(journey) {
     if (journey.step === "recorded") {
         return journey.details.regressed
             ? _t("It is back in the developers' queue.")
-            : _t("There is nothing for you to report: the developers have it, with your user and the time.");
+            : _t(
+                  "There is nothing for you to report: the developers have it, with your user and the time.",
+              );
     }
     if (journey.step === "resolved") {
         return _t("If it still happens, it is recorded again and reopened.");

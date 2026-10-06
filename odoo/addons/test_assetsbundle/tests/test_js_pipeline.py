@@ -2,6 +2,7 @@ import re
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from odoo.libs.sourcemap import iter_segments
 from odoo.tests.common import BaseCase, TransactionCase
 from odoo.tools import config
 from odoo.tools.assets.esm_graph import _MODULE_SYNTAX_RE
@@ -24,35 +25,6 @@ MODULE_JS = 'import { x } from "@web/core/registry";\nexport const y = x;\n'
 PLAIN_JS = "(function () {\n    var x = 1;\n    window.testX = x;\n})();\n"
 TEMPLATE_XML = "<templates><t t-name='audit.g10.tpl'><div>x</div></t></templates>"
 UNTERMINATED_JS = "window.auditG10 = window.auditG10Src\n"
-
-_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-
-
-def _vlq_decode_mappings(mappings):
-    out = []
-    gen_line = 0
-    src_idx = 0
-    orig_line0 = 0
-    for field in mappings.split(";"):
-        gen_line += 1
-        for seg in field.split(","):
-            if not seg:
-                continue
-            vals = []
-            shift = acc = 0
-            for ch in seg:
-                d = _B64.index(ch)
-                acc += (d & 31) << shift
-                if d & 32:
-                    shift += 5
-                else:
-                    vals.append((acc >> 1) * (-1 if acc & 1 else 1))
-                    acc = shift = 0
-            if len(vals) >= 4:
-                src_idx += vals[1]
-                orig_line0 += vals[2]
-                out.append((gen_line, src_idx, orig_line0 + 1))
-    return out
 
 
 class TestModuleSyntaxGuard(TransactionCase):
@@ -462,7 +434,14 @@ class TestJsSourceMapAccuracy(TransactionCase):
 
         src_lines = {0: a.split("\n"), 1: b.split("\n")}
         checked = 0
-        for gen_line, src_idx, orig_line in _vlq_decode_mappings(data["mappings"]):
+        for segment in iter_segments(data["mappings"]):
+            if segment.source is None:
+                continue
+            gen_line, src_idx, orig_line = (
+                segment.line + 1,
+                segment.source,
+                segment.source_line + 1,
+            )
             lines = src_lines[src_idx]
             if orig_line < 2 or orig_line > len(lines):
                 continue

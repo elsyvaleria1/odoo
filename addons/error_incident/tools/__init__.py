@@ -1,1 +1,1 @@
-from . import fingerprint
+from . import client_errors, fingerprint

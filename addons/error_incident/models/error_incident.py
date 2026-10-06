@@ -8,6 +8,7 @@ from odoo.libs.redact import mask_text
 from odoo.tools import SQL, frozendict
 
 from ..tools import fingerprint as fp
+from ..tools.client_errors import client_fingerprint, read_client_error
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -16,6 +17,7 @@ SOURCES = [
     ("request", "Request"),
     ("cron", "Scheduled Action"),
     ("job", "Background Job"),
+    ("client", "Browser"),
 ]
 
 # What the error dialog follows, pushed to the users an incident affected.
@@ -415,4 +417,39 @@ def capture_payload(
         "date": fields.Datetime.now(),
         "message": mask_text(str(exc), 2000),
         "traceback": mask_text(fp.format_traceback(exc), 40000),
+    }
+
+
+def client_capture_payload(
+    env: api.Environment,
+    stack: str,
+    *,
+    user_id: int,
+    location: str | None = None,
+) -> dict[str, Any]:
+    """`capture_payload` for an error the browser reports: its stack, located
+    in our sources through the bundles' source maps."""
+    error = read_client_error(env, stack)
+    origin = error.origin
+    title = error.kind
+    if origin:
+        where = origin.function or origin.path.rsplit("/", 1)[-1]
+        title = f"{title} in {where} ({origin.module})"
+    return {
+        "title": title[:200],
+        "fingerprint": client_fingerprint(error.kind, origin, error.message),
+        "fingerprint_version": fp.FINGERPRINT_VERSION,
+        "exception_type": error.kind,
+        "origin_module": origin.module if origin else "",
+        "origin_path": origin.path if origin else "",
+        "origin_function": origin.function if origin else "",
+        "origin_line": origin.line if origin else 0,
+        "source": "client",
+        "user_id": user_id,
+        "location": location,
+        "request_ref": None,
+        "occurrence_ref": uuid.uuid4().hex,
+        "date": fields.Datetime.now(),
+        "message": mask_text(error.message, 2000),
+        "traceback": mask_text(error.traceback, 40000),
     }

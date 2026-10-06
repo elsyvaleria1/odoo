@@ -74,7 +74,8 @@
                 </div>
             </div>
             <t t-set-slot="footer">
-                <button class="btn btn-primary o-default-button" t-on-click="this.props.close">Close</button>
+                <!-- not o-default-button: addons add footer buttons, and Close must stay -->
+                <button class="btn btn-primary o_error_dialog_close" t-on-click="this.props.close">Close</button>
             </t>
         </Dialog>
     </t>

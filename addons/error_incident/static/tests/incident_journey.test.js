@@ -1,6 +1,10 @@
-import {beforeEach, describe, destroy, expect, test} from "@odoo/hoot";
-import {click, queryAllTexts} from "@odoo/hoot-dom";
-import {advanceTime, animationFrame} from "@odoo/hoot-mock";
+import {
+    IncidentJourney,
+    JOURNEY_NOTIFICATION,
+} from "@error_incident/incident_journey";
+import { beforeEach, describe, destroy, expect, test } from "@odoo/hoot";
+import { click, queryAllTexts } from "@odoo/hoot-dom";
+import { advanceTime, animationFrame } from "@odoo/hoot-mock";
 import {
     makeDialogMockEnv,
     mockService,
@@ -8,9 +12,9 @@ import {
     onRpc,
     patchWithCleanup,
 } from "@web/../tests/web_test_helpers";
-import {ErrorDialog} from "@web/components/errors/error_dialogs";
-import {user} from "@web/core/user";
-import {IncidentJourney, JOURNEY_NOTIFICATION} from "@error_incident/incident_journey";
+import { ClientErrorDialog, ErrorDialog } from "@web/components/errors/error_dialogs";
+import { browser } from "@web/core/browser/browser";
+import { user } from "@web/core/user";
 
 describe.current.tags("desktop");
 
@@ -47,7 +51,7 @@ beforeEach(() => {
             listeners.delete(callback);
         },
     });
-    patchWithCleanup(user, {isInternalUser: true, isSystem: false});
+    patchWithCleanup(user, { isInternalUser: true, isSystem: false });
 });
 
 const journey = (step, extra = {}) => ({
@@ -55,21 +59,21 @@ const journey = (step, extra = {}) => ({
     steps: STEPS,
     step,
     outcome: null,
-    details: {count: 1, regressed: false},
+    details: { count: 1, regressed: false },
     ...extra,
 });
 
 function route(answer) {
     const calls = [];
     onRpc("/error_incident/journey", async (request) => {
-        const {params} = await request.json();
+        const { params } = await request.json();
         calls.push(params);
         return typeof answer === "function" ? answer(calls.length) : answer;
     });
     return calls;
 }
 
-async function mountDialog(context = {error_incident: {occurrence: OCCURRENCE}}) {
+async function mountDialog(context = { error_incident: { occurrence: OCCURRENCE } }) {
     const env = await makeDialogMockEnv();
     const dialog = await mountWithCleanup(ErrorDialog, {
         env,
@@ -78,7 +82,7 @@ async function mountDialog(context = {error_incident: {occurrence: OCCURRENCE}})
             exceptionName: "builtins.ValueError",
             message: "boom",
             traceback: "tb",
-            data: {name: "builtins.ValueError", context},
+            data: { name: "builtins.ValueError", context },
             close() {},
         },
     });
@@ -87,20 +91,20 @@ async function mountDialog(context = {error_incident: {occurrence: OCCURRENCE}})
 }
 
 test("the dialog follows the incident the server named on the error", async () => {
-    const calls = route({state: "found", ...journey("acknowledged")});
+    const calls = route({ state: "found", ...journey("acknowledged") });
     await mountDialog();
-    expect(calls).toEqual([{occurrence: OCCURRENCE}]);
+    expect(calls).toEqual([{ occurrence: OCCURRENCE }]);
     expect(".o_error_incident_head").toHaveText("A developer is working on this error");
     expect(".o_error_incident_step").toHaveCount(3);
     expect(".o_error_incident_done").toHaveCount(1);
     expect(".o_error_incident_active").toHaveAttribute("aria-current", "step");
     expect(".o_error_incident_active .o_error_incident_label").toHaveText(
-        "A developer is on it"
+        "A developer is on it",
     );
 });
 
 test("an error the server did not name asks nothing and shows nothing", async () => {
-    const calls = route({state: "found", ...journey("recorded")});
+    const calls = route({ state: "found", ...journey("recorded") });
     await mountDialog({});
     expect(calls).toEqual([]);
     expect(".o_error_incident").toHaveCount(0);
@@ -108,21 +112,21 @@ test("an error the server did not name asks nothing and shows nothing", async ()
 });
 
 test("a portal user asks nothing", async () => {
-    patchWithCleanup(user, {isInternalUser: false});
-    const calls = route({state: "found", ...journey("recorded")});
+    patchWithCleanup(user, { isInternalUser: false });
+    const calls = route({ state: "found", ...journey("recorded") });
     await mountDialog();
     expect(calls).toEqual([]);
     expect(".o_error_incident").toHaveCount(0);
 });
 
 test("an occurrence not written yet is picked up from the bus", async () => {
-    const calls = route({state: "pending"});
+    const calls = route({ state: "pending" });
     await mountDialog();
     expect(".o_error_incident").toHaveCount(0);
-    bus.push(journey("recorded", {occurrence: "someone-else"}));
+    bus.push(journey("recorded", { occurrence: "someone-else" }));
     await animationFrame();
     expect(".o_error_incident").toHaveCount(0);
-    bus.push(journey("recorded", {occurrence: OCCURRENCE}));
+    bus.push(journey("recorded", { occurrence: OCCURRENCE }));
     await animationFrame();
     expect(".o_error_incident_head").toHaveText("This error was recorded");
     // The bus answered: the retries it stood in for are not sent.
@@ -131,7 +135,7 @@ test("an occurrence not written yet is picked up from the bus", async () => {
 });
 
 test("without the bus, it is asked again a few times, then given up", async () => {
-    const calls = route({state: "pending"});
+    const calls = route({ state: "pending" });
     await mountDialog();
     for (const delay of IncidentJourney.RETRY_MS) {
         await advanceTime(delay);
@@ -143,7 +147,9 @@ test("without the bus, it is asked again a few times, then given up", async () =
 });
 
 test("a retry finds it once it is written", async () => {
-    route((n) => (n < 2 ? {state: "pending"} : {state: "found", ...journey("recorded")}));
+    route((n) =>
+        n < 2 ? { state: "pending" } : { state: "found", ...journey("recorded") },
+    );
     await mountDialog();
     await advanceTime(IncidentJourney.RETRY_MS[0]);
     await animationFrame();
@@ -151,9 +157,9 @@ test("a retry finds it once it is written", async () => {
 });
 
 test("a change of the incident is shown as it happens, without asking", async () => {
-    const calls = route({state: "found", ...journey("recorded")});
+    const calls = route({ state: "found", ...journey("recorded") });
     await mountDialog();
-    bus.push(journey("resolved", {incident: 8}));
+    bus.push(journey("resolved", { incident: 8 }));
     await animationFrame();
     expect(".o_error_incident_head").toHaveText("This error was recorded");
     bus.push(journey("resolved"));
@@ -165,7 +171,7 @@ test("a change of the incident is shown as it happens, without asking", async ()
 });
 
 test("set aside stops at the step reached and says why", async () => {
-    route({state: "found", ...journey("recorded", {outcome: "set_aside"})});
+    route({ state: "found", ...journey("recorded", { outcome: "set_aside" }) });
     await mountDialog();
     expect(".o_error_incident_head").toHaveText("Set aside");
     expect(".o_error_incident_stopped").toHaveCount(1);
@@ -178,7 +184,7 @@ test("set aside stops at the step reached and says why", async () => {
 test("a regression and a count are told; a single occurrence is not", async () => {
     route({
         state: "found",
-        ...journey("recorded", {details: {count: 4, regressed: true}}),
+        ...journey("recorded", { details: { count: 4, regressed: true } }),
     });
     await mountDialog();
     expect(".o_error_incident_head").toHaveText("This error came back after a fix");
@@ -189,8 +195,8 @@ test("a regression and a count are told; a single occurrence is not", async () =
 });
 
 test("an administrator can open the incident from the dialog", async () => {
-    patchWithCleanup(user, {isSystem: true});
-    route({state: "found", ...journey("recorded")});
+    patchWithCleanup(user, { isSystem: true });
+    route({ state: "found", ...journey("recorded") });
     const actions = [];
     mockService("action", {
         doAction(action) {
@@ -210,7 +216,7 @@ test("an administrator can open the incident from the dialog", async () => {
 });
 
 test("nobody else is offered the link", async () => {
-    route({state: "found", ...journey("recorded")});
+    route({ state: "found", ...journey("recorded") });
     await mountDialog();
     expect(".o_error_incident_open").toHaveCount(0);
 });
@@ -225,17 +231,99 @@ test("a failed lookup leaves the dialog as it was", async () => {
 });
 
 test("a closed dialog stops listening", async () => {
-    route({state: "pending"});
+    route({ state: "pending" });
     const env = await makeDialogMockEnv();
     const dialog = await mountWithCleanup(ErrorDialog, {
         env,
         props: {
             message: "boom",
-            data: {context: {error_incident: {occurrence: OCCURRENCE}}},
+            data: { context: { error_incident: { occurrence: OCCURRENCE } } },
             close() {},
         },
     });
     expect(bus.size).toBe(1);
     destroy(dialog);
     expect(bus.size).toBe(0);
+});
+
+const STACK =
+    "TypeError: boom\n    at Probe.onClick (http://h/web/assets/esm/1/web.assets_web.esm.js:1:150)";
+
+function reportRoute(answer) {
+    const calls = [];
+    onRpc("/error_incident/report", async (request) => {
+        const { params } = await request.json();
+        calls.push(params);
+        return answer;
+    });
+    return calls;
+}
+
+async function mountClientDialog(props = {}) {
+    const env = await makeDialogMockEnv();
+    await mountWithCleanup(ClientErrorDialog, {
+        env,
+        props: {
+            name: "UncaughtClientError > TypeError",
+            message: "Uncaught Javascript Error > boom",
+            traceback: STACK,
+            close() {},
+            ...props,
+        },
+    });
+    await animationFrame();
+}
+
+test("an error the browser raised on its own is reported and followed", async () => {
+    const calls = reportRoute({
+        state: "found",
+        occurrence: "client-1",
+        ...journey("recorded"),
+    });
+    const asks = route({ state: "found", ...journey("recorded") });
+    await mountClientDialog();
+    expect(calls).toEqual([{ stack: STACK, location: browser.location.pathname }]);
+    expect(asks).toEqual([]);
+    expect(".o_error_incident_head").toHaveText("This error was recorded");
+    bus.push(journey("acknowledged", { incident: 7 }));
+    await animationFrame();
+    expect(".o_error_incident_head").toHaveText("A developer is working on this error");
+});
+
+test("a browser error without a stack is not reported", async () => {
+    const calls = reportRoute({
+        state: "found",
+        occurrence: "client-1",
+        ...journey("recorded"),
+    });
+    await mountClientDialog({ traceback: null });
+    expect(calls).toEqual([]);
+    expect(".o_error_incident").toHaveCount(0);
+});
+
+test("a server error the server did not name is not reported as a browser one", async () => {
+    const calls = reportRoute({
+        state: "found",
+        occurrence: "client-1",
+        ...journey("recorded"),
+    });
+    await mountDialog({});
+    expect(calls).toEqual([]);
+});
+
+test("a report the server refuses leaves the dialog as it was", async () => {
+    reportRoute({ state: "limited" });
+    await mountClientDialog();
+    expect(".o_error_incident").toHaveCount(0);
+});
+
+test("a portal user reports nothing", async () => {
+    patchWithCleanup(user, { isInternalUser: false });
+    const calls = reportRoute({
+        state: "found",
+        occurrence: "client-1",
+        ...journey("recorded"),
+    });
+    await mountClientDialog();
+    expect(calls).toEqual([]);
 });
