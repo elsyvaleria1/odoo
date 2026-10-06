@@ -51,4 +51,11 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_thumbnails" model="res.groups">
+        <field name="name">Render and Show Document Thumbnails</field>
+        <field
+            name="comment">A thumbnail is reached only through the document it shows: code that has checked the document reads, renders or stores its thumbnail. A rendering of a content is shared by every document holding it, so nobody reads the rows directly.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

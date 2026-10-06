@@ -1,15 +1,20 @@
 import base64
 import io
+import unittest
 
 from PIL import Image
 
-from odoo import Command, http
+from odoo import SUPERUSER_ID, Command, http
+from odoo.exceptions import AccessError
+from odoo.libs import pdf_raster
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
 from odoo.tools import mute_logger
 
+from ..models import document_document_thumbnail
 from .test_document_common import TransactionCaseDocuments
+from odoo.addons.base.tests.test_pdf_raster import make_pdf
 
 
 def _png(color):
@@ -24,35 +29,37 @@ class TestDocumentsThumbnail(TransactionCaseDocuments):
         document = self.env["document.document"].create(
             {"name": "pic.png", "type": "binary", "datas": _png((10, 200, 10))}
         )
+        self.env.cr.flush()
         self.assertEqual(document.thumbnail_status, "present")
-        self.assertTrue(document.thumbnail)
+        first = document.thumbnail
+        self.assertTrue(first)
 
         result = document.web_save(
             {"datas": _png((10, 10, 200))}, {"thumbnail_status": {}}
         )
 
-        self.assertEqual(result[0]["thumbnail_status"], "present")
-        document.invalidate_recordset()
+        self.assertEqual(
+            result[0]["thumbnail_status"],
+            "pending",
+            "the new content is rendered before the save commits, after it answers",
+        )
+        self.env.cr.flush()
         self.assertEqual(document.thumbnail_status, "present")
         self.assertTrue(document.thumbnail)
+        self.assertNotEqual(document.thumbnail, first)
 
-    def test_thumbnail_recompute_under_bin_size(self):
+    def test_thumbnail_read_under_bin_size(self):
         document = self.env["document.document"].create(
             {"name": "pic.png", "type": "binary", "datas": _png((200, 30, 30))}
         )
-        self.env.flush_all()
+        self.env.cr.flush()
         self.env.invalidate_all()
-        for field_name in ("thumbnail", "thumbnail_status"):
-            self.env.add_to_compute(
-                self.env["document.document"]._fields[field_name], document
-            )
 
         self.assertEqual(
             document.with_context(bin_size=True).thumbnail_status, "present"
         )
-        self.env.flush_all()
         document.invalidate_recordset()
-        self.assertTrue(document.thumbnail)
+        self.assertTrue(base64.b64decode(document.thumbnail).startswith(b"\x89PNG"))
 
     def test_thumbnail_status_error_for_undecodable_content(self):
         document = self.env["document.document"].create(
@@ -63,7 +70,7 @@ class TestDocumentsThumbnail(TransactionCaseDocuments):
             }
         )
         document.attachment_id.sudo().mimetype = "image/png"
-        document.invalidate_recordset()
+        self.env.cr.flush()
         self.assertEqual(document.thumbnail_status, "error")
         self.assertFalse(document.thumbnail)
 
@@ -124,28 +131,34 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
         cls.folder.action_update_access_rights(
             access_via_link="edit", partners={cls.uploader.partner_id: ("edit", False)}
         )
-        cls.webp = Doc.with_user(cls.manager).create(
+        cls.pdf = Doc.with_user(cls.manager).create(
             {
                 "type": "binary",
-                "name": "audit.webp",
+                "name": "audit.pdf",
                 "user_folder_id": "COMPANY",
-                "datas": base64.b64encode(b"RIFF....WEBPVP8 "),
-                "mimetype": "image/webp",
+                "datas": base64.b64encode(make_pdf()),
+                "mimetype": "application/pdf",
             }
         )
-        cls.webp.action_update_access_rights(
+        cls.pdf.action_update_access_rights(
             partners={cls.viewer.partner_id: ("view", False)}
         )
 
+    def setUp(self):
+        super().setUp()
+        # no renderer on this server: the browser renders PDFs, and stores
+        # what it rendered through the route
+        self.patch(pdf_raster, "available", lambda: False)
+
     def _post_thumbnail(self, payload):
         return self.url_open(
-            f"/documents/document/{self.webp.id}/update_thumbnail",
+            f"/documents/document/{self.pdf.id}/update_thumbnail",
             headers={"Content-Type": "application/json"},
             data=json_dumps(
                 {
                     "jsonrpc": "2.0",
                     "method": "call",
-                    "params": {"document_id": self.webp.id, "thumbnail": payload},
+                    "params": {"document_id": self.pdf.id, "thumbnail": payload},
                 }
             ),
         ).json()
@@ -162,13 +175,16 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
         garbage = base64.b64encode(b"<svg onload=alert(1)>NOTIMAGE").decode()
         body = self._post_thumbnail(garbage)
         self.assertIn("error", body)
-        self.assertFalse(self.webp.thumbnail)
+        self.pdf.invalidate_recordset()
+        self.assertFalse(self.pdf.thumbnail)
         buffer = io.BytesIO()
         Image.new("RGB", (48, 48)).save(buffer, format="PNG")
         body = self._post_thumbnail(base64.b64encode(buffer.getvalue()).decode())
         self.assertNotIn("error", body)
-        self.assertTrue(self.webp.thumbnail)
-        self.assertTrue(base64.b64decode(self.webp.thumbnail).startswith(b"\x89PNG"))
+        self.pdf.invalidate_recordset()
+        self.assertEqual(self.pdf.thumbnail_status, "present")
+        self.assertTrue(self.pdf.thumbnail)
+        self.assertTrue(base64.b64decode(self.pdf.thumbnail).startswith(b"\x89PNG"))
 
     def test_a_viewer_cannot_store_a_thumbnail(self):
         """A read check guarding a `sudo()` write let any reader set it.
@@ -188,10 +204,10 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
             body.get("error", {}).get("data", {}).get("name"),
             "odoo.exceptions.AccessError",
         )
-        self.webp.invalidate_recordset()
-        self.assertFalse(self.webp.thumbnail)
+        self.pdf.invalidate_recordset()
+        self.assertFalse(self.pdf.thumbnail)
         self.assertEqual(
-            self.webp.thumbnail_status,
+            self.pdf.thumbnail_status,
             "client_generated",
             "and the document stays open for someone who may store one",
         )
@@ -211,12 +227,13 @@ def _oversized_png(side):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
-    """`_compute_thumbnail` degrades; it never takes the transaction with it.
+    """A thumbnail render degrades; it never takes the transaction with it.
 
-    The compute is stored and runs inside `create`/`write`, so an image PIL
-    refuses to decode must land as `thumbnail_status = "error"`. Anything that
-    escapes it aborts the write that carried the file -- including an upload
-    arriving on the public `/documents/upload` route through an edit link.
+    An image is rendered before the transaction that carried it commits, so one
+    PIL refuses to decode must land as `thumbnail_status = "error"`. Anything
+    that escapes it aborts the write that carried the file -- including an
+    upload arriving on the public `/documents/upload` route through an edit
+    link.
     """
 
     def _create_with_content(self, name, raw, mimetype):
@@ -236,7 +253,7 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
         document = self._create_with_content(
             "bomb.png", _oversized_png(16000), "image/png"
         )
-        self.env.flush_all()
+        self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "error")
         self.assertFalse(document.thumbnail)
@@ -249,7 +266,7 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
         document = self._create_with_content(
             "claims.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 512, "image/png"
         )
-        self.env.flush_all()
+        self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "error")
         self.assertFalse(document.thumbnail)
@@ -259,7 +276,7 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
         document = self._create_with_content(
             "fine.png", base64.b64decode(_png((10, 200, 10))), "image/png"
         )
-        self.env.flush_all()
+        self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "present")
         self.assertTrue(document.thumbnail)
@@ -269,7 +286,7 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
 class TestDocumentsThumbnailPublicUpload(HttpCase):
     """The bomb reaches the compute through the PUBLIC upload route.
 
-    The unit test above proves `_compute_thumbnail` degrades; this one proves
+    The unit test above proves the render degrades; this one proves
     the input is reachable without an account. Together they are the claim:
     an unauthenticated visitor holding an edit link -- the shape
     `wizard.document.document.request` creates for a requestee with no user -- can send
@@ -295,7 +312,7 @@ class TestDocumentsThumbnailPublicUpload(HttpCase):
     @mute_logger(
         "odoo.http",
         "odoo.sql_db",
-        "odoo.addons.document.models.document_document",
+        "odoo.addons.document.models.document_document_thumbnail",
     )
     def test_an_unauthenticated_visitor_may_upload_an_undecodable_image(self):
         self.authenticate(None, None)
@@ -341,7 +358,7 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
     `ir.attachment` normally downscales an uploaded image to 1920px before
     anything else sees it -- but `_documents_upload` builds its attachments
     `with_context(image_no_postprocess=True)`, so on the Documents upload route
-    the full-size image reaches this compute. Pillow refuses only above twice
+    the full-size image reaches the render. Pillow refuses only above twice
     its own `MAX_IMAGE_PIXELS`; below that it decodes, so a 410 KB PNG declaring
     12000x12000 used to decode in full and SUCCEED -- measured at +552 MB and
     0.80s for one request, against +0 MB and 0.04s once bounded. A request that
@@ -370,7 +387,7 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
         document = self.env["document.document"].create(
             {"name": "huge.png", "type": "binary", "attachment_id": attachment.id}
         )
-        self.env.flush_all()
+        self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "error")
         self.assertFalse(document.thumbnail)
@@ -387,7 +404,269 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
         document = self.env["document.document"].create(
             {"name": "normal.png", "type": "binary", "attachment_id": attachment.id}
         )
-        self.env.flush_all()
+        self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "present")
         self.assertTrue(document.thumbnail)
+
+
+@tagged("post_install", "-at_install")
+class TestDocumentsThumbnailStore(TransactionCaseDocuments):
+    """One rendering per content, reached only through a document holding it."""
+
+    def _create(self, name, raw, mimetype, **values):
+        return self.env["document.document"].create(
+            {
+                "name": name,
+                "type": "binary",
+                "folder_id": self.folder_a.id,
+                "datas": base64.b64encode(raw),
+                "mimetype": mimetype,
+                **values,
+            }
+        )
+
+    def _rows(self, checksum):
+        return self.env["document.thumbnail"].search(
+            [("document_id", "=", False), ("checksum", "=", checksum)]
+        )
+
+    def _jobs(self, checksum):
+        return self.env["ir.job"].search(
+            [("identity_key", "=", f"document.thumbnail:{checksum}")]
+        )
+
+    def _png_bytes(self, color):
+        return base64.b64decode(_png(color))
+
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_a_pdf_is_rendered_by_a_job_as_the_system(self):
+        document = self._create("report.pdf", make_pdf(), "application/pdf")
+        self.env.cr.flush()
+
+        self.assertEqual(document.thumbnail_status, "pending")
+        job = self._jobs(document.checksum)
+        self.assertEqual(len(job), 1)
+        self.assertEqual(job.channel, "document_thumbnail")
+        self.assertEqual(list(job.record_ids), [document.id])
+        self.assertEqual(job.user_id.id, SUPERUSER_ID)
+
+        document._job_render_thumbnails()
+
+        self.assertEqual(document.thumbnail_status, "present")
+        self.assertTrue(base64.b64decode(document.thumbnail).startswith(b"\x89PNG"))
+
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_a_pdf_without_a_page_is_an_error_thumbnail(self):
+        document = self._create("empty.pdf", make_pdf(pages=0), "application/pdf")
+        self.env.cr.flush()
+
+        document._job_render_thumbnails()
+
+        self.assertEqual(document.thumbnail_status, "error")
+        self.assertFalse(document.thumbnail)
+
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_a_render_out_of_time_is_asked_again_not_failed(self):
+        document = self._create("report.pdf", make_pdf(), "application/pdf")
+        self.env.cr.flush()
+        timed_out = pdf_raster.Rendering(pdf_raster.Outcome.TIMED_OUT)
+        self.patch(pdf_raster, "render_first_page", lambda *args: timed_out)
+
+        document._job_render_thumbnails()
+
+        self.assertFalse(self._rows(document.checksum))
+        self.assertEqual(document.thumbnail_status, "pending")
+
+    def test_no_renderer_leaves_the_pdf_to_the_browser(self):
+        self.patch(pdf_raster, "available", lambda: False)
+        document = self._create("report.pdf", make_pdf(), "application/pdf")
+        self.env.cr.flush()
+
+        self.assertEqual(document.thumbnail_status, "client_generated")
+        self.assertFalse(self._jobs(document.checksum))
+        self.assertEqual(
+            document.thumbnail_source_checksum,
+            document.checksum,
+            "the content stays named, for the renderer installed later",
+        )
+
+    def test_documents_holding_one_content_share_one_rendering(self):
+        raw = self._png_bytes((10, 200, 10))
+        first = self._create("a.png", raw, "image/png")
+        second = self._create("b.png", raw, "image/png")
+        self.env.cr.flush()
+
+        self.assertEqual(first.checksum, second.checksum)
+        self.assertEqual(len(self._rows(first.checksum)), 1)
+        self.assertEqual((first | second).mapped("thumbnail_status"), ["present"] * 2)
+        self.assertEqual(first.thumbnail, second.thumbnail)
+
+    def test_a_copy_shares_the_rendering(self):
+        document = self._create("a.png", self._png_bytes((7, 7, 7)), "image/png")
+        self.env.cr.flush()
+
+        copy = document.copy()
+        self.env.cr.flush()
+
+        self.assertEqual(copy.thumbnail_status, "present")
+        self.assertEqual(copy.thumbnail, document.thumbnail)
+        self.assertEqual(len(self._rows(document.checksum)), 1)
+
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_documents_holding_one_pdf_queue_one_job(self):
+        raw = make_pdf()
+        first = self._create("a.pdf", raw, "application/pdf")
+        self.env.cr.flush()
+        self._create("b.pdf", raw, "application/pdf")
+        self.env.cr.flush()
+
+        self.assertEqual(len(self._jobs(first.checksum)), 1)
+
+    def test_a_shortcut_shows_its_targets_thumbnail(self):
+        target = self._create("a.png", self._png_bytes((200, 10, 10)), "image/png")
+        shortcut = target.action_create_shortcut(self.folder_b.id)
+        self.env.cr.flush()
+
+        self.assertFalse(shortcut.thumbnail_source_checksum)
+        self.assertEqual(shortcut.thumbnail_status, "present")
+        self.assertEqual(shortcut.thumbnail, target.thumbnail)
+
+    def test_new_content_is_rendered_and_the_old_rendering_collected(self):
+        document = self._create("a.png", self._png_bytes((200, 10, 10)), "image/png")
+        self.env.cr.flush()
+        old_checksum = document.checksum
+        old_thumbnail = document.thumbnail
+
+        document.write({"datas": _png((10, 10, 200))})
+        self.env.cr.flush()
+
+        self.assertNotEqual(document.checksum, old_checksum)
+        self.assertEqual(document.thumbnail_status, "present")
+        self.assertNotEqual(document.thumbnail, old_thumbnail)
+        self.assertTrue(self._rows(old_checksum))
+
+        self.env["document.thumbnail"]._gc_unreferenced()
+
+        self.assertFalse(self._rows(old_checksum))
+        self.assertTrue(self._rows(document.checksum))
+
+    def test_rows_are_reached_only_through_a_document(self):
+        document = self._create("a.png", self._png_bytes((10, 10, 10)), "image/png")
+        document.action_update_access_rights(
+            partners={self.internal_user.partner_id: ("view", False)}
+        )
+        self.env.cr.flush()
+
+        with self.assertRaises(AccessError):
+            self.env["document.thumbnail"].with_user(self.internal_user).search([])
+        as_viewer = document.with_user(self.internal_user)
+        self.assertEqual(as_viewer.thumbnail_status, "present")
+        self.assertTrue(as_viewer.thumbnail)
+
+    def test_an_authored_thumbnail_wins_until_it_is_cleared(self):
+        document = self._create("a.png", self._png_bytes((10, 200, 10)), "image/png")
+        self.env.cr.flush()
+        rendered = document.thumbnail
+        authored = _png((1, 2, 3))
+
+        document.thumbnail = authored
+
+        self.assertEqual(document.thumbnail, authored)
+        self.assertEqual(document.thumbnail_status, "present")
+
+        document.thumbnail = False
+
+        self.assertEqual(document.thumbnail, rendered)
+
+    def test_a_browser_rendering_goes_stale_with_its_content(self):
+        self.patch(pdf_raster, "available", lambda: False)
+        document = self._create("a.pdf", make_pdf(), "application/pdf")
+        document._store_own_thumbnail(_png((5, 5, 5)), "present")
+        self.assertEqual(document.thumbnail_status, "present")
+
+        document.write({"datas": base64.b64encode(make_pdf(pages=2))})
+
+        self.assertEqual(
+            document.thumbnail_status,
+            "client_generated",
+            "a rendering of the previous content shows nothing of this one",
+        )
+
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_the_sweep_queues_what_the_queue_lost(self):
+        document = self._create("a.pdf", make_pdf(), "application/pdf")
+        self.env.cr.flush()
+        self._jobs(document.checksum).unlink()
+
+        self.env["document.document"]._cron_render_awaited_thumbnails()
+        self.env["document.document"]._cron_render_awaited_thumbnails()
+
+        self.assertEqual(len(self._jobs(document.checksum)), 1)
+
+        document._job_render_thumbnails()
+        self._jobs(document.checksum).unlink()
+        self.env["document.document"]._cron_render_awaited_thumbnails()
+
+        self.assertFalse(self._jobs(document.checksum), "rendered: nothing to sweep")
+
+    def test_past_the_inline_cap_images_queue(self):
+        self.patch(document_document_thumbnail, "INLINE_IMAGES", 2)
+        # the fixtures' own images are rendered first, outside the count
+        self.env.cr.flush()
+        documents = self.env["document.document"]
+        for shade in range(4):
+            documents |= self._create(
+                f"{shade}.png", self._png_bytes((shade, 0, 0)), "image/png"
+            )
+        self.env.cr.flush()
+
+        self.assertEqual(
+            sorted(documents.mapped("thumbnail_status")),
+            ["pending", "pending", "present", "present"],
+        )
+        queued = documents.filtered(lambda d: d.thumbnail_status == "pending")
+        for document in queued:
+            self.assertEqual(len(self._jobs(document.checksum)), 1)
+        queued._job_render_thumbnails()
+        self.assertEqual(set(documents.mapped("thumbnail_status")), {"present"})
+
+    def test_a_rendering_raced_by_another_transaction_is_kept(self):
+        document = self._create("a.png", self._png_bytes((9, 9, 9)), "image/png")
+        self.env.cr.flush()
+
+        document._store_rendered_thumbnail(document.checksum, b"\x89PNG other")
+
+        self.assertEqual(len(self._rows(document.checksum)), 1)
+        self.assertEqual(document.thumbnail_status, "present")
+
+    def test_a_reader_of_the_document_reads_its_thumbnail_whatever_holds_the_file(self):
+        # the file is attached to a record the reader cannot open: the
+        # thumbnail is the document's, read through it
+        cron = self.env["ir.cron"].search([], limit=1)
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": "a.pdf",
+                "raw": make_pdf(),
+                "mimetype": "application/pdf",
+                "res_model": "ir.cron",
+                "res_id": cron.id,
+            }
+        )
+        document = self.env["document.document"].create(
+            {
+                "name": "a.pdf",
+                "type": "binary",
+                "folder_id": self.folder_a.id,
+                "attachment_id": attachment.id,
+            }
+        )
+        document.action_update_access_rights(
+            partners={self.internal_user.partner_id: ("view", False)}
+        )
+        self.env.cr.flush()
+        as_viewer = document.with_user(self.internal_user)
+        as_viewer.check_access("read")
+
+        self.assertIn(as_viewer.thumbnail_status, ("pending", "client_generated"))
+        self.assertFalse(as_viewer.thumbnail)

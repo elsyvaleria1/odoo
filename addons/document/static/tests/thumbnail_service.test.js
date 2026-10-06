@@ -66,6 +66,28 @@ test("a failing update_thumbnail RPC does not surface to the user", async () => 
     });
 });
 
+test("a thumbnail the server is rendering is left to the server", async () => {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(3, "Report", {
+            thumbnail_status: "pending",
+            attachment_id: 2,
+            folder_id: 1,
+            mimetype: "application/pdf",
+        }),
+    ]);
+    serverData["ir.attachment"] = [{ id: 2, name: "report.pdf" }];
+    onRpc("/documents/document/3/update_thumbnail", () => {
+        expect.step("update_thumbnail attempted");
+        return true;
+    });
+
+    await makeDocumentsMockEnv({ serverData });
+    await mountDocumentsKanbanView();
+    await drainThumbnailQueue();
+
+    expect.verifySteps([]);
+});
+
 test("a thumbnail failure does not stop the queue for later records", async () => {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(3, "Doc A", {

@@ -27,16 +27,21 @@ class DocumentsDocument(models.Model):
     )
 
     @api.depends("has_embedded_pdf")
-    def _compute_thumbnail(self) -> None:
-        """Compute the thumbnail and thumbnail status.
+    def _compute_thumbnail_source_checksum(self) -> None:
+        super()._compute_thumbnail_source_checksum()
 
-        If the XML invoices contain an embedded PDF, the thumbnail / thumbnail_status
-        must have the same behavior as a standard PDF.
-        """
-        xml_documents = self.filtered(lambda doc: doc.has_embedded_pdf)
-        xml_documents.thumbnail = False
-        xml_documents.thumbnail_status = "client_generated"
-        super(DocumentsDocument, self - xml_documents)._compute_thumbnail()
+    def _get_thumbnail_kind(self) -> str | bool:
+        # an XML invoice carrying a PDF shows that PDF, as a PDF file would
+        if self.has_embedded_pdf:
+            if self.attachment_id.type == "cloud_storage":
+                return "browser"
+            return "pdf"
+        return super()._get_thumbnail_kind()
+
+    def _get_thumbnail_source(self) -> bytes:
+        if self.has_embedded_pdf:
+            return self._extract_pdf_from_xml() or b""
+        return super()._get_thumbnail_source()
 
     @api.depends("checksum")
     def _compute_has_embedded_pdf(self) -> None:

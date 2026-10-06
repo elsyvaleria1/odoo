@@ -39,9 +39,7 @@ class TestDocumentsPublicRouteHardening(HttpCase):
                 "access_via_link": "view",
             }
         )
-        cls.shared_image.write(
-            {"thumbnail": base64.b64encode(png), "thumbnail_status": "present"}
-        )
+        cls.shared_image.thumbnail = base64.b64encode(png)
 
     def test_public_thumbnail_rejects_negative_dimensions(self):
         token = self.shared_image.access_token

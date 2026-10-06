@@ -1,6 +1,6 @@
 {
     "name": "Documents",
-    "version": "1.26",
+    "version": "1.27",
     "oldest_upgradable_version": "1.26",
     "category": "Productivity/Documents",
     "sequence": 80,
@@ -21,6 +21,7 @@
         "security/ir.access.csv",
         "security/ir_access.xml",
         "data/ir_cron_data.xml",
+        "data/ir_job_channel.xml",
         "data/mail_template_data.xml",
         "data/mail_activity_type_data.xml",
         "data/document_tag_data.xml",

@@ -1,11 +1,14 @@
 import base64
+import unittest
 from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.libs import pdf_raster
 from odoo.tests.common import tagged
 
 from odoo.addons.account.tests.test_account_move_send import TestAccountMoveSendCommon
+from odoo.addons.base.tests.test_pdf_raster import make_pdf
 from odoo.addons.document.models.document_document import DocumentsDocument
 from odoo.addons.document_account.tests.common import (
     PDF,
@@ -455,8 +458,32 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         )
         self.assertEqual(document.mimetype, "application/xml")
         self.assertEqual(document._extract_pdf_from_xml(), b"%PDF- Fake PDF content")
-        self.assertEqual(document.thumbnail_status, "client_generated")
         self.assertTrue(document.has_embedded_pdf)
+        self.assertEqual(document._get_thumbnail_kind(), "pdf")
+        self.assertEqual(document._get_thumbnail_source(), b"%PDF- Fake PDF content")
+        self.assertEqual(document.thumbnail_source_checksum, document.checksum)
+
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_an_embedded_pdf_is_rendered_as_the_thumbnail(self):
+        embedded = base64.b64encode(make_pdf())
+        document = self.env["document.document"].create(
+            {
+                "name": "invoice.xml",
+                "folder_id": self.folder_a.id,
+                "datas": base64.b64encode(
+                    b'<?xml version="1.0" ?>\n<Invoice><Attachment>'
+                    + embedded
+                    + b"</Attachment></Invoice>"
+                ),
+            }
+        )
+        self.env.cr.flush()
+        self.assertEqual(document.thumbnail_status, "pending")
+
+        document._job_render_thumbnails()
+
+        self.assertEqual(document.thumbnail_status, "present")
+        self.assertTrue(base64.b64decode(document.thumbnail).startswith(b"\x89PNG"))
 
     def test_move_document_unlink(self):
         """Test that the document is sent to trash when the `account.move` is unlinked."""

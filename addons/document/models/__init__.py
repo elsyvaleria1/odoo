@@ -18,7 +18,9 @@ from . import document_document_versioning
 from . import document_document_embedded_actions
 from . import document_document_link_to_record
 from . import document_document_mail
+from . import document_document_thumbnail
 from . import document_tag
+from . import document_thumbnail
 
 from . import ir_attachment
 from . import ir_binary

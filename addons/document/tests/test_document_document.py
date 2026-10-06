@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from odoo import Command, fields, http
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.libs import pdf_raster
 from odoo.tests.common import TransactionCase, new_test_user, tagged, users
 from odoo.tools import mute_logger
 
@@ -828,8 +829,6 @@ class TestCaseDocuments(TransactionCaseDocuments):
                 {
                     "name",
                     "is_multipage",
-                    "thumbnail",
-                    "thumbnail_status",
                     "url_preview_image",
                     "file_extension",
                 },
@@ -1202,8 +1201,13 @@ class TestCaseDocuments(TransactionCaseDocuments):
                         "folder_id": self.folder_b.id,
                     }
                 )
+                self.env.cr.flush()
                 self.assertEqual(pdf_document.thumbnail, False)
-                self.assertEqual(pdf_document.thumbnail_status, "client_generated")
+                self.assertEqual(
+                    pdf_document.thumbnail_status,
+                    "pending" if pdf_raster.available() else "client_generated",
+                    "rendered by a job when the server has a renderer",
+                )
 
         word_document = self.env["document.document"].create(
             {
@@ -1223,8 +1227,9 @@ class TestCaseDocuments(TransactionCaseDocuments):
                 "folder_id": self.folder_b.id,
             }
         )
-        self.assertEqual(webp_document.thumbnail, False)
-        self.assertEqual(webp_document.thumbnail_status, "client_generated")
+        self.env.cr.flush()
+        self.assertTrue(webp_document.thumbnail)
+        self.assertEqual(webp_document.thumbnail_status, "present")
 
         image_documents = self.env["document.document"].create(
             [
@@ -1245,6 +1250,7 @@ class TestCaseDocuments(TransactionCaseDocuments):
                 ]
             ]
         )
+        self.env.cr.flush()
         for image_document in image_documents:
             with self.subTest(mimetype=image_document.mimetype):
                 self.assertEqual(image_document.thumbnail, GIF)

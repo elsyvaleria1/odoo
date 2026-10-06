@@ -89,6 +89,12 @@ class TestDocumentAccessMatrix(AccessMatrixCase):
             "document.access.tracking",
             "tracking",
         ),
+        # reached only through a document, by code holding the privilege:
+        # not even the document's owner reads the row
+        Cell(
+            "document.thumbnail",
+            "thumbnail",
+        ),
         Cell(
             "document.tag",
             "tag",
@@ -234,6 +240,9 @@ class TestDocumentAccessMatrix(AccessMatrixCase):
                     "changes": {"matrix": 1},
                     "documents": {"matrix": 1},
                 }
+            ),
+            "thumbnail": env["document.thumbnail"].create(
+                {"document_id": doc_team.id, "state": "error"}
             ),
             "tag": env["document.tag"].create({"name": "matrix tag"}),
             "doc_type": env["document.type"].create(

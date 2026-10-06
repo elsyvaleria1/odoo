@@ -878,14 +878,13 @@ class ShareRoute(http.Controller):
     )
     def documents_update_thumbnail(self, document_id: int, thumbnail: Any) -> None:
         document = request.env["document.document"].browse(document_id)
-        # A read check guarding a `sudo().write`: any reader could set the
-        # stored thumbnail that every other user then sees, and because the
-        # write flips `thumbnail_status` away from "client_generated" nobody
-        # could correct it afterwards. The thumbnail is a property of the
-        # document, so writing it takes write access like every other one; the
-        # client only reaches this route for documents it can already edit, and
-        # a viewer simply leaves the thumbnail to somebody who can.
-        document.check_access("write")
+        # The thumbnail a browser renders is the document's own, shown to every
+        # reader and, behind a shortcut, to every reader of the shortcut, so
+        # storing it takes write access on the document holding the content.
+        # The client only reaches this route for documents it can edit; a
+        # viewer leaves the thumbnail to somebody who can.
+        source = document.shortcut_document_id or document
+        source.check_access("write")
         if document.thumbnail_status != "client_generated":
             return
         validated = False
@@ -896,12 +895,7 @@ class ShareRoute(http.Controller):
                 buffer = io.BytesIO()
                 image.convert("RGB").save(buffer, format="PNG")
                 validated = base64.b64encode(buffer.getvalue())
-        document.sudo().write(
-            {
-                "thumbnail": validated,
-                "thumbnail_status": "present" if validated else "error",
-            }
-        )
+        source._store_own_thumbnail(validated, "present" if validated else "error")
 
     @http.route(["/documents/zip"], type="http", auth="user")
     def documents_zip(self, file_ids: str, zip_name: str, **kw: Any) -> Any:

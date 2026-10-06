@@ -1,4 +1,3 @@
-import base64
 import contextlib
 import io
 import logging
@@ -19,7 +18,6 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import get_extension
 from odoo.tools import SQL, groupby
 from odoo.tools.date_utils import time_unit_selection
-from odoo.tools.image import image_process
 from odoo.tools.misc import clean_context
 from odoo.tools.pdf import PdfReader
 
@@ -224,27 +222,6 @@ class DocumentsDocument(models.Model):
     is_folder = fields.Boolean(
         compute="_compute_is_folder",
         order_by_sql="_order_by_sql_is_folder",
-    )
-    thumbnail = fields.Binary(
-        attachment=True,
-        compute="_compute_thumbnail",
-        recursive=True,
-        store=True,
-        readonly=False,
-    )
-    thumbnail_status = fields.Selection(
-        selection=[
-            ("present", "Present"),
-            ("error", "Error"),
-            (
-                "client_generated",
-                "Client Generated",
-            ),
-        ],
-        compute="_compute_thumbnail",
-        recursive=True,
-        store=True,
-        readonly=False,
     )
     url = fields.Char(
         string="Link URL",
@@ -2020,87 +1997,6 @@ class DocumentsDocument(models.Model):
                     else:
                         document.res_name = names[document.res_id]
             span.set(masked=masked)
-
-    @api.depends(
-        "checksum",
-        "mimetype",
-        "attachment_id.type",
-        "shortcut_document_id.thumbnail",
-        "shortcut_document_id.thumbnail_status",
-    )
-    def _compute_thumbnail(self) -> None:
-        for document in self:
-            if document.shortcut_document_id:
-                document.thumbnail = document.shortcut_document_id.thumbnail
-                document.thumbnail_status = (
-                    document.shortcut_document_id.thumbnail_status
-                )
-            elif document.mimetype and (
-                document.mimetype.startswith("application/pdf")
-                or document.mimetype.startswith("image/webp")
-                or (
-                    document.mimetype.startswith("image/")
-                    and document.attachment_id.type == "cloud_storage"
-                )
-            ):
-                document.thumbnail = False
-                document.thumbnail_status = "client_generated"
-            elif document.mimetype and document.mimetype.startswith("image/"):
-                content = document.attachment_id.sudo()._get_content_prefix()
-                # Any decoding failure is an ERROR THUMBNAIL, never an
-                # exception. This compute is stored, so it runs inside the
-                # `create`/`write` that carried the file: whatever escapes here
-                # aborts that write and loses the upload. odoo.libs.image turns
-                # Pillow's decode failures and its DecompressionBombError into
-                # ImageError, but an encoder or a format plugin can still raise
-                # its own type, and the bomb stays reachable on purpose -- a
-                # uniform 16000x16000 PNG is 250 KB on the wire and 256 Mpx once
-                # decoded, so no upload size limit bounds it, and
-                # `/documents/upload/<token>` accepts it from an unauthenticated
-                # visitor holding an edit link.
-                try:
-                    thumbnail = (
-                        image_process(
-                            content,
-                            size=(200, 140),
-                            crop="center",
-                            # Bound the DECODE, not just the download. Pillow
-                            # only refuses above twice its own MAX_IMAGE_PIXELS;
-                            # between one and two times it warns and decodes
-                            # anyway, so a 410 KB, 12000x12000 RGB PNG arriving
-                            # on the public upload route allocated ~550 MB and
-                            # SUCCEEDED -- a better denial primitive than the
-                            # one that raised, because it can be repeated and
-                            # logs nothing. `verify_resolution` reads the header
-                            # and refuses past `IMAGE_MAX_RESOLUTION` (50 Mpx)
-                            # before any pixel is decoded, as `html_editor` and
-                            # `web_unsplash` already do on their upload paths.
-                            # Past it the file is still stored and served; only
-                            # its preview is skipped.
-                            verify_resolution=True,
-                        )
-                        if content
-                        else None
-                    )
-                except Exception:
-                    thumbnail = None
-                    _logger.warning(
-                        "Documents: could not build a thumbnail for %r (%s)",
-                        document.name,
-                        document.mimetype,
-                        exc_info=True,
-                    )
-                document.thumbnail = base64.b64encode(thumbnail) if thumbnail else False
-                document.thumbnail_status = "present" if thumbnail else "error"
-                if _debug.logic.enabled and not thumbnail:
-                    _debug.logic(
-                        "thumbnail_failed",
-                        document=document,
-                        mimetype=document.mimetype,
-                    )
-            else:
-                document.thumbnail = False
-                document.thumbnail_status = False
 
     @api.depends("type")
     def _compute_deletion_delay(self) -> None:

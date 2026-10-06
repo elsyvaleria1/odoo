@@ -75,6 +75,7 @@ export class DocumentsDocument extends models.Model {
         selection: [
             ["present", "Present"],
             ["error", "Error"],
+            ["pending", "Pending"],
             ["client_generated", "Client_Generated"],
             ["restricted", "Inaccessible"],
         ],

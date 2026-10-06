@@ -1103,6 +1103,22 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         )
         self.assertFalse(document.spreadsheet_thumbnail_checksum)
 
+    def test_a_spreadsheet_keeps_its_authored_thumbnail_across_saves(self):
+        spreadsheet = self.create_spreadsheet()
+        spreadsheet.thumbnail = GIF
+        checksum = spreadsheet.checksum
+
+        spreadsheet.spreadsheet_data = '{"sheets": [{"id": "saved"}]}'
+        self.env.cr.flush()
+
+        self.assertNotEqual(spreadsheet.checksum, checksum)
+        self.assertFalse(
+            spreadsheet.thumbnail_source_checksum,
+            "the server renders nothing from a spreadsheet's data",
+        )
+        self.assertEqual(spreadsheet.thumbnail_status, "present")
+        self.assertEqual(spreadsheet.thumbnail, GIF)
+
     def test_get_only_spreadsheet_documents(self):
         self.env["document.document"].search([("handler", "=", "spreadsheet")]).unlink()
 

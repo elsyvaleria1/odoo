@@ -400,14 +400,16 @@ class DocumentsDocument(models.Model):
             else:
                 document.spreadsheet_thumbnail_checksum = False
 
-    @api.depends("checksum", "handler")
-    def _compute_thumbnail(self) -> None:
-        # Spreadsheet thumbnails cannot be computed from their binary data.
-        # They should be saved independently.
-        spreadsheets = self.filtered(
-            lambda d: d.handler in ("spreadsheet", "frozen_spreadsheet")
-        )
-        super(DocumentsDocument, self - spreadsheets)._compute_thumbnail()
+    @api.depends("handler")
+    def _compute_thumbnail_source_checksum(self) -> None:
+        super()._compute_thumbnail_source_checksum()
+
+    def _get_thumbnail_kind(self) -> str | bool:
+        # a spreadsheet's thumbnail is drawn by the spreadsheet, never from
+        # its data, and saved along with it
+        if self.handler in ("spreadsheet", "frozen_spreadsheet"):
+            return "authored"
+        return super()._get_thumbnail_kind()
 
     def _copy_spreadsheet_image_attachments(self) -> None:
         spreadsheets = self.filtered(
