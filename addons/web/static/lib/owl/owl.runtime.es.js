@@ -5114,6 +5114,18 @@ function listenerKey(key) {
   }
   return id;
 }
+function outerOf(catcher) {
+  if (catcher.outer === void 0) {
+    catcher.outer = catcher.findOuter();
+    if (debug.event) {
+      debugLog(
+        "event",
+        `catcher mounted by its own render: ${catcher.outer ? "an enclosing catcher" : "no enclosing catcher"} found at dispatch`
+      );
+    }
+  }
+  return catcher.outer;
+}
 function dispatch(key, parent, ev) {
   let node = ev.target;
   while (node && node.parentNode !== parent) {
@@ -5122,7 +5134,7 @@ function dispatch(key, parent, ev) {
   if (!node) {
     return;
   }
-  for (let catcher = ownerOf(node, node); catcher; catcher = catcher.outer) {
+  for (let catcher = ownerOf(node, node); catcher; catcher = outerOf(catcher)) {
     const handlers = catcher.groups.get(key);
     if (handlers) {
       for (const { fn, mods } of handlers) {
@@ -5136,7 +5148,7 @@ function ownerOf(node, from) {
     let catcher = byEnd.get(n) || null;
     if (catcher) {
       while (catcher && !catcher.holds(node)) {
-        catcher = catcher.outer;
+        catcher = outerOf(catcher);
       }
       return catcher;
     }
@@ -5187,7 +5199,7 @@ function createCatcher(eventsSpec, fns) {
     child;
     groups = groups;
     ctx;
-    outer = null;
+    outer = void 0;
     parentEl;
     afterNode = null;
     constructor(child, ctx) {
@@ -5211,10 +5223,11 @@ function createCatcher(eventsSpec, fns) {
       } finally {
         updating.pop();
       }
-      if (!this.outer) {
-        this.outer = ownerOf(this.child.firstNode(), end.nextSibling);
-      }
       listen(keys, parent);
+    }
+    findOuter() {
+      const first = this.child.firstNode();
+      return first ? ownerOf(first, this.afterNode.nextSibling) : null;
     }
     holds(node) {
       const first = this.child.firstNode();
@@ -6853,7 +6866,7 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "d6c1a1da";
+var buildHash = "b654faa9";
 
 // ../owl-runtime/src/template_set.ts
 var bdom = { text, createBlock, list, multi, html, toggler };
@@ -7878,8 +7891,8 @@ var blockDom = {
 };
 var __info__ = {
   version: App.version,
-  date: "2026-10-06T18:49:28.507Z",
-  hash: "d6c1a1da",
+  date: "2026-10-06T19:47:33.029Z",
+  hash: "b654faa9",
   url: "https://github.com/odoo/owl"
 };
 export {

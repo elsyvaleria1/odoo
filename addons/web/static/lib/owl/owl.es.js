@@ -5114,6 +5114,18 @@ function listenerKey(key) {
   }
   return id;
 }
+function outerOf(catcher) {
+  if (catcher.outer === void 0) {
+    catcher.outer = catcher.findOuter();
+    if (debug.event) {
+      debugLog(
+        "event",
+        `catcher mounted by its own render: ${catcher.outer ? "an enclosing catcher" : "no enclosing catcher"} found at dispatch`
+      );
+    }
+  }
+  return catcher.outer;
+}
 function dispatch(key, parent, ev) {
   let node = ev.target;
   while (node && node.parentNode !== parent) {
@@ -5122,7 +5134,7 @@ function dispatch(key, parent, ev) {
   if (!node) {
     return;
   }
-  for (let catcher = ownerOf(node, node); catcher; catcher = catcher.outer) {
+  for (let catcher = ownerOf(node, node); catcher; catcher = outerOf(catcher)) {
     const handlers = catcher.groups.get(key);
     if (handlers) {
       for (const { fn, mods } of handlers) {
@@ -5136,7 +5148,7 @@ function ownerOf(node, from) {
     let catcher = byEnd.get(n) || null;
     if (catcher) {
       while (catcher && !catcher.holds(node)) {
-        catcher = catcher.outer;
+        catcher = outerOf(catcher);
       }
       return catcher;
     }
@@ -5187,7 +5199,7 @@ function createCatcher(eventsSpec, fns) {
     child;
     groups = groups;
     ctx;
-    outer = null;
+    outer = void 0;
     parentEl;
     afterNode = null;
     constructor(child, ctx) {
@@ -5211,10 +5223,11 @@ function createCatcher(eventsSpec, fns) {
       } finally {
         updating.pop();
       }
-      if (!this.outer) {
-        this.outer = ownerOf(this.child.firstNode(), end.nextSibling);
-      }
       listen(keys, parent);
+    }
+    findOuter() {
+      const first = this.child.firstNode();
+      return first ? ownerOf(first, this.afterNode.nextSibling) : null;
     }
     holds(node) {
       const first = this.child.firstNode();
@@ -6853,7 +6866,7 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "d6c1a1da";
+var buildHash = "b654faa9";
 
 // ../owl-runtime/src/template_set.ts
 var bdom = { text, createBlock, list, multi, html, toggler };
@@ -7878,8 +7891,8 @@ var blockDom = {
 };
 var __info__ = {
   version: App.version,
-  date: "2026-10-06T18:49:28.507Z",
-  hash: "d6c1a1da",
+  date: "2026-10-06T19:47:33.029Z",
+  hash: "b654faa9",
   url: "https://github.com/odoo/owl"
 };
 
@@ -9367,7 +9380,6 @@ function normalizeXML(el) {
 }
 
 // ../owl-compiler/src/code_generator.ts
-var zero2 = /* @__PURE__ */ Symbol("zero");
 var MAX_LAZY_LOOP_KEYS = 3;
 var whitespaceRE = /[ \t\n\r\f]+/g;
 var xmlDoc;
@@ -9555,7 +9567,6 @@ var CodeGenerator = class {
   ast;
   staticDefs = [];
   hoistedHandlers = /* @__PURE__ */ new Map();
-  slotNames = /* @__PURE__ */ new Set();
   helpers = /* @__PURE__ */ new Set();
   // per generator, so that generating a template (a translateFn may compile
   // another) never shifts the names of the one in progress
@@ -9994,9 +10005,7 @@ ${code}`;
   compileZero(ast, ctx) {
     this.helpers.add("zero");
     this.helpers.add("zeroCtx");
-    const isMultiple = this.slotNames.has(zero2);
-    this.slotNames.add(zero2);
-    const key = this.scopeKey(ctx, isMultiple);
+    const key = this.scopeKey(ctx);
     let defaultContent = `text("")`;
     if (ast.body) {
       const bodyAst = { type: ASTType.Multi, content: ast.body };
@@ -10025,14 +10034,14 @@ ${code}`;
         const loopKeys = Array.from({ length: level }, (_, i) => `, key${i + 1}`).join("");
         keyArgs = `${keyExpr}, "${site}"${level ? `, ${level}${loopKeys}` : ""}`;
       } else {
-        keyArgs = `${this.scopeKey(ctx, false, site)}, ""`;
+        keyArgs = `${this.scopeKey(ctx, site)}, ""`;
       }
       const expr = compileExpr(ast.expr);
       this.helpers.add("safeOutput");
       if (ast.body) {
         const bodyAst = { type: ASTType.Multi, content: ast.body };
         const name = this.compileInNewTarget("defaultContent", bodyAst, ctx);
-        const key = this.scopeKey(ctx, false, site);
+        const key = this.scopeKey(ctx, site);
         const value = this.generateId("out");
         this.define(value, expr);
         blockStr = `${value} === undefined || ${value} === null ? toggler("default", ${name}.call(this, ctx, node, ${key})) : safeOutput(${value}, ${keyArgs})`;
@@ -10087,7 +10096,7 @@ ${code}`;
       this.helpers.add("memoPrevious");
       this.helpers.add("memoKeep");
       this.helpers.add("memoHit");
-      this.define(`${memo}_site`, this.scopeKey(ctx, true));
+      this.define(`${memo}_site`, this.scopeKey(ctx));
       this.define(`${memo}_previous`, `memoPrevious(node, ${memo}_site)`);
       this.define(`${memo}_next`, `new Map()`);
     }
@@ -10251,15 +10260,15 @@ ${code}`;
     const isDynamic = isInterpolated(ast.name);
     const subTemplate = isDynamic ? interpolate(ast.name) : toStringExpression(ast.name);
     block = this.createBlock(block, "multi");
-    const zero3 = [];
+    const zero2 = [];
     if (ast.body) {
       const name = this.compileInNewTarget("callBody", ast.body, ctx);
       this.helpers.add("zero");
       this.helpers.add("zeroCtx");
-      zero3.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
+      zero2.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
     } else if (!ast.context) {
       this.helpers.add("zero");
-      zero3.push(["[zero]", "null"]);
+      zero2.push(["[zero]", "null"]);
     }
     let ctxExpr;
     if (ast.context) {
@@ -10268,7 +10277,7 @@ ${code}`;
       const entries = [
         `this: ${dynCtxVar}`,
         ...attrs.map(([name, value]) => `${propKey(name)}: ${value}`),
-        ...zero3.map(([key2, value]) => `${key2}: ${value}`)
+        ...zero2.map(([key2, value]) => `${key2}: ${value}`)
       ];
       ctxExpr = `Object.assign({}, ${dynCtxVar}, {${entries.join(", ")}})`;
     } else if (!attrs.length && !ast.body) {
@@ -10280,11 +10289,11 @@ ${code}`;
       for (const [name, value] of attrs) {
         this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
       }
-      for (const [key2, value] of zero3) {
+      for (const [key2, value] of zero2) {
         this.addLine(`${ctxExpr}${key2} = ${value};`);
       }
     }
-    const key = this.scopeKey(ctx, true);
+    const key = this.scopeKey(ctx);
     this.helpers.add("callTemplate");
     this.insertBlock(
       block,
@@ -10336,12 +10345,16 @@ ${code}`;
     }
     return null;
   }
-  scopeKey(ctx, unique = false, site = "") {
-    let suffix = unique ? this.generateId("__") : site;
+  // the key of a site's content: the site's id, then the key of each open
+  // loop. Every site has an id: without one, a site's loop keys could spell
+  // another site's id (`__2` for the item keyed 2 and for the site __2), and
+  // the two would share a key in their component's children.
+  scopeKey(ctx, site = this.generateId("__")) {
+    let suffix = site;
     for (let i = 1; i <= this.target.loopLevel; i++) {
       suffix += `__\${${this.target.stringKey(i)}}`;
     }
-    const key = suffix ? `key + \`${suffix}\`` : "key";
+    const key = `key + \`${suffix}\``;
     return ctx.tKeyExpr ? `${ctx.tKeyExpr} + ${key}` : key;
   }
   /**
@@ -10475,7 +10488,7 @@ ${code}`;
     } else {
       expr = `\`${ast.name}\``;
     }
-    const keyArg = this.scopeKey(ctx, true);
+    const keyArg = this.scopeKey(ctx);
     let id = this.generateId("comp");
     this.helpers.add("createComponent");
     this.staticDefs.push({
@@ -10515,17 +10528,13 @@ ${code}`;
     let blockString;
     let slotName;
     let dynamic = false;
-    let isMultiple = false;
     if (isInterpolated(ast.name)) {
       dynamic = true;
-      isMultiple = true;
       slotName = interpolate(ast.name);
     } else {
       slotName = JSON.stringify(ast.name);
-      isMultiple = this.slotNames.has(ast.name);
-      this.slotNames.add(ast.name);
     }
-    const key = this.scopeKey(ctx, isMultiple);
+    const key = this.scopeKey(ctx);
     const props2 = ast.attrs ? this.formatPropObject(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
     const scope = props2.length || ast.dynamicProps ? this.getPropString(props2, ast.dynamicProps) : "null";
     if (ast.defaultContent) {

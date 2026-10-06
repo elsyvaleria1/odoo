@@ -1516,7 +1516,6 @@ function normalizeXML(el) {
 }
 
 // ../owl-compiler/src/code_generator.ts
-var zero = /* @__PURE__ */ Symbol("zero");
 var MAX_LAZY_LOOP_KEYS = 3;
 var whitespaceRE = /[ \t\n\r\f]+/g;
 var xmlDoc;
@@ -1704,7 +1703,6 @@ var CodeGenerator = class {
   ast;
   staticDefs = [];
   hoistedHandlers = /* @__PURE__ */ new Map();
-  slotNames = /* @__PURE__ */ new Set();
   helpers = /* @__PURE__ */ new Set();
   // per generator, so that generating a template (a translateFn may compile
   // another) never shifts the names of the one in progress
@@ -2143,9 +2141,7 @@ ${code}`;
   compileZero(ast, ctx) {
     this.helpers.add("zero");
     this.helpers.add("zeroCtx");
-    const isMultiple = this.slotNames.has(zero);
-    this.slotNames.add(zero);
-    const key = this.scopeKey(ctx, isMultiple);
+    const key = this.scopeKey(ctx);
     let defaultContent = `text("")`;
     if (ast.body) {
       const bodyAst = { type: ASTType.Multi, content: ast.body };
@@ -2174,14 +2170,14 @@ ${code}`;
         const loopKeys = Array.from({ length: level }, (_, i) => `, key${i + 1}`).join("");
         keyArgs = `${keyExpr}, "${site}"${level ? `, ${level}${loopKeys}` : ""}`;
       } else {
-        keyArgs = `${this.scopeKey(ctx, false, site)}, ""`;
+        keyArgs = `${this.scopeKey(ctx, site)}, ""`;
       }
       const expr = compileExpr(ast.expr);
       this.helpers.add("safeOutput");
       if (ast.body) {
         const bodyAst = { type: ASTType.Multi, content: ast.body };
         const name = this.compileInNewTarget("defaultContent", bodyAst, ctx);
-        const key = this.scopeKey(ctx, false, site);
+        const key = this.scopeKey(ctx, site);
         const value = this.generateId("out");
         this.define(value, expr);
         blockStr = `${value} === undefined || ${value} === null ? toggler("default", ${name}.call(this, ctx, node, ${key})) : safeOutput(${value}, ${keyArgs})`;
@@ -2236,7 +2232,7 @@ ${code}`;
       this.helpers.add("memoPrevious");
       this.helpers.add("memoKeep");
       this.helpers.add("memoHit");
-      this.define(`${memo}_site`, this.scopeKey(ctx, true));
+      this.define(`${memo}_site`, this.scopeKey(ctx));
       this.define(`${memo}_previous`, `memoPrevious(node, ${memo}_site)`);
       this.define(`${memo}_next`, `new Map()`);
     }
@@ -2400,15 +2396,15 @@ ${code}`;
     const isDynamic = isInterpolated(ast.name);
     const subTemplate = isDynamic ? interpolate(ast.name) : toStringExpression(ast.name);
     block = this.createBlock(block, "multi");
-    const zero2 = [];
+    const zero = [];
     if (ast.body) {
       const name = this.compileInNewTarget("callBody", ast.body, ctx);
       this.helpers.add("zero");
       this.helpers.add("zeroCtx");
-      zero2.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
+      zero.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
     } else if (!ast.context) {
       this.helpers.add("zero");
-      zero2.push(["[zero]", "null"]);
+      zero.push(["[zero]", "null"]);
     }
     let ctxExpr;
     if (ast.context) {
@@ -2417,7 +2413,7 @@ ${code}`;
       const entries = [
         `this: ${dynCtxVar}`,
         ...attrs.map(([name, value]) => `${propKey(name)}: ${value}`),
-        ...zero2.map(([key2, value]) => `${key2}: ${value}`)
+        ...zero.map(([key2, value]) => `${key2}: ${value}`)
       ];
       ctxExpr = `Object.assign({}, ${dynCtxVar}, {${entries.join(", ")}})`;
     } else if (!attrs.length && !ast.body) {
@@ -2429,11 +2425,11 @@ ${code}`;
       for (const [name, value] of attrs) {
         this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
       }
-      for (const [key2, value] of zero2) {
+      for (const [key2, value] of zero) {
         this.addLine(`${ctxExpr}${key2} = ${value};`);
       }
     }
-    const key = this.scopeKey(ctx, true);
+    const key = this.scopeKey(ctx);
     this.helpers.add("callTemplate");
     this.insertBlock(
       block,
@@ -2485,12 +2481,16 @@ ${code}`;
     }
     return null;
   }
-  scopeKey(ctx, unique = false, site = "") {
-    let suffix = unique ? this.generateId("__") : site;
+  // the key of a site's content: the site's id, then the key of each open
+  // loop. Every site has an id: without one, a site's loop keys could spell
+  // another site's id (`__2` for the item keyed 2 and for the site __2), and
+  // the two would share a key in their component's children.
+  scopeKey(ctx, site = this.generateId("__")) {
+    let suffix = site;
     for (let i = 1; i <= this.target.loopLevel; i++) {
       suffix += `__\${${this.target.stringKey(i)}}`;
     }
-    const key = suffix ? `key + \`${suffix}\`` : "key";
+    const key = `key + \`${suffix}\``;
     return ctx.tKeyExpr ? `${ctx.tKeyExpr} + ${key}` : key;
   }
   /**
@@ -2624,7 +2624,7 @@ ${code}`;
     } else {
       expr = `\`${ast.name}\``;
     }
-    const keyArg = this.scopeKey(ctx, true);
+    const keyArg = this.scopeKey(ctx);
     let id = this.generateId("comp");
     this.helpers.add("createComponent");
     this.staticDefs.push({
@@ -2664,17 +2664,13 @@ ${code}`;
     let blockString;
     let slotName;
     let dynamic = false;
-    let isMultiple = false;
     if (isInterpolated(ast.name)) {
       dynamic = true;
-      isMultiple = true;
       slotName = interpolate(ast.name);
     } else {
       slotName = JSON.stringify(ast.name);
-      isMultiple = this.slotNames.has(ast.name);
-      this.slotNames.add(ast.name);
     }
-    const key = this.scopeKey(ctx, isMultiple);
+    const key = this.scopeKey(ctx);
     const props = ast.attrs ? this.formatPropObject(ast.attrs, ast.attrsTranslationCtx, ctx) : [];
     const scope = props.length || ast.dynamicProps ? this.getPropString(props, ast.dynamicProps) : "null";
     if (ast.defaultContent) {
@@ -2733,7 +2729,7 @@ ${code}
 var version = "3.0.0-alpha.49";
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "d6c1a1da";
+var buildHash = "b654faa9";
 
 // src/compiler.ts
 var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);
