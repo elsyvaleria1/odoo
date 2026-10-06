@@ -50,13 +50,18 @@ class StockPicking(models.Model):
 
     def _requires_trip(self):
         """Whether this transfer may only be validated inside a departed trip:
-        its type asks for trips and its goods ride the trip's vehicle.
+        its goods ride the trip's vehicle, and its type asks for trips or it
+        already boards one.
 
         :rtype: bool
         """
         self.check_singleton()
+        # Boarded on a trip with its vehicle, the goods travel on it whatever the
+        # type asks: the trip waits for their outcome, a salesperson's ends at its
+        # last stop, and they are delivered from it.
         return bool(
-            self.picking_type_id.dispatch_batch_required and self._rides_trip_vehicle()
+            (self.picking_type_id.dispatch_batch_required or self.batch_id.vehicle_id)
+            and self._rides_trip_vehicle()
         )
 
     def _rides_trip_vehicle(self) -> bool:

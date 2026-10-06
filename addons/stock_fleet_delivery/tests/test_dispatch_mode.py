@@ -1,4 +1,6 @@
-from odoo import Command
+from freezegun import freeze_time
+
+from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
@@ -83,6 +85,76 @@ class TestDispatchMode(TransactionCase):
                     picking = self._picking(mode)
                     self.assertEqual(picking._rides_trip_vehicle(), expected)
                     self.assertEqual(picking._requires_trip(), compulsory and expected)
+
+    def _salesperson_trip(self, picking, tag):
+        salesperson = self.env["res.users"].create(
+            {
+                "name": "Salesperson",
+                "login": f"trip_salesperson_{tag}",
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("stock.group_stock_user").id,
+                            self.env.ref("stock_fleet.group_trip_driver").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        supervisor = self.env["res.users"].create(
+            {
+                "name": "Supervisor",
+                "login": f"trip_supervisor_{tag}",
+                "group_ids": [Command.set([self.env.ref("stock.group_stock_user").id])],
+            }
+        )
+        kind = self.env.ref("resource_asset.kind_vehicle")
+        car = self.env["resource.resource"].create(
+            {
+                "name": "Salesperson's car",
+                "kind_id": kind.id,
+                "product_id": self.env["product.product"]
+                .create({"name": "Car", "type": "consu", "asset_kind_id": kind.id})
+                .id,
+            }
+        )
+        trip = self.env["stock.picking.batch"].create(
+            {
+                "picking_type_id": self.out_type.id,
+                "picking_ids": [Command.set(picking.ids)],
+                "vehicle_id": car.id,
+                "operator_id": self.env["hr.employee"]
+                .create({"name": "Salesperson", "user_id": salesperson.id})
+                .id,
+                "supervisor_id": supervisor.id,
+                "odometer_departure": 1000.0,
+            }
+        )
+        return trip, salesperson
+
+    def test_a_salesperson_leaves_on_friday_and_delivers_on_monday(self):
+        # Loaded on Friday at CDG, the salesperson takes the goods home for the
+        # weekend and delivers on Monday: the trip stays open until then.
+        for compulsory in (True, False):
+            with self.subTest(compulsory=compulsory):
+                self.out_type.dispatch_batch_required = compulsory
+                picking = self._picking("salesperson")
+                trip, salesperson = self._salesperson_trip(picking, compulsory)
+                with freeze_time("2026-10-09 22:00:00"):
+                    trip.with_user(salesperson).action_depart()
+                self.assertEqual(trip.departed_uid, salesperson)
+                with freeze_time("2026-10-11 12:00:00"):
+                    trip._close_trip_at_last_stop()
+                    self.assertEqual(trip.trip_state, "in_transit")
+                    with self.assertRaisesRegex(UserError, "have no outcome"):
+                        trip.action_return()
+                with freeze_time("2026-10-12 17:00:00"):
+                    picking.with_user(salesperson).action_deliver()
+                self.assertEqual(picking.state, "done")
+                self.assertEqual(trip.trip_state, "closed")
+                self.assertEqual(
+                    trip.date_return, fields.Datetime.to_datetime("2026-10-12 17:00")
+                )
 
     def test_a_salesperson_does_not_bring_the_vehicle_back(self):
         for mode, returns in (

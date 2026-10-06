@@ -265,13 +265,23 @@ class TestTrip(TransactionCase):
         self.assertFalse(batch.trip_state)
 
     def test_a_done_batch_that_never_left_is_not_a_trip(self):
-        picking = self._picking()
-        batch = self._trip(picking)
-        picking.move_ids.picked = True
         self.out_type.dispatch_batch_required = False
+        picking = self._picking()
+        batch = self._trip(picking, vehicle_id=False)
+        picking.move_ids.picked = True
         batch.action_done()
         self.assertEqual(batch.state, "done")
         self.assertFalse(batch.trip_state)
+
+    def test_a_batch_with_its_vehicle_is_validated_only_once_departed(self):
+        # Even where trips are optional, transfers put on a vehicle are delivered
+        # from its trip.
+        self.out_type.dispatch_batch_required = False
+        picking = self._picking()
+        trip = self._trip(picking)
+        picking.move_ids.picked = True
+        with self.assertRaisesRegex(UserError, "has not departed"):
+            trip.action_done()
 
     def test_the_batch_validates_its_transfers_inside_a_departed_trip(self):
         pickings = self._picking() | self._picking()
@@ -583,14 +593,13 @@ class TestTrip(TransactionCase):
         self.assertEqual(trip.trip_state, "in_transit")
 
     def test_a_closed_trip_gives_up_the_transfers_left_pending(self):
-        # Without "Deliver in Trips" a trip closes with its transfers pending, and
-        # they stayed trapped on it: the way out was a delivery failure.
+        # Trips closed before they waited for their transfers kept the pending
+        # ones trapped on them: the way out was a delivery failure.
         self.out_type.dispatch_batch_required = False
         pending = self._picking()
         trip = self._trip(pending)
         trip.action_depart()
-        trip.odometer_return = 1100.0
-        trip.action_return()
+        trip.write({"odometer_return": 1100.0, "date_return": fields.Datetime.now()})
         self.assertEqual(trip.trip_state, "closed")
         self._correction(
             trip, reason="unbatch_reason_operations_instruction"
@@ -604,6 +613,30 @@ class TestTrip(TransactionCase):
             "A closed trip left without transfers ended with no deliveries; it is "
             "not cancelled, since the vehicle did go out.",
         )
+
+    def test_without_the_rule_a_departed_trip_waits_for_its_transfers(self):
+        self.out_type.dispatch_batch_required = False
+        pending = self._picking()
+        trip = self._trip(pending)
+        trip.action_depart()
+        trip.odometer_return = 1100.0
+        with self.assertRaisesRegex(UserError, "have no outcome"):
+            trip.action_return()
+        pending.action_deliver()
+        trip.action_return()
+        self.assertEqual(trip.trip_state, "closed")
+
+    def test_without_the_rule_a_transfer_on_a_trip_is_delivered_from_it(self):
+        self.out_type.dispatch_batch_required = False
+        picking = self._picking()
+        self.assertFalse(picking._requires_trip())
+        trip = self._trip(picking)
+        self.assertTrue(picking._requires_trip())
+        with self.assertRaisesRegex(UserError, "has not departed"):
+            picking.button_validate()
+        trip.action_depart()
+        picking.action_deliver()
+        self.assertEqual(picking.state, "done")
 
     def test_only_trip_corrections_take_a_transfer_off_a_departed_trip(self):
         pending = self._picking()
