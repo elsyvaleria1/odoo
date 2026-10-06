@@ -11,13 +11,19 @@ class WizardMolecularDockingImport(models.TransientModel):
     _name = "wizard.molecular.docking.import"
     _description = "Import Docking Results"
 
-    job_id = fields.Many2one(comodel_name="molecular.docking.job", required=True)
-    sdf_file = fields.Binary(string="Poses (SDF)", required=True)
+    job_id = fields.Many2one(
+        comodel_name="molecular.docking.job",
+        required=True,
+    )
+    sdf_file = fields.Binary(
+        string="Poses (SDF)",
+        required=True,
+    )
     sdf_filename = fields.Char()
     engine = fields.Char(
         compute="_compute_engine",
-        store=True,
         precompute=True,
+        store=True,
         readonly=False,
         required=True,
         help="Docking engine that produced the poses, e.g. smina.",
@@ -25,14 +31,14 @@ class WizardMolecularDockingImport(models.TransientModel):
     engine_ver = fields.Char(
         string="Engine Version",
         compute="_compute_engine",
-        store=True,
         precompute=True,
+        store=True,
         readonly=False,
         required=True,
     )
     score_tag = fields.Char(
-        required=True,
         default="minimizedAffinity",
+        required=True,
         help="SD data tag holding the score in kcal/mol: minimizedAffinity for "
         "smina and GNINA.",
     )

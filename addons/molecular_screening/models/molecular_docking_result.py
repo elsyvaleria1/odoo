@@ -32,9 +32,9 @@ class MolecularDockingResult(models.Model):
     )
     ligand_efficiency = fields.Float(
         string="Ligand Efficiency",
+        digits=(16, 3),
         compute="_compute_ligand_efficiency",
         store=True,
-        digits=(16, 3),
         help="Score per heavy atom of the docked structure, in kcal/mol, with "
         "the sign turned so that higher is better. Docking scores grow with "
         "size; this compares compounds of different size on equal terms.",

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
     <record id="molecular_docking_import_view_form" model="ir.ui.view">
@@ -24,8 +24,12 @@
                     the poses of the compounds in the file.
                 </p>
                 <footer>
-                    <button name="action_import" type="object" string="Import" class="btn-primary" />
-                    <button string="Cancel" special="cancel" />
+                    <button
+                        name="action_import"
+                        type="object"
+                        string="Import"
+                        class="btn-primary" />
+                    <button special="cancel" string="Cancel" />
                 </footer>
             </form>
         </field>
