@@ -1,5 +1,6 @@
 # Run by odoo.libs.pdf_raster as `python -I _child.py WIDTH HEIGHT CPU MEMORY`,
-# the PDF on stdin, a PNG on stdout. Exit 2: no page to show; 3: no MuPDF.
+# the PDF on stdin; on stdout its page count, a newline, then the first page as
+# a PNG. Exit 2: no page to show; 3: no MuPDF.
 import resource
 import sys
 
@@ -23,7 +24,7 @@ def main() -> int:
         page = pdf[0]
         zoom = min(width / page.rect.width, height / page.rect.height)
         pixmap = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), alpha=False)
-        sys.stdout.buffer.write(pixmap.tobytes("png"))
+        sys.stdout.buffer.write(b"%d\n" % pdf.page_count + pixmap.tobytes("png"))
     return 0
 
 

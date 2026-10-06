@@ -566,6 +566,24 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         self.assertFalse(document.is_multipage)
         self.assertEqual(document.thumbnail_status, "pending")
 
+    @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
+    def test_the_render_tells_a_providers_pdf_page_count(self):
+        document = self._cloud_document("pages.pdf", "application/pdf")
+        self.env.cr.flush()
+        self.assertFalse(document.is_multipage, "not downloaded to count, filed")
+        written = document.write_date
+
+        with patch.object(
+            type(self.env["ir.attachment"]),
+            "_get_content",
+            lambda att, size=None: make_pdf(pages=3),
+        ):
+            document._job_render_thumbnails()
+
+        self.assertTrue(document.is_multipage)
+        self.assertEqual(document.thumbnail_status, "present")
+        self.assertEqual(document.write_date, written)
+
     def test_a_provider_out_of_reach_leaves_the_file_for_later(self):
         document = self._cloud_document("cloud.jpg", "image/jpeg")
         self.env.cr.flush()

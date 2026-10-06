@@ -49,6 +49,8 @@ DEFAULT_LIMITS = Limits()
 class Rendering:
     outcome: Outcome
     png: bytes = b""
+    # the PDF's page count, known once it rendered
+    pages: int | None = None
 
 
 @functools.cache
@@ -91,7 +93,12 @@ def render_first_page(
         return Rendering(Outcome.UNAVAILABLE)
     if proc.returncode == 2:
         return Rendering(Outcome.REFUSED)
-    png = proc.stdout
-    if proc.returncode or not png.startswith(_PNG) or len(png) > limits.output_bytes:
+    head, _newline, png = proc.stdout.partition(b"\n")
+    if (
+        proc.returncode
+        or not head.isdigit()
+        or not png.startswith(_PNG)
+        or len(png) > limits.output_bytes
+    ):
         return Rendering(Outcome.FAILED)
-    return Rendering(Outcome.RENDERED, png)
+    return Rendering(Outcome.RENDERED, png, int(head))

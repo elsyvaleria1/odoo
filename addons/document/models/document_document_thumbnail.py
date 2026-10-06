@@ -327,11 +327,41 @@ class DocumentsDocument(models.Model):
                     # nothing learnt about the file: no row, and the sweep
                     # asks again
                     return
+                if rendering.pages is not None:
+                    self._note_page_count(checksum, rendering.pages)
                 image = _fit(rendering.png, crop="top")
             else:
                 image = _fit(content, crop="center")
                 span.set(outcome="rendered" if image else "failed")
         self._store_rendered_thumbnail(checksum, image)
+
+    def _note_page_count(self, checksum: str, pages: int) -> None:
+        # a PDF a storage provider holds is not downloaded to count its pages
+        # when it is filed (_get_is_multipage); the render downloaded it, and
+        # tells. Written past the ORM, as the source key is: the documents'
+        # write dates stay those of what was done to them
+        self.env.cr.execute(
+            SQL(
+                """
+                UPDATE document_document AS document
+                   SET is_multipage = %s
+                  FROM ir_attachment AS attachment
+                 WHERE attachment.id = document.attachment_id
+                   AND attachment.type = 'cloud_storage'
+                   AND attachment.mimetype LIKE 'application/pdf%%'
+                   AND document.thumbnail_source_checksum = %s
+                   AND document.is_multipage IS DISTINCT FROM %s
+                """,
+                pages > 1,
+                checksum,
+                pages > 1,
+            )
+        )
+        if noted := self.env.cr.rowcount:
+            self.invalidate_model(["is_multipage"])
+            _debug.logic(
+                "page_count_noted", checksum=checksum, pages=pages, documents=noted
+            )
 
     def _store_rendered_thumbnail(self, checksum: str, image: bytes | None) -> None:
         vals = {

@@ -42,6 +42,7 @@ class TestPdfRaster(BaseCase):
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.RENDERED)
         self.assertTrue(rendering.png.startswith(PNG))
+        self.assertEqual(rendering.pages, 3)
 
     def test_malformed_and_empty_input_fail(self):
         for content in (b"", b"certainly not a pdf", b"%PDF-1.4\n" + b"\x00" * 64):
