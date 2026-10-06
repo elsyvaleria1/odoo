@@ -1,19 +1,24 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-from .resource_resource import KIND_MODEL_CREATING
+from .resource_resource import ASSET_INITIAL_STATE, KIND_MODEL_CREATING
 
 # what a thing decides at its creation, which a person's defaults must not
 THING_DECIDES = ("type", "state", "calendar_id")
+THING_STARTS = {"type": "material", "state": ASSET_INITIAL_STATE}
 
 
 def without_resource_defaults(model, fields, defaults):
     """The resource's defaults for what a thing decides itself are not values a
     model delegating to it hands down: a thing starts in its own state, as the
-    thing it is."""
+    thing it is. A required one is given the thing's own value, so a form can
+    be saved; the calendar is left to create, which reads the kind."""
     for name in THING_DECIDES:
         if name in fields and f"default_{name}" not in model.env.context:
-            defaults.pop(name, None)
+            if name in THING_STARTS:
+                defaults[name] = THING_STARTS[name]
+            else:
+                defaults.pop(name, None)
     return defaults
 
 
@@ -74,7 +79,17 @@ class MixinResourceKind(models.AbstractModel):
 
     @api.model
     def default_get(self, fields):
-        return without_resource_defaults(self, fields, super().default_get(fields))
+        defaults = super().default_get(fields)
+        calendar_id = defaults.get("calendar_id")
+        defaults = without_resource_defaults(self, fields, defaults)
+        if "calendar_id" in fields and "default_calendar_id" not in self.env.context:
+            # what create decides for this kind, so a form of it can be saved
+            defaults["calendar_id"] = (
+                calendar_id
+                if self._get_kind().scheduled
+                else self.env["resource.calendar"]._get_fully_flexible_calendar().id
+            )
+        return defaults
 
     @api.model
     def _get_kind(self):

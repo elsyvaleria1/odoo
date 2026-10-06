@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from odoo import fields
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import Form, TransactionCase, new_test_user, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -78,6 +78,26 @@ class TestFleetVehicle(TransactionCase):
             .kind_code
             == "vehicle"
         )
+
+    def test_a_vehicle_field_written_on_its_resource_reaches_the_vehicle(self):
+        vehicle = self._vehicle()
+        resource = (
+            self.env["resource.resource"].with_user(self.manager).browse(vehicle.id)
+        )
+        resource.write({"license_plate": "PRB-002", "name": "Renamed"})
+        self.assertEqual(vehicle.license_plate, "PRB-002")
+        self.assertEqual(vehicle.name, "Renamed")
+        with self.assertRaises(ValueError):
+            self.env["resource.resource"].create({"name": "Desk"}).write(
+                {"tag_ids": [(6, 0, [])]}
+            )
+
+    def test_a_new_vehicle_form_starts_as_a_draft_thing_and_saves(self):
+        form = Form(self.env["resource.asset.vehicle"].with_user(self.manager))
+        self.assertEqual(form.state, "draft")
+        form.name = "Form Probe"
+        form.product_id = self.model
+        self.assertEqual(form.save().state, "draft")
 
     def test_a_driver_is_an_operator_assignment(self):
         vehicle = self._vehicle()

@@ -594,7 +594,10 @@ class ResourceResource(models.Model):
         )
         return self.env["resource.calendar"]._get_company_calendar(company)
 
+    @api.depends("calendar_id", "company_id", "partner_id", "user_id")
     def _compute_tz(self) -> None:
+        # a zone once set is kept: the depends only let a new record's form
+        # seed it from what it already knows
         for resource in self:
             resource.tz = (
                 resource.tz

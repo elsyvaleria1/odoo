@@ -557,6 +557,8 @@ class ResourceResource(models.Model):
         return resources
 
     def write(self, vals):
+        if vals.keys() - self._fields.keys():
+            return self._write_in_kind_models(vals)
         if "kind_id" in vals:
             self._check_kind_keeps_its_model(vals["kind_id"])
         if "odometer_uom_id" in vals:
@@ -569,6 +571,30 @@ class ResourceResource(models.Model):
             things._check_required_identifiers()
         things._notify_kind_models(vals)
         return res
+
+    def _write_in_kind_models(self, vals) -> bool:
+        # what create dispatches to a kind's model, a write of the kind's own
+        # fields reaches there too: the kind model delegates the resource's
+        # fields back here
+        by_model = defaultdict(list)
+        for record_id, model_name in self._get_kind_models().items():
+            by_model[model_name].append(record_id)
+        unknown = sorted(vals.keys() - self._fields.keys())
+        if self._name in by_model:
+            _debug.logic(
+                "write.refused",
+                reason="field_of_no_kind",
+                resources=self,
+                fields=unknown,
+            )
+            raise ValueError(f"Invalid field {unknown[0]!r} in {self._name!r}")
+        _debug.pipeline(
+            "resource_asset.write_dispatched",
+            models={name: len(ids) for name, ids in by_model.items()},
+        )
+        for model_name, ids in by_model.items():
+            self.env[model_name].browse(ids).write(vals)
+        return True
 
     def _notify_kind_models(self, vals) -> None:
         """What the model extending a thing's kind keeps in step with its
