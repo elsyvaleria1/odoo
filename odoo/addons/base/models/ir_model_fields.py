@@ -54,6 +54,7 @@ def _check_translate_value(env: api.Environment, vals: dict[str, Any]) -> None:
 
 class IrModelFields(models.Model):
     _name = "ir.model.fields"
+    _access_anchors = frozendict({"company": ""})
     _is_registry_metadata = True
     _description = "Fields"
     _order = "name, id"

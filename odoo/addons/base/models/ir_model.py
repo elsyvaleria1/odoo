@@ -10,7 +10,7 @@ from odoo.db import schema as sql
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, OrderedSet, remove_accents, unique
+from odoo.tools import SQL, OrderedSet, frozendict, remove_accents, unique
 
 from .ir_model_common import (
     MODULE_UNINSTALL_FLAG,
@@ -41,6 +41,7 @@ class Unknown(models.AbstractModel):
 
 class IrModel(models.Model):
     _name = "ir.model"
+    _access_anchors = frozendict({"company": ""})
     _is_registry_metadata = True
     _description = "Models"
     _order = "model"

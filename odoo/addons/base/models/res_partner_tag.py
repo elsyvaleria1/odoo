@@ -1,10 +1,12 @@
 from odoo import fields, models
+from odoo.tools import frozendict
 
 from .mixin_catalog import no_name_uniq_index
 
 
 class ResPartnerTag(models.Model):
     _name = "res.partner.tag"
+    _access_anchors = frozendict({"company": ""})
     _description = "Partner Tag"
     _inherit = ["mixin.tag.nested"]
 

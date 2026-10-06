@@ -1,8 +1,10 @@
 from odoo import fields, models
+from odoo.tools import frozendict
 
 
 class DeviceWeekday(models.Model):
     _name = "device.weekday"
+    _access_anchors = frozendict({"company": ""})
     _description = "Day of the Week"
     _order = "sequence"
     _rec_name = "name"

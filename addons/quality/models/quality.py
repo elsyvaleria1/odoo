@@ -4,6 +4,7 @@ from typing import Self
 from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
 
 
 def _update_sequence_names(env, vals_list, sequence_code) -> None:
@@ -30,6 +31,7 @@ _debug = DebugLog(__name__)
 
 class QualityPointTest_Type(models.Model):
     _name = "quality.point.test_type"
+    _access_anchors = frozendict({"company": ""})
     _description = "Quality Control Test Type"
 
     # Used instead of selection field in order to hide a choice depending on the view.
@@ -233,6 +235,7 @@ class QualityPoint(models.Model):
 
 class QualityReason(models.Model):
     _name = "quality.reason"
+    _access_anchors = frozendict({"company": ""})
     _description = "Root Cause for Quality Failure"
 
     name = fields.Char(
@@ -243,6 +246,7 @@ class QualityReason(models.Model):
 
 class QualityTag(models.Model):
     _name = "quality.tag"
+    _access_anchors = frozendict({"company": ""})
     _description = "Quality Tag"
 
     name = fields.Char(
@@ -257,6 +261,7 @@ class QualityTag(models.Model):
 
 class QualityAlertStage(models.Model):
     _name = "quality.alert.stage"
+    _access_anchors = frozendict({"company": ""})
     _description = "Quality Alert Stage"
     _order = "sequence, id"
     _fold_name = "folded"

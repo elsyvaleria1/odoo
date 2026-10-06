@@ -1,6 +1,7 @@
 from odoo import api, fields, models, tools
 from odoo.exceptions import ValidationError
 from odoo.service import api_scope
+from odoo.tools import frozendict
 
 
 class ResUsersApikeysScope(models.Model):
@@ -10,6 +11,7 @@ class ResUsersApikeysScope(models.Model):
     `service.model.call_kw` enforces it on every door alike."""
 
     _name = "res.users.apikeys.scope"
+    _access_anchors = frozendict({"company": ""})
     _description = "API Key Scope"
     _order = "key"
     _rec_name = "name"
@@ -161,6 +163,7 @@ class ResUsersApikeysScope(models.Model):
 
 class ResUsersApikeysScopeLine(models.Model):
     _name = "res.users.apikeys.scope.line"
+    _access_anchors = frozendict({"company": ""})
     _description = "API Key Scope Model"
     _rec_name = "model_id"
     _order = "scope_id, model_id"
