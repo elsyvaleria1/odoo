@@ -1,0 +1,1201 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * sms_twilio
+#
+# Oakarmin Iron <oakarminiron@gmail.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:37+0000\n"
+"PO-Revision-Date: 2025-11-12 13:10+0000\n"
+"Last-Translator: Weblate <noreply-mt-weblate@weblate.org>\n"
+"Language-Team: Burmese <https://translate.odoo.com/projects/odoo-19/"
+"sms_twilio/my/>\n"
+"Language: my\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.12.2\n"
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/sms_sms.py:0
+msgid "%(company)s Twilio SMS status callbacks"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_number.py:0
+msgid "%(company)s Twilio incoming SMS"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/twilio_api.py:0
+msgid "%(company)s has no Twilio account configured."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_config.py:0
+msgid ""
+"%(company)s's Twilio account: status %(status)s, balance %(balance)s "
+"%(currency)s. SMS and calls stop when the account is suspended or out of "
+"funds."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "%(failure_type)s: %(failure_reason)s"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_number.py:0
+msgid ""
+"%(number)s is answered by internal users of %(company)s only: %(users)s"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "'To' and 'From' numbers cannot be the same"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "A 'From' number is required to send a message"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "A 'To' phone number is required"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_config.py:0
+msgid "A Twilio Account SID is 'AC' followed by 32 hexadecimal characters."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.constraint,message:integration_twilio.constraint_integration_twilio_call_twilio_sid_unique
+msgid "A Twilio call is recorded once per company."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.constraint,message:integration_twilio.constraint_integration_twilio_number_twilio_sid_unique
+msgid "A Twilio number is synced once per company."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__amount_twilio_balance_alert
+#: model:ir.model.fields,help:integration_twilio.field_wizard_integration_twilio_config_update__amount_twilio_balance_alert
+msgid ""
+"A balance under this amount makes an activity for whoever last updated the "
+"account; zero alerts on nothing but a suspended account."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_integration_twilio_config
+msgid "A company's Twilio account"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "ACabcde12345abcde12345abcde12345ab"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Account"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_account_sid
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_account_sid
+msgid "Account SID"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_account_status
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_account_status
+msgid "Account Status"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_account_type
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_account_type
+msgid "Account Type"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__active
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__twilio_account_status__active
+msgid "Active"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_alert_user_id
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_alert_user_id
+msgid "Alert"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__amount_twilio_balance_alert
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__amount_twilio_balance_alert
+msgid "Alert Below"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/discuss_channel.py:0
+msgid "An SMS carries text only: write the reply; attachments are not sent."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/discuss_channel.py:0
+msgid ""
+"An SMS conversation needs the sender's number and the company number it "
+"takes place on: %(channels)s"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__user_ids
+msgid "Answered By"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_auth_token
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_auth_token
+msgid "Auth Token"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__twilio_auth_token
+#: model:ir.model.fields,help:integration_twilio.field_wizard_integration_twilio_config_update__twilio_auth_token
+msgid "Authenticates the API calls and signs the webhooks Twilio sends."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__mail_notification__failure_type__twilio_authentication
+#: model:ir.model.fields.selection,name:integration_twilio.selection__sms_sms__failure_type__twilio_authentication
+msgid "Authentication Error"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_search
+msgid "Awaiting the Phone System"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_call__report_state__pending
+msgid "Awaiting the phone system"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__amount_twilio_balance
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__amount_twilio_balance
+msgid "Balance"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_currency_id
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_currency_id
+msgid "Balance Currency"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__mail_notification__failure_type__sms_blacklist
+msgid "Blacklisted"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_discuss_channel__channel_type
+msgid "Channel Type"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_discuss_channel__channel_type
+msgid ""
+"Chat is private and unique between 2 persons. Group is private among invited"
+" persons. Channel can be freely joined (depending on its configuration)."
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Check Now"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_config.py:0
+msgid "Cleared at the last check."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__twilio_account_status__closed
+msgid "Closed"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_res_company
+msgid "Companies"
+msgstr "ကုမ္ပဏီများ"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__company_id
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__company_id
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__company_id
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_sms__record_company_id
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__company_id
+msgid "Company"
+msgstr "ကုမ္ပဏီ"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_discuss_channel__twilio_number_id
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_search
+msgid "Company Number"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.res_config_settings_view_form
+msgid "Configure Twilio Account"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__country_id
+msgid "Country"
+msgstr "နိုင်ငံ"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__country_code
+msgid "Country Code"
+msgstr "နိုင်ငံ ကုဒ်"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__create_uid
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__create_uid
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__create_uid
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__create_uid
+msgid "Created by"
+msgstr "ဖန်တီးသူ"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__create_date
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__create_date
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__create_date
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__create_date
+msgid "Created on"
+msgstr "တည်ဆောက်သည့်အချိန်"
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_credential_credential
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__credential_id
+msgid "Credential"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Credentials"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_search
+msgid "Date"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Delete"
+msgstr "ဖျက်"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__direction
+msgid "Direction"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Discard"
+msgstr "မလုပ်တော့"
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_discuss_channel
+msgid "Discussion Channel"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_credential_credential__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_mail_ice_server__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_mail_notification__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_res_company__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_sms__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_tracker__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__display_name
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_sms_sms_send__display_name
+msgid "Display Name"
+msgstr "ပြသသော အမည်"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__duration
+msgid "Duration (s)"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__end_date
+msgid "End Date"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "Error: %s"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_sms__failure_type
+msgid "Failure Type"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_mail_notification__failure_type
+msgid "Failure type"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__mail_notification__failure_type__twilio_from_to
+#: model:ir.model.fields.selection,name:integration_twilio.selection__sms_sms__failure_type__twilio_from_to
+msgid "From / To identic"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__twilio_account_type__full
+msgid "Full"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_mail_ice_server
+msgid "ICE Server"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_credential_credential__id
+#: model:ir.model.fields,field_description:integration_twilio.field_discuss_channel__id
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__id
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__id
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__id
+#: model:ir.model.fields,field_description:integration_twilio.field_mail_ice_server__id
+#: model:ir.model.fields,field_description:integration_twilio.field_mail_notification__id
+#: model:ir.model.fields,field_description:integration_twilio.field_res_company__id
+#: model:ir.model.fields,field_description:integration_twilio.field_res_config_settings__id
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_sms__id
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_tracker__id
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__id
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_sms_sms_send__id
+msgid "ID"
+msgstr "နံပါတ်"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__message_has_error
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_call__direction__incoming
+msgid "Incoming"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__mail_notification__failure_type__twilio_callback
+#: model:ir.model.fields.selection,name:integration_twilio.selection__sms_sms__failure_type__twilio_callback
+msgid "Incorrect callback URL"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_res_company__integration_twilio_config_id
+msgid "Integration Twilio Config"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__date_twilio_checked
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__date_twilio_checked
+msgid "Last Checked"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__write_uid
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__write_uid
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__write_uid
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__write_uid
+msgid "Last Updated by"
+msgstr "နောက်ဆုံးပြင်ဆင်သူ"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__write_date
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__write_date
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__write_date
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__write_date
+msgid "Last Updated on"
+msgstr "နောက်ဆုံးပြင်ဆင်ချိန်"
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.res_config_settings_view_form_mail
+msgid "Left empty, calls use the company's Twilio account."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__line_number
+msgid "Line Number"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_sms_tracker
+msgid "Link SMS to mailing/sms tracking models"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__is_mms_capable
+msgid "MMS"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/res_company.py:0
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "Manage Twilio Account"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_mail_notification
+msgid "Message Notifications"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__mail_notification__failure_type__twilio_from_missing
+#: model:ir.model.fields.selection,name:integration_twilio.selection__sms_sms__failure_type__twilio_from_missing
+msgid "Missing From Number"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid ""
+"Need help ?\n"
+"                            <i class=\"fa-solid fa-up-right-from-square\" aria-hidden=\"true\"/>"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_search
+msgid "Never Reported"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_call__report_state__unreported
+msgid "Never reported"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-javascript
+#: code:addons/integration_twilio/static/src/core/public_web/messaging_menu_model_patch.js:0
+msgid "No SMS conversation yet."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "No synced SMS number to route: sync the numbers first."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_call__report_state__not_expected
+msgid "Not connected"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.constraint,message:integration_twilio.constraint_discuss_channel_sms_conversation_unique
+msgid "One SMS conversation per sender on each company number."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/discuss_channel.py:0
+msgid "Only internal users take part in an SMS conversation."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__mail_notification__failure_type__sms_optout
+msgid "Opted Out"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_call__direction__outgoing
+msgid "Outgoing"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_sms_sms
+msgid "Outgoing SMS"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__phone_number
+msgid "Phone Number"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Phone Numbers"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "Please set the number to which you want to send a test SMS."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__amount_price
+msgid "Price"
+msgstr ""
+
+#. module: integration_twilio
+#: model:res.groups,name:integration_twilio.privilege_send_sms_conversation_reply
+msgid ""
+"Privilege: a member's reply in an SMS conversation is sent from its number"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Receive SMS in Odoo"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__is_sms_routed
+msgid "Receives SMS in Odoo"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_number.py:0
+msgid "Replied %(keyword)s to %(number)s by SMS"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__report_state
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_search
+msgid "Report"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_call__report_state__matched
+msgid "Reported"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__phone_call_id
+msgid "Reported Call"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-javascript
+#: code:addons/integration_twilio/static/src/core/public_web/messaging_menu_model_patch.js:0
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__is_sms_capable
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "SMS"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_discuss_channel__sms_partner_id
+msgid "SMS Contact"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__discuss_channel__channel_type__sms
+msgid "SMS Conversation"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__sms_provider
+#: model:ir.model.fields,field_description:integration_twilio.field_res_config_settings__sms_provider
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__sms_provider
+msgid "SMS Provider"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_wizard_sms_sms_send
+msgid "Send SMS Wizard"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Send test SMS"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__sms_provider__iap
+msgid "Send via Odoo"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__sms_provider__twilio
+msgid "Send via Twilio"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_discuss_channel__sms_number
+msgid "Sender Number"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__sequence
+msgid "Sequence"
+msgstr "Sequence"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__start_date
+msgid "Start Date"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__twilio_account_status__suspended
+msgid "Suspended"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Sync Numbers from Twilio"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__test_number
+msgid "Test Number"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_number__country_code
+msgid ""
+"The ISO country code in two chars. \n"
+"You can use this field for quick search."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "The SMS has been sent from %s"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid ""
+"The Twilio account may not send to this recipient yet: a trial account, or "
+"one without an approved compliance profile"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_call__phone_call_id
+msgid "The call the phone system reported to Odoo for this carrier record"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_call__line_number
+msgid "The company number the call came in on or went out from"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_sms_tracker__twilio_company_id
+msgid ""
+"The company whose Twilio account sent the SMS and signs its status "
+"callbacks, kept after the SMS itself is deleted"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_discuss_channel__twilio_number_id
+msgid ""
+"The company's Twilio number this conversation takes place on; replies are "
+"sent from it."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_discuss_channel__sms_partner_id
+msgid "The contact the sender's number matched when the conversation began."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_discuss_channel__sms_number
+msgid "The number of the person this SMS conversation is with."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_sms_sms__twilio_sender_id
+msgid ""
+"The number this SMS must be sent from, whatever the recipient's country: the"
+" number a conversation's reply answers on."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "The number you're trying to reach is not correctly formatted"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "The numbers could not be synced: %s"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "The numbers could not be updated: %s"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_call__phone_number
+msgid "The other party's number"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid ""
+"The recipient replied STOP to this number; Twilio refuses to send until they"
+" reply START"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__credential_id
+msgid ""
+"The vault credential holding this company's Account SID and Auth Token, "
+"bound to the Twilio service so every call authenticates with it."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+msgid "This is a test SMS from Odoo"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_list
+msgid "Total"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields.selection,name:integration_twilio.selection__integration_twilio_config__twilio_account_type__trial
+msgid "Trial"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "Trial Account Limitation"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__date_twilio_calls_synced
+msgid "Trunk Calls Synced"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__trunk_sid
+msgid "Trunk SID"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/wizards/wizard_integration_twilio_config_update.py:0
+#: model:integration.service,name:integration_twilio.service_twilio
+msgid "Twilio"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Twilio Account"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_tracker__twilio_company_id
+msgid "Twilio Account Company"
+msgstr ""
+
+#. module: integration_twilio
+#: model:mail.activity.type,name:integration_twilio.mail_activity_data_twilio_account_stopped
+msgid "Twilio Account Stopped"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "Twilio Authentication Error"
+msgstr "Twilio Authentication မှားနေသည်"
+
+#. module: integration_twilio
+#: model:mail.activity.type,name:integration_twilio.mail_activity_data_twilio_balance_low
+msgid "Twilio Balance Low"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__twilio_sid
+msgid "Twilio Call SID"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_sms__twilio_message_sid
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_tracker__twilio_message_sid
+msgid "Twilio Message SID"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_integration_twilio_number
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__number
+msgid "Twilio Number"
+msgstr "Twilio နံပါတ်"
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_res_company__twilio_number_ids
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_number_ids
+msgid "Twilio Numbers"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__twilio_sid
+msgid "Twilio SID"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_integration_twilio_call
+msgid "Twilio SIP Trunk Call"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__twilio_sms_url
+msgid "Twilio SMS URL"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_sms_sms__twilio_sender_id
+msgid "Twilio Sender"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_call__twilio_status
+msgid "Twilio Status"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "Twilio StatusCallback URL is incorrect"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.actions.act_window,name:integration_twilio.integration_twilio_call_action
+#: model:ir.ui.menu,name:integration_twilio.integration_twilio_call_menu
+#: model_terms:ir.ui.view,arch_db:integration_twilio.integration_twilio_call_view_list
+msgid "Twilio Trunk Calls"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_config.py:0
+msgid "Twilio account of %(company)s"
+msgstr ""
+
+#. module: integration_twilio
+#: model:mail.activity.type,summary:integration_twilio.mail_activity_data_twilio_account_stopped
+msgid "Twilio account suspended or closed"
+msgstr ""
+
+#. module: integration_twilio
+#: model:mail.activity.type,summary:integration_twilio.mail_activity_data_twilio_balance_low
+msgid "Twilio balance low"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "Twilio could not be reached; resend the SMS later"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/integration_twilio_config.py:0
+msgid "Twilio did not answer: %s"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "Twilio is busy or unavailable; resend the SMS later"
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/sms_sms.py:0
+msgid "Twilio refused to send: the recipient replied STOP"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_number__is_sms_routed
+msgid ""
+"Twilio sends this number's incoming SMS to Odoo, as last synced from the "
+"account."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_number__twilio_sid
+msgid ""
+"Twilio's own id for this number (PN...), set when it is synced from the "
+"account."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.actions.server,name:integration_twilio.ir_cron_sync_trunk_calls_ir_actions_server
+msgid "Twilio: Reconcile SIP Trunk Calls"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/tools/sms_api.py:0
+msgid "Unknown error, please contact Odoo support"
+msgstr "မသိသော Error တစ်ခုတက်နေပါသည်၊ Odoo Support ကိုဆက်သွယ်ပါ"
+
+#. module: integration_twilio
+#. odoo-javascript
+#: code:addons/integration_twilio/static/src/core/public_web/messaging_menu_model_patch.js:0
+msgid "Unread"
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "Update Account"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model,name:integration_twilio.model_wizard_integration_twilio_config_update
+msgid "Update a company's Twilio account"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_number__is_voice_capable
+msgid "Voice"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_call__amount_price
+msgid ""
+"What Twilio charged for the call's connectivity, in the currency beside it: "
+"per-minute prices are fractions of a cent, which the currency's own rounding"
+" would lose"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_number__twilio_sms_url
+msgid ""
+"Where Twilio sends this number's incoming SMS, as it reported it: the URL "
+"its webhooks are signed for."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_call__report_state
+msgid ""
+"Whether the phone system reported this call to Odoo: a completed carrier "
+"call still unreported two hours after it ended was lost between the carrier "
+"and Odoo."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_config__twilio_alert_user_id
+#: model:ir.model.fields,help:integration_twilio.field_wizard_integration_twilio_config_update__twilio_alert_user_id
+msgid ""
+"Who is given an activity when the account is suspended or its balance falls "
+"under the alert amount; the administrator when empty."
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,help:integration_twilio.field_integration_twilio_number__user_ids
+msgid "Who receives the SMS conversations started on this number."
+msgstr ""
+
+#. module: integration_twilio
+#. odoo-python
+#: code:addons/integration_twilio/models/discuss_channel.py:0
+msgid ""
+"You answer %(number)s: ask an administrator to take you off the number to "
+"leave its conversations."
+msgstr ""
+
+#. module: integration_twilio
+#: model_terms:ir.ui.view,arch_db:integration_twilio.wizard_integration_twilio_config_update_view_form
+msgid "abcde12345abcde12345abcde12345ab"
+msgstr ""
+
+#~ msgid "Numbers"
+#~ msgstr "နံပါတ်များ"
+
+#~ msgid "Reload Numbers from Twilio"
+#~ msgstr "Twilio မှ နံပါတ် များကို Reload ပါ"

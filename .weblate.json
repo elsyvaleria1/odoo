@@ -1297,6 +1297,11 @@
                 "new_base": "addons/industry_fsm_stock/i18n/industry_fsm_stock.pot"
             },
             {
+                "name": "integration_twilio",
+                "filemask": "addons/integration_twilio/i18n/*.po",
+                "new_base": "addons/integration_twilio/i18n/integration_twilio.pot"
+            },
+            {
                 "name": "iot_base",
                 "filemask": "addons/iot_base/i18n/*.po",
                 "new_base": "addons/iot_base/i18n/iot_base.pot"
@@ -2655,11 +2660,6 @@
                 "name": "sms",
                 "filemask": "addons/sms/i18n/*.po",
                 "new_base": "addons/sms/i18n/sms.pot"
-            },
-            {
-                "name": "sms_twilio",
-                "filemask": "addons/sms_twilio/i18n/*.po",
-                "new_base": "addons/sms_twilio/i18n/sms_twilio.pot"
             },
             {
                 "name": "snailmail",

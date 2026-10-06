@@ -4,7 +4,7 @@ from odoo.exceptions import UserError
 from odoo.tests.common import tagged, users
 from odoo.tools import mute_logger
 
-from odoo.addons.sms_twilio.tests.common import MockSmsTwilioApi
+from odoo.addons.integration_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.test_mass_mailing.tests.common import (
     TestMassMailCommon,
     TestMassSMSCommon,

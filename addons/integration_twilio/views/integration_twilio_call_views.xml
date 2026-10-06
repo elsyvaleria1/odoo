@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="integration_twilio_call_view_list" model="ir.ui.view">
+        <field name="name">integration.twilio.call.view.list</field>
+        <field name="model">integration.twilio.call</field>
+        <field name="arch" type="xml">
+            <list
+                string="Twilio Trunk Calls"
+                create="0"
+                edit="0"
+                decoration-danger="report_state == 'unreported'"
+                decoration-muted="report_state == 'not_expected'">
+                <field name="start_date" />
+                <field name="direction" />
+                <field name="phone_number" />
+                <field name="line_number" />
+                <field name="twilio_status" />
+                <field name="duration" />
+                <field name="amount_price" sum="Total" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="report_state" />
+                <field name="phone_call_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="integration_twilio_call_view_search" model="ir.ui.view">
+        <field name="name">integration.twilio.call.view.search</field>
+        <field name="model">integration.twilio.call</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="phone_number" />
+                <field name="line_number" />
+                <field name="twilio_sid" />
+                <filter
+                    name="unreported"
+                    string="Never Reported"
+                    domain="[('report_state', '=', 'unreported')]" />
+                <filter
+                    name="pending"
+                    string="Awaiting the Phone System"
+                    domain="[('report_state', '=', 'pending')]" />
+                <separator />
+                <filter name="start_date" string="Date" date="start_date" />
+                <group>
+                    <filter
+                        name="group_report_state"
+                        string="Report"
+                        context="{'group_by': 'report_state'}" />
+                    <filter
+                        name="group_line"
+                        string="Company Number"
+                        context="{'group_by': 'line_number'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="integration_twilio_call_action" model="ir.actions.act_window">
+        <field name="name">Twilio Trunk Calls</field>
+        <field name="res_model">integration.twilio.call</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_unreported': 1}</field>
+    </record>
+
+</odoo>

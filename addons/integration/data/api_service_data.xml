@@ -15,15 +15,4 @@
         <field name="rate_limit_period">second</field>
     </record>
 
-    <record id="service_twilio" model="integration.service">
-        <field name="name">Twilio SMS</field>
-        <field name="code">twilio</field>
-        <field name="category">communication</field>
-        <field name="provider">Twilio</field>
-        <field name="website">https://www.twilio.com</field>
-        <field name="documentation_url">https://www.twilio.com/docs/sms/api</field>
-        <field name="endpoint_url">https://api.twilio.com</field>
-        <field name="auth_type">basic</field>
-    </record>
-
 </odoo>

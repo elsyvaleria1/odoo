@@ -464,6 +464,10 @@ class MixinInboundGate(models.AbstractModel):
         caller_already_checked: bool = False,
     ) -> tuple[bool, int, str, str]:
         self.check_singleton()
+        # an owner's receiver is found archived or not, so that archiving it
+        # does not make the next call create a fresh, open one
+        if "active" in self._fields and not self.active:
+            return False, 404, f"{self.display_name} is archived", "endpoint_inactive"
         if mode == self.AUTH_MODE_OFF:
             return True, 200, "", "allowed"
 

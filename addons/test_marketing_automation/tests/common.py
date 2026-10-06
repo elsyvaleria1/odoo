@@ -1,5 +1,6 @@
 from odoo import Command
 
+from odoo.addons.integration_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.marketing_automation.tests.common import (
     MarketingAutomationCase,
     MarketingAutomationCommon,
@@ -8,7 +9,6 @@ from odoo.addons.marketing_automation_whatsapp.tests.common import (
     MarketingAutomationWACase,
 )
 from odoo.addons.mass_mailing_sms.tests.common import MassSMSCommon
-from odoo.addons.sms_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.whatsapp.tests.common import MockIncomingWhatsApp, WhatsAppCommon
 
 

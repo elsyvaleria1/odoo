@@ -6,8 +6,8 @@ from odoo.tests import tagged
 from odoo.tests.common import users
 from odoo.tools import mute_logger
 
+from odoo.addons.integration_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.phone_validation.tools import phone_validation
-from odoo.addons.sms_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.test_mass_mailing.tests.common import TestMassSMSCommon
 
 

@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+integration_twilio_number_rule_company_group_user,integration.twilio.number: the reader's companies,model_integration_twilio_number,base.group_user,permission,r,company,,
+integration_twilio_number_rule_group_system,integration.twilio.number: every company for a settings manager,model_integration_twilio_number,base.group_system,permission,crud,,,
+wizard_integration_twilio_config_update_rule_group_system,wizard.integration.twilio.config.update: a settings manager,model_wizard_integration_twilio_config_update,base.group_system,permission,cru,,,
+integration_twilio_config_rule_company_group_user,integration.twilio.config: the reader's companies,model_integration_twilio_config,base.group_user,permission,r,company,,
+integration_twilio_config_rule_erp_manager,integration.twilio.config: every company for an access-rights manager,model_integration_twilio_config,base.group_erp_manager,permission,r,,,
+integration_twilio_config_rule_group_system,integration.twilio.config: every company for a settings manager,model_integration_twilio_config,base.group_system,permission,cud,,,
+integration_twilio_call_rule_group_system,integration.twilio.call: every company for a settings manager,model_integration_twilio_call,base.group_system,permission,r,,,
+privilege_send_sms_conversation_reply_sms,SMS: a conversation's reply is pinned to its number and sent,sms.model_sms_sms,privilege_send_sms_conversation_reply,permission,ru,,,
+privilege_send_sms_conversation_reply_blacklist,Phone blacklist: a conversation's reply checks its person did not opt out,phone_validation.model_phone_blacklist,privilege_send_sms_conversation_reply,permission,r,,,
+privilege_send_sms_conversation_reply_tracker,SMS tracker: a conversation's reply refused for an opted-out person is marked so,sms.model_sms_tracker,privilege_send_sms_conversation_reply,permission,r,,,

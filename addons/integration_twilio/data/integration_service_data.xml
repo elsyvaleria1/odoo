@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_twilio" model="integration.service">
+        <field name="name">Twilio</field>
+        <field name="code">twilio</field>
+        <field name="category">communication</field>
+        <field name="provider">Twilio Inc.</field>
+        <field name="website">https://www.twilio.com</field>
+        <field name="documentation_url">https://www.twilio.com/docs/usage/api</field>
+        <field name="endpoint_url">https://api.twilio.com</field>
+        <field name="auth_type">basic</field>
+        <field name="health_check_enabled" eval="True" />
+        <field name="health_check_endpoint">/2010-04-01/Accounts.json</field>
+    </record>
+
+</odoo>

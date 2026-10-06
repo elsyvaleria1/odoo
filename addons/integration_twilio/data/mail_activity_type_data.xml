@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mail_activity_data_twilio_account_stopped" model="mail.activity.type">
+        <field name="name">Twilio Account Stopped</field>
+        <field name="summary">Twilio account suspended or closed</field>
+        <field name="icon">fa-ban</field>
+        <field name="res_model">integration.twilio.config</field>
+        <field name="sequence">40</field>
+    </record>
+
+    <record id="mail_activity_data_twilio_balance_low" model="mail.activity.type">
+        <field name="name">Twilio Balance Low</field>
+        <field name="summary">Twilio balance low</field>
+        <field name="icon">fa-money</field>
+        <field name="res_model">integration.twilio.config</field>
+        <field name="sequence">41</field>
+    </record>
+
+</odoo>

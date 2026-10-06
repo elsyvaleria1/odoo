@@ -10,7 +10,7 @@
     "depends": [
         "mail",
         "sms",
-        "sms_twilio",
+        "integration_twilio",
         "test_orm",
     ],
     "data": [

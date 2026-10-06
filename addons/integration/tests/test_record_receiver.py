@@ -29,6 +29,16 @@ class TestRecordReceiver(TransactionCase):
         self.assertNotEqual(first.code, second.code)
         self.assertEqual(first.auth_type, "caller_check")
 
+    def test_an_archived_receiver_refuses_every_call(self):
+        receiver = self._for_record("Archived flow", purpose="archived_flow")
+        receiver.active = False
+
+        self.assertEqual(
+            self._for_record("Archived flow", purpose="archived_flow"), receiver
+        )
+        allowed, status, _reason, code = receiver._decide_inbound_request({})
+        self.assertEqual((allowed, status, code), (False, 404, "endpoint_inactive"))
+
     def test_a_receiver_without_purpose_is_not_a_purposed_one(self):
         plain = self._for_record("Plain")
 

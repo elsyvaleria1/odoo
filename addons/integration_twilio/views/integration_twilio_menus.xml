@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="integration_twilio_call_menu"
+        name="Twilio Trunk Calls"
+        parent="phone_validation.phone_menu_main"
+        action="integration_twilio_call_action"
+        sequence="10" />
+
+</odoo>

@@ -1,8 +1,8 @@
 from odoo import Command
 from odoo.tests import Form, tagged, users
 
+from odoo.addons.integration_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.sms.tests.common import SMSCommon
-from odoo.addons.sms_twilio.tests.common import MockSmsTwilioApi
 from odoo.addons.test_mail_sms.tests.common import TestSMSRecipients
 
 

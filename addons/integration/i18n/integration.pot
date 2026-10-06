@@ -3631,11 +3631,6 @@ msgid "Ttl Seconds"
 msgstr ""
 
 #. module: integration
-#: model:integration.service,name:integration.service_twilio
-msgid "Twilio SMS"
-msgstr ""
-
-#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_exchange__event_type
 msgid ""
 "Type of event (e.g., 'payment.success', 'push'). Used for inbound webhooks."
