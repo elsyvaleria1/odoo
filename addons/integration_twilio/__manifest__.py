@@ -30,6 +30,9 @@
         "web.assets_backend": [
             "integration_twilio/static/src/core/public_web/**/*",
         ],
+        "web.assets_unit_tests": [
+            "integration_twilio/static/tests/**/*",
+        ],
     },
     "pre_init_hook": "pre_init_hook",
     "uninstall_hook": "uninstall_hook",
