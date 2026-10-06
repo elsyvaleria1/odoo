@@ -20,6 +20,13 @@ function makeDb(initial = {}) {
         async write(_table, key, value) {
             store[key] = value;
         },
+        async invalidateWhere(_tables, predicate) {
+            for (const key of Object.keys(store)) {
+                if (predicate(key)) {
+                    delete store[key];
+                }
+            }
+        },
     };
 }
 
@@ -82,6 +89,42 @@ test("a miss compiles and stores; a hit renders the same without compiling", asy
 
 test("only entries of the cache's scope are loaded", async () => {
     const db = makeDb({ "old/x": "return () => null;", "new/y": "return () => null;" });
+    const cache = new TemplateCompileCache({ db, scope: "new" });
+    await cache.ready;
+    expect([...cache.code.keys()]).toEqual(["new/y"]);
+});
+
+test("opening prunes the rows of another OWL build and of this language's other translations", async () => {
+    const code = "return () => null;";
+    const db = makeDb({
+        "3.0.0+old/en_US/h1/1-a": code,
+        "3.0.0+old/fr_FR/h1/1-b": code,
+        "3.0.1+new/en_US/h0/1-c": code,
+        "3.0.1+new/en_US/h1/1-d": code,
+        "3.0.1+new/fr_FR/h9/1-e": code,
+    });
+    const cache = new TemplateCompileCache({ db, scope: "3.0.1+new/en_US/h1" });
+    await cache.ready;
+    expect([...cache.code.keys()]).toEqual(["3.0.1+new/en_US/h1/1-d"]);
+    expect(Object.keys(db.store).sort()).toEqual([
+        "3.0.1+new/en_US/h1/1-d",
+        "3.0.1+new/fr_FR/h9/1-e",
+    ]);
+});
+
+test("a scope is not the prefix of a longer one", async () => {
+    const db = makeDb({ "s2/x": "return () => null;", "s/y": "return () => null;" });
+    const cache = new TemplateCompileCache({ db, scope: "s" });
+    await cache.ready;
+    expect([...cache.code.keys()]).toEqual(["s/y"]);
+    expect(Object.keys(db.store)).toEqual(["s/y"]);
+});
+
+test("a failed prune leaves the scope's rows loaded", async () => {
+    const db = makeDb({ "old/x": "return () => null;", "new/y": "return () => null;" });
+    db.invalidateWhere = async () => {
+        throw new Error("quota");
+    };
     const cache = new TemplateCompileCache({ db, scope: "new" });
     await cache.ready;
     expect([...cache.code.keys()]).toEqual(["new/y"]);

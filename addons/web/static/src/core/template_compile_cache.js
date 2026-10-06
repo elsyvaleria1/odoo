@@ -34,10 +34,35 @@ function functionBody(fn) {
     return source.slice(source.indexOf("{") + 1, source.lastIndexOf("}"));
 }
 
+/**
+ * Another language's row stays: an editor's website page may run in another
+ * language than the backend.
+ *
+ * @param {string} key
+ * @param {string} scope
+ * @returns {boolean}
+ */
+function isSuperseded(key, scope) {
+    const [build, language] = scope.split("/");
+    const [keyBuild, keyLanguage] = key.split("/");
+    if (keyBuild !== build) {
+        return true;
+    }
+    return (
+        language !== undefined &&
+        keyLanguage === language &&
+        !key.startsWith(`${scope}/`)
+    );
+}
+
 export class TemplateCompileCache {
     /**
      * @param {{
-     *  db?: { readAll(table: string): Promise<Record<string, string>>, write(table: string, key: string, value: string): Promise<any> } | null,
+     *  db?: {
+     *      readAll(table: string): Promise<Record<string, string>>,
+     *      write(table: string, key: string, value: string): Promise<any>,
+     *      invalidateWhere(tables: string[], predicate: (key: string) => boolean): Promise<any>,
+     *  } | null,
      *  scope: string,
      * }} config
      */
@@ -55,16 +80,32 @@ export class TemplateCompileCache {
         if (!this.db) {
             return;
         }
+        /** @type {Record<string, string>} */
+        let stored;
         try {
-            const stored = await this.db.readAll(TABLE);
-            for (const [key, code] of Object.entries(stored)) {
-                if (key.startsWith(this.scope) && typeof code === "string") {
-                    this.code.set(key, code);
-                }
-            }
-            log("loaded", `entries=${this.code.size}`, `scope=${this.scope}`);
+            stored = await this.db.readAll(TABLE);
         } catch (error) {
             log("load failed, compiling for this session", error);
+            return;
+        }
+        const prefix = `${this.scope}/`;
+        for (const [key, code] of Object.entries(stored)) {
+            if (key.startsWith(prefix) && typeof code === "string") {
+                this.code.set(key, code);
+            }
+        }
+        log("loaded", `entries=${this.code.size}`, `scope=${this.scope}`);
+        const superseded = new Set(
+            Object.keys(stored).filter((key) => isSuperseded(key, this.scope)),
+        );
+        if (!superseded.size) {
+            return;
+        }
+        try {
+            await this.db.invalidateWhere([TABLE], (key) => superseded.has(key));
+            log("pruned", `entries=${superseded.size}`);
+        } catch (error) {
+            log("prune failed", error);
         }
     }
 
