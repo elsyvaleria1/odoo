@@ -9,7 +9,7 @@
                     placeholder="Search..."
                     type="text"
                     t-ref="this.inputRef"
-                    t-on-change="this.onFilterChange"
+                    t-on-input="this.onFilterInput"
                 />
                 <button class="btn btn-outline-secondary" type="button" t-on-click="this.onClickClear">
                     <i class="fa-solid fa-eraser"/>

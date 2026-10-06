@@ -97,20 +97,22 @@ export class DocumentsSearchPanelUserFolderId extends Component {
         return this.state.expanded[category.id][value.id] ? "true" : "false";
     }
 
-    onFilterChange(ev) {
-        const query = ev.target.value;
+    onFilterInput(ev) {
+        this._filter(ev.target.value);
+    }
+
+    onClickClear() {
+        this.inputRef.el.value = "";
+        this._filter("");
+    }
+
+    /** @param {string} query */
+    _filter(query) {
         this._createCategoryTree({
             values: this._treeValues,
             query,
             initialValue: this.category.activeValueId,
         });
-    }
-
-    onClickClear() {
-        this.inputRef.el.value = "";
-        this.inputRef.el.dispatchEvent(
-            new CustomEvent("change", { detail: { value: "" } }),
-        );
     }
 
     /**
@@ -214,24 +216,17 @@ export class DocumentsSearchPanelUserFolderId extends Component {
         }
     }
 
+    /** The values kept, each with the children kept among its own. */
     _setCategoryValues(category, idsToInclude, categoryMap) {
-        for (const folderId of category.values.keys()) {
-            if (typeof folderId === "number") {
-                category.values.delete(folderId);
-            }
-        }
-        for (const id of idsToInclude) {
-            if (categoryMap.has(id)) {
-                const node = Object.assign({}, categoryMap.get(id), {
-                    childrenIds: [],
+        category.values.clear();
+        for (const [id, node] of categoryMap) {
+            if (idsToInclude.has(id)) {
+                category.values.set(id, {
+                    ...node,
+                    childrenIds: node.childrenIds.filter((childId) =>
+                        idsToInclude.has(childId),
+                    ),
                 });
-                category.values.set(id, node);
-            }
-        }
-        for (const [id, node] of category.values.entries()) {
-            const parentId = node.parentId;
-            if (parentId && category.values.has(parentId)) {
-                category.values.get(parentId).childrenIds.push(id);
             }
         }
     }

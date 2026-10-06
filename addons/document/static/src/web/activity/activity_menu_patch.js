@@ -10,7 +10,7 @@ patch(ActivityMenu.prototype, {
         this.documentService = useService("document.document");
     },
 
-    async onClickRequestDocument() {
+    onClickRequestDocument() {
         this.dropdown.close();
         this.action.doAction("document.action_request_form");
     },

@@ -8,7 +8,7 @@ export class DocumentsDiscardChangesField extends Component {
     static props = { ...standardFieldProps };
     props = useProps(this.constructor.props);
 
-    async discard() {
+    discard() {
         this.props.record.model.root.discard();
     }
 }

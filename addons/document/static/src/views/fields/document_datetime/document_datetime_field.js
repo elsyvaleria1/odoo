@@ -15,7 +15,7 @@ export class DocumentsDatetimeField extends Component {
     };
     props = useProps(this.constructor.props);
 
-    async onRemove() {
+    onRemove() {
         this.props.record.update({ [this.props.name]: false });
     }
 

@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { isLockedByOther } from "@document/views/document_actions";
 import { DocumentsDetailsMany2ManyTagsField } from "@document/views/fields/document_details_many2many_tags/document_details_many2many_tags_field";
 import { DocumentsDetailsMany2OneField } from "@document/views/fields/document_details_many2one/document_details_many2one_field";
 import { DocumentsTypeIcon } from "@document/views/fields/document_type_icon/document_type_icon";
@@ -87,8 +88,12 @@ export class DocumentsDetailsPanel extends Component {
     }
 
     get userPermissionViewOnly() {
+        // a lock stops the others, not its taker nor a Documents manager
         return (
-            !!this.record.data?.lock_uid ||
+            isLockedByOther(
+                this.record.data,
+                this.documentService.userIsDocumentManager,
+            ) ||
             this.record.data?.user_permission !== "edit" ||
             (!this.documentService.userIsDocumentManager &&
                 this.record.data?.user_folder_id === "COMPANY")
@@ -120,20 +125,34 @@ export class DocumentsDetailsPanel extends Component {
         return user.allowedCompanies.length > 1;
     }
 
+    /** `mail.alias.domain` is created by base.group_erp_manager */
     get canCreateAliasDomain() {
         return user.isAdmin;
+    }
+
+    /** `mail.activity.type` is created by base.group_system */
+    get canCreateActivityType() {
+        return user.isSystem;
     }
 
     get activeCompanies() {
         return user.activeCompanies.map((c) => c.id);
     }
 
+    /**
+     * Links the document to a record of the model picked, once one is chosen:
+     * the current link stays until then, and through a picker cancelled.
+     */
     async onModelSelected(value) {
-        this.state.pendingModel = value.technical ? value : null;
-        await this.record.update({ res_id: false, res_model: false }, { save: true });
         if (!value.technical) {
+            this.state.pendingModel = null;
+            await this.record.update(
+                { res_id: false, res_model: false },
+                { save: true },
+            );
             return;
         }
+        this.state.pendingModel = value;
         this.dialog.add(
             SelectCreateDialog,
             {

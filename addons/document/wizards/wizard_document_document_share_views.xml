@@ -124,7 +124,6 @@
                                                 <field
                                                     name="expiration_date"
                                                     widget="documents_datetime"
-                                                    options="{'btn_classes': 'btn-secondary'}"
                                                     invisible="not expiration_date"
                                                     readonly="is_readonly" />
                                             </div>

@@ -200,6 +200,33 @@ test("Details panel required document name", async () => {
     }
 });
 
+test("the details panel stays editable under the user's own lock, not another's", async () => {
+    const serverData = getDocumentsTestServerModelsData([
+        makeDocumentRecordData(2, "Mine", {
+            folder_id: 1,
+            user_permission: "edit",
+            lock_uid: serverState.userId,
+            ...binaryTestedValues,
+        }),
+        makeDocumentRecordData(3, "Theirs", {
+            folder_id: 1,
+            user_permission: "edit",
+            lock_uid: serverState.odoobotId,
+            ...binaryTestedValues,
+        }),
+    ]);
+    await makeDocumentsMockEnv({ serverData });
+    patchWithCleanup(getService("document.document"), { userIsDocumentManager: false });
+    await mountDocumentsKanbanView({ arch: archWithTags });
+    await contains(".o_control_panel_navigation .o_documents_info_toggle").click();
+    await contains(".o_kanban_record:contains('Mine')").click();
+    await animationFrame();
+    expect(dp(".o_field_tags input")).toHaveCount(1);
+    await contains(".o_kanban_record:contains('Theirs')").click();
+    await animationFrame();
+    expect(dp(".o_field_tags input")).toHaveCount(0);
+});
+
 test("Details panel root folder placeholders", async () => {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "In COMPANY"),
@@ -491,7 +518,7 @@ test("the linked model follows the record when it is unlinked elsewhere", async 
     });
 });
 
-test("linking a record: a closed dialog leaves no model, a picked record is linked", async () => {
+test("linking a record: a closed dialog changes nothing, a picked record is linked", async () => {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Unlinked", {
             folder_id: 1,
@@ -517,13 +544,15 @@ test("linking a record: a closed dialog leaves no model, a picked record is link
     });
     await contains(".modal .btn-close").click();
     expect(dp(".o_model_selector input")).toHaveValue("");
-    expect.verifySteps(["save false"]);
+    expect.verifySteps([], { message: "no record picked: nothing written" });
 
     await contains(dp("input[placeholder='No linked model']")).click();
     await contains(dp("li:contains('res.partner')")).click();
     await contains(".modal .o_data_row:first-child .o_data_cell").click();
     await waitFor(dp(".o_documents_details_panel_record"));
-    expect.verifySteps(["save false", "save res.partner"]);
+    expect.verifySteps(["save res.partner"], {
+        message: "one write, the link itself: no unlinking first",
+    });
 });
 
 test("the company field shows only to a user of several companies", async () => {
@@ -567,6 +596,28 @@ for (const isAdmin of [true, false]) {
         );
         await runAllTimers();
         expect(".o_m2o_dropdown_option_create_edit").toHaveCount(isAdmin ? 1 : 0);
+    });
+}
+
+for (const isSystem of [true, false]) {
+    test(`an activity type is created from the panel by a Settings user only (system: ${isSystem})`, async () => {
+        // an Access Rights administrator creates alias domains, not activity types
+        patchWithCleanup(user, { isAdmin: true, isSystem });
+        const serverData = getDocumentsTestServerModelsData([
+            makeDocumentRecordData(3, "Folder with alias", {
+                folder_id: 1,
+                ...folderTestedValues,
+            }),
+        ]);
+        await makeDocumentsMockEnv({ serverData });
+        await mountDocumentsKanbanView({ arch: archWithTags });
+        await contains(".o_kanban_record:contains('Folder with alias')").click();
+        await contains(".o_control_panel_navigation .o_documents_info_toggle").click();
+        await contains(dp("input[placeholder='No activity']")).edit("Brand new", {
+            confirm: false,
+        });
+        await runAllTimers();
+        expect(".o_m2o_dropdown_option_create_edit").toHaveCount(isSystem ? 1 : 0);
     });
 }
 

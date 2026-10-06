@@ -2,7 +2,6 @@
 import { Component, proxy, status, useProps } from "@odoo/owl";
 import { Dropdown, DropdownItem } from "@web/components/dropdown";
 import { makeLogger } from "@web/core/debug/debug_logger";
-import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 import { useDebounced } from "@web/core/utils/timing";
 import { COG_GROUP } from "@web/search/cog_menu/cog_menu_group";
@@ -61,14 +60,8 @@ export class DocumentCogMenuPinAction extends Component {
     }
 
     async onEnableAction(actionId) {
+        // isDisplayed: an editable folder, so a real one
         const currentFolderId = this.searchModel.getSelectedFolderId();
-        if (!currentFolderId || typeof currentFolderId !== "number") {
-            this.notification.add(_t("You can not pin actions for that folder."), {
-                type: "warning",
-            });
-            return;
-        }
-
         const action = this.documentsState.actions.find((a) => a.id === actionId);
         if (!action) {
             return;
@@ -94,8 +87,10 @@ export const documentCogMenuPinAction = {
     Component: DocumentCogMenuPinAction,
     groupNumber: COG_GROUP.APP,
     isDisplayed: (env) =>
-        env.model.documentService.userIsDocumentUser &&
-        DocumentCogMenuPinAction.isVisible(env, ({ folder, documentService }) =>
-            documentService.isEditable(folder),
+        DocumentCogMenuPinAction.isVisible(
+            env,
+            ({ folder, documentService }) =>
+                documentService.userIsDocumentUser &&
+                documentService.isEditable(folder),
         ),
 };

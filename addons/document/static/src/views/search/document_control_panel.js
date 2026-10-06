@@ -9,14 +9,11 @@ import { useViewModel } from "@web/model/model";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
 import { useSearchModel } from "@web/search/search_model";
 
-import { DocumentsCogMenu } from "../cog_menu/document_cog_menu.js";
-
 export class DocumentsControlPanel extends ControlPanel {
     static template = "document.ControlPanel";
     static components = {
         ...ControlPanel.components,
         DocumentsBreadcrumbs,
-        DocumentsCogMenu,
         DocumentsAction,
     };
 

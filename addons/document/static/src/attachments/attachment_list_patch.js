@@ -26,7 +26,7 @@ patch(AttachmentList.prototype, {
         const res = super.getActions(...arguments);
         if (this.canAddToDocuments(attachment)) {
             res.push({
-                label: _t("Add to My Documents"),
+                label: _t("Add to Documents"),
                 icon: "fa-regular fa-hard-drive",
                 onSelect: () => this.onClickAddToDocuments(attachment),
             });

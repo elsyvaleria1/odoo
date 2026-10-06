@@ -1,11 +1,20 @@
 import "@document/core/router";
+import "@document/webclient/webclient";
 
 import { after, describe, expect, test } from "@odoo/hoot";
-import { click } from "@odoo/hoot-dom";
+import { click, waitFor } from "@odoo/hoot-dom";
 import { Component, t, useProps, xml } from "@odoo/owl";
-import { mountWithCleanup, patchWithCleanup } from "@web/../tests/web_test_helpers";
+import {
+    defineActions,
+    defineMenus,
+    getService,
+    mountWebClient,
+    mountWithCleanup,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
 import { router } from "@web/core/browser/router";
+import { registry } from "@web/core/registry";
 import { redirect } from "@web/core/utils/urls";
 
 describe.current.tags("desktop");
@@ -62,4 +71,29 @@ test("stateToUrl writes a token URL for the documents action only", () => {
     expect(
         router.stateToUrl({ action: "documents_portal", access_token: "tok" }),
     ).not.toBe("/odoo/documents/tok");
+});
+
+test("a document's URL opens the Documents app on it, and makes it the current app", async () => {
+    class DocumentsStub extends Component {
+        static template = xml`<div class="o_documents_stub"/>`;
+        static props = ["*"];
+    }
+    registry.category("actions").add("document_test_stub", DocumentsStub);
+    defineActions([
+        {
+            id: 77,
+            xml_id: "document.document_action",
+            type: "ir.actions.client",
+            tag: "document_test_stub",
+        },
+    ]);
+    defineMenus([{ id: 9, name: "Documents", appID: 9, actionID: 77 }]);
+    redirect("/odoo/document.document/5");
+    await mountWebClient();
+    await waitFor(".o_documents_stub");
+    const action = getService("action").currentController.action;
+    expect(action.context.documents_init_document_id).toBe(5);
+    expect(getService("menu").getCurrentApp()?.id).toBe(9, {
+        message: "the navbar shows the Documents app, not the one before",
+    });
 });

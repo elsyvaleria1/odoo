@@ -170,7 +170,7 @@
                             record="this.record"
                             canOpen="false"
                             canCreate="false"
-                            canCreateEdit="this.canCreateAliasDomain"
+                            canCreateEdit="this.canCreateActivityType"
                             canQuickCreate="false"
                             placeholder.translate="No activity"
                         />
