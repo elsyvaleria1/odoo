@@ -4,7 +4,10 @@
     overflow: hidden;
     width: 210mm;
     height: 297mm;
-    break-before: page;
+    // WeasyPrint honours a forced break before the first sheet: break between sheets only.
+    & ~ & {
+        break-before: page;
+    }
     &.o_label_dymo {
         font-size: 90%;
         width: 57mm;
