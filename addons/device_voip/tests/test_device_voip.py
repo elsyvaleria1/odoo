@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 
+from psycopg import IntegrityError
+
 from odoo.tests import tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.device.tests.common import DeviceHttpCase
 
@@ -78,6 +81,61 @@ class TestDeviceVoip(DeviceHttpCase):
         reported = self._report(extension="7201")
         self.assertNotEqual(reported, softphone)
         self.assertFalse(softphone.device_id)
+
+    def test_the_softphone_call_the_phone_system_names_is_completed(self):
+        named = self._softphone_call(self.when + timedelta(seconds=90))
+        named.sip_call_id = "dialog-1@browser"
+        nearer = self._softphone_call(self.when + timedelta(seconds=5))
+        reported = self._report(extension="7201", sip_call_id="dialog-1@browser")
+        self.assertEqual(reported, named, "the dialog decides, not the clock")
+        self.assertFalse(nearer.device_id)
+
+    def _ringing_copy(self, user, start, state="missed"):
+        call = self._softphone_call(start)
+        call.write({"user_id": user.id, "state": state})
+        return call
+
+    def test_the_browsers_a_missed_call_rang_leave_one_call(self):
+        other = self.env["res.users"].create(
+            {"name": "Otra", "login": "device_voip_otra"}
+        )
+        copies = self._ringing_copy(self.agent, self.when + timedelta(seconds=1)) | (
+            self._ringing_copy(other, self.when + timedelta(seconds=1), "calling")
+        )
+        missed = self._report(direction="missed", duration=0)
+        self.assertFalse(copies.exists(), "the phone system's report is that call")
+        self.assertFalse(missed.user_id)
+        self.assertIn(
+            missed,
+            self.calls.with_user(self.agent).search(
+                self.calls.with_user(self.agent)._softphone_history_domain()
+            ),
+            "everyone it rang sees the missed call in their history",
+        )
+
+    def test_an_answered_call_keeps_its_answerer_and_drops_the_other_copies(self):
+        other = self.env["res.users"].create(
+            {"name": "Otra", "login": "device_voip_otra2"}
+        )
+        answered = self._softphone_call(self.when + timedelta(seconds=2))
+        copy = self._ringing_copy(other, self.when + timedelta(seconds=2))
+        reported = self._report(extension="7201")
+        self.assertEqual(reported, answered)
+        self.assertFalse(copy.exists())
+
+    def test_an_extension_belongs_to_one_user_per_provider(self):
+        other = self.env["res.users"].create(
+            {"name": "Otra", "login": "device_voip_otra3"}
+        )
+        settings = self.env["res.users.settings"]._get_or_create_for_user(other)
+        settings.voip_provider_id = self.provider
+        with (
+            self.assertRaises(IntegrityError),
+            mute_logger("odoo.db"),
+            self.env.cr.savepoint(),
+        ):
+            settings.voip_username = "7201"
+            self.env.flush_all()
 
     def _settings(self, device, token=None):
         return self.url_open(

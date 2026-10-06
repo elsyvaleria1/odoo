@@ -257,7 +257,7 @@ export class Session {
             this.blindTransfer(this.transferTarget);
             return;
         }
-        this.callService.start(this.call);
+        this.callService.start(this.call, { sipCallId: response?.message?.callId });
     }
 
     /**

@@ -133,6 +133,21 @@ class TestVoipCall(TransactionCase):
         self.assertIsNone(call.acquire_contact_info())
         self.assertFalse(call.partner_id)
 
+    def test_an_answered_outgoing_call_takes_its_dialog_name(self):
+        call = self.env["phone.call"].create(
+            {
+                "phone_number": "5512345678",
+                "user_id": self.env.uid,
+                "direction": "outgoing",
+            }
+        )
+        call.start_call(sip_call_id="dialog@browser")
+        self.assertEqual(call.sip_call_id, "dialog@browser")
+        call.start_call(sip_call_id="another@browser")
+        self.assertEqual(
+            call.sip_call_id, "dialog@browser", "a named dialog stays named"
+        )
+
     def test_acquire_contact_info_with_no_number_names_nobody(self):
         # every user without an extension has an empty voip_username
         call = self.env["phone.call"].create(

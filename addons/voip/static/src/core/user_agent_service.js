@@ -480,6 +480,7 @@ export class UserAgent extends SignalStore {
         const call = await this.callService.create({
             direction: "incoming",
             phone_number: phoneNumber,
+            sip_call_id: inviteSession.request.getHeader("Call-ID"),
         });
         const session = new Session(call, inviteSession);
         session.controlHandle = inviteSession.request.getHeader("Call-ID");

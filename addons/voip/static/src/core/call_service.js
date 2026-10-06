@@ -69,8 +69,21 @@ export class CallService {
         this.store.insert(await this.orm.call("phone.call", "reject_call", [[call.id]]));
     }
 
-    async start(call) {
-        this.store.insert(await this.orm.call("phone.call", "start_call", [[call.id]]));
+    /**
+     * @param {Object} call
+     * @param {Object} [options]
+     * @param {string} [options.sipCallId] the dialog's SIP Call-ID, so the phone
+     *  system's report of the same call joins it
+     */
+    async start(call, { sipCallId } = {}) {
+        this.store.insert(
+            await this.orm.call(
+                "phone.call",
+                "start_call",
+                [[call.id]],
+                sipCallId ? { sip_call_id: sipCallId } : {},
+            ),
+        );
         call.timer = {};
         // Use the time from the client (rather than call.start_date) to avoid
         // clock skew with the server.

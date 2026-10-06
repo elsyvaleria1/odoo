@@ -37,6 +37,14 @@ class PhoneCall(models.Model):
     )
     image_1920 = fields.Binary(related="partner_id.image_1920")
     avatar_128 = fields.Binary(related="partner_id.avatar_128")
+    sip_call_id = fields.Char(
+        string="SIP Call-ID",
+        index="btree_not_null",
+        copy=False,
+        readonly=True,
+        help="The softphone's SIP dialog: a phone system reporting the same "
+        "call names it, and the two are one call",
+    )
 
     @api.depends("activity_name")
     def _compute_display_name(self):
@@ -92,6 +100,7 @@ class PhoneCall(models.Model):
         direction: str = "outgoing",
         res_id: int | None = None,
         res_model: str | None = None,
+        sip_call_id: str | None = None,
     ) -> dict:
         """Creates a call from the provided values and returns it formatted for
         use in JavaScript. If a record is provided via its id and model,
@@ -102,6 +111,7 @@ class PhoneCall(models.Model):
         :param direction: Direction of the call ('incoming' or 'outgoing')
         :param res_id: Optional record ID to extract partner from
         :param res_model: Optional model name to extract partner from
+        :param sip_call_id: The SIP Call-ID of the call's dialog, when known
         :return: Dictionary with created call IDs and formatted data
         """
         self.check_access("read")
@@ -112,6 +122,7 @@ class PhoneCall(models.Model):
             "state": "calling",
             "user_id": self.env.uid,
             "channel": "softphone",
+            "sip_call_id": sip_call_id or False,
         }
         if res_id and res_model:
             related_record = self.env[res_model].browse(res_id)
@@ -136,7 +147,7 @@ class PhoneCall(models.Model):
     def get_recent_phone_calls(
         self, search_terms: str | None = None, offset: int = 0, limit: int | None = None
     ):
-        domain = Domain("user_id", "=", self.env.uid)
+        domain = self._softphone_history_domain()
         if search_terms:
             search_fields = ["phone_number", "partner_id.name", "activity_name"]
             domain &= Domain.OR(
@@ -148,11 +159,25 @@ class PhoneCall(models.Model):
         return Store().add(calls, calls._get_fields_voip_store()).get_result()
 
     @api.model
+    def _softphone_history_domain(self) -> Domain:
+        """The user's own calls, and their companies' calls to a company number
+        that nobody answered: the phone system reports those once, for everyone
+        it rang."""
+        return Domain("user_id", "=", self.env.uid) | (
+            Domain("user_id", "=", False)
+            & Domain("channel", "=", "pbx")
+            & Domain("state", "in", ("missed", "voicemail"))
+            & Domain("company_id", "in", self.env.companies.ids)
+        )
+
+    @api.model
     def _get_number_of_missed_calls(self) -> int:
-        domain = [("user_id", "=", self.env.uid), ("state", "=", "missed")]
+        domain = self._softphone_history_domain() & Domain(
+            "state", "in", ("missed", "voicemail")
+        )
         last_seen_phone_call = self.env.user.last_seen_phone_call
         if last_seen_phone_call:
-            domain += [("id", ">", last_seen_phone_call.id)]
+            domain &= Domain("id", ">", last_seen_phone_call.id)
         return self.search_count(domain)
 
     def abort_call(self):
@@ -160,11 +185,17 @@ class PhoneCall(models.Model):
         self.sudo().state = "aborted"
         return Store().add(self, self._get_fields_voip_store()).get_result()
 
-    def start_call(self):
+    def start_call(self, sip_call_id: str | None = None):
         self.check_access("read")
         calls_sudo = self.sudo()
         calls_sudo.start_date = fields.Datetime.now()
         calls_sudo.state = "ongoing"
+        if sip_call_id:
+            # an outgoing call's dialog exists once it is answered: named now,
+            # the phone system's report of it joins this call
+            calls_sudo.filtered(
+                lambda call: not call.sip_call_id
+            ).sip_call_id = sip_call_id
         return Store().add(self, self._get_fields_voip_store()).get_result()
 
     def end_call(self, activity_name: str | None = None):

@@ -29,6 +29,13 @@ class ResUsersSettings(models.Model):
         string="VoIP username / Extension number",
         help="The username (typically the extension number) that will be used to register with the PBX server.",
     )
+    # two users on one extension: the phone system rings whoever registered
+    # last, and a call's report names a user at random
+    _voip_username_unique = models.UniqueIndex(
+        "(voip_provider_id, voip_username) WHERE voip_username IS NOT NULL "
+        "AND voip_username != ''",
+        "This extension already belongs to another user of the same provider.",
+    )
     voip_credential_id = fields.Many2one(
         comodel_name="credential.credential",
         string="VoIP Credential",
