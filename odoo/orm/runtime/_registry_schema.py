@@ -219,6 +219,26 @@ class _RegistrySchemaMixin(_RegistryStubs):
         ]
         if not expected:
             return
+        # a foreign table (a postgres_fdw log living in another database)
+        # cannot be indexed here: its indexes are the remote table's
+        cr.execute(
+            """
+            SELECT c.relname
+              FROM pg_class c
+             WHERE c.relname = ANY(%s)
+               AND c.relkind = 'f'
+               AND c.relnamespace = current_schema::regnamespace
+            """,
+            [sorted({tablename for _name, tablename, _field in expected})],
+        )
+        foreign = {row[0] for row in cr.fetchall()}
+        if foreign:
+            _debug.logic(
+                "registry.check_indexes.foreign_skipped", tables=sorted(foreign)
+            )
+            expected = [row for row in expected if row[1] not in foreign]
+            if not expected:
+                return
 
         cr.execute(
             """
