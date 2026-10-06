@@ -39,6 +39,37 @@ class TestRecordReceiver(TransactionCase):
         allowed, status, _reason, code = receiver._decide_inbound_request({})
         self.assertEqual((allowed, status, code), (False, 404, "endpoint_inactive"))
 
+    def test_repeated_failed_authentication_from_one_caller_is_one_row(self):
+        receiver = self._for_record("Signed flow", purpose="signed_flow")
+        for _ in range(3):
+            receiver._store_inbound_refusal(
+                "authentication_failed",
+                401,
+                "bad signature",
+                headers={},
+                remote_addr="203.0.113.9",
+                mode="enforce",
+            )
+        receiver._store_inbound_refusal(
+            "authentication_failed",
+            401,
+            "bad signature",
+            headers={},
+            remote_addr="203.0.113.10",
+            mode="enforce",
+        )
+        self.env.flush_all()
+        rows = self.env["integration.exchange"].search(
+            [
+                ("state", "=", "refused"),
+                ("refusal_reason", "=", "authentication_failed"),
+                ("channel_id", "=", f"{receiver._name},{receiver.id}"),
+            ]
+        )
+        self.assertEqual(
+            sorted(rows.mapped("attempt_count")), [1, 3], "one row per caller, counted"
+        )
+
     def test_a_receiver_without_purpose_is_not_a_purposed_one(self):
         plain = self._for_record("Plain")
 

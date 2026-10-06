@@ -737,11 +737,14 @@ class MixinInboundGate(models.AbstractModel):
                 reason,
             )
 
-    # A caller's own limit collapses per caller and is counted; a gate's
-    # standing fault collapses per gate and is not, because counting is an
-    # UPDATE of a row every concurrent request shares.
+    # A caller's own limit collapses per caller and is counted, and so does a
+    # caller's failed authentication: unsigned or forged requests are free to
+    # send and would otherwise each add a row. A gate's standing fault
+    # collapses per gate and is not counted, because counting is an UPDATE of
+    # a row every concurrent request shares.
     _COALESCED_REFUSALS = {
         "caller_limited": {"per_caller": True, "counted": True},
+        "authentication_failed": {"per_caller": True, "counted": True},
         "misconfigured": {"per_caller": False, "counted": False},
     }
 
@@ -750,7 +753,7 @@ class MixinInboundGate(models.AbstractModel):
 
     def _get_inbound_coalesce_window(self, code: str) -> int:
         """Return the caller-limit or standing-condition window in seconds."""
-        if code == "caller_limited":
+        if code in ("caller_limited", "authentication_failed"):
             return self.rate_limit_window_seconds or 60
         window = self.env.registry.settings.get_int(
             self.env, self.STANDING_WINDOW_PARAM, self.STANDING_WINDOW_DEFAULT
