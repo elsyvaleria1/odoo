@@ -133,6 +133,11 @@ function parseMany2OneViews(fieldInfo) {
     if (!relatedFields) {
         return;
     }
+    // The registry contract allows an array or a function of the field info,
+    // as parseX2ManyViews and the property-field path already honour.
+    if (relatedFields instanceof Function) {
+        relatedFields = relatedFields(fieldInfo);
+    }
     relatedFields = Object.fromEntries(relatedFields.map((f) => [f.name, f]));
     fieldInfo.viewMode = "default";
     fieldInfo.views = {

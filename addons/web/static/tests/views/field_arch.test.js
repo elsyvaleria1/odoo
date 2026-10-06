@@ -1,7 +1,9 @@
 // @ts-check
 
 import { describe, expect, test } from "@odoo/hoot";
+import { Component, useProps } from "@odoo/owl";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { registry } from "@web/core/registry";
 import { getSupportedOptionNames } from "@web/fields/field";
 import { parseFieldNode, resetUnknownOptionWarnings } from "@web/views/field_arch";
 
@@ -117,5 +119,36 @@ describe("unknown field options", () => {
             parseFieldNode(node, MODELS, "res.partner", "form");
         }
         expect(warnings.length).toBe(1);
+    });
+});
+
+describe("many2one related fields", () => {
+    test("a widget may declare its related fields as a function", () => {
+        const key = "__test_field_arch_m2o_related_fn";
+        /** @type {any[]} */
+        const seen = [];
+        registry.category("fields").add(key, {
+            component: class extends Component {
+                props = useProps(this.constructor.props);
+            },
+            relatedFields: (/** @type {any} */ fieldInfo) => {
+                seen.push(fieldInfo.options);
+                return [{ name: "name", type: "char" }];
+            },
+        });
+        try {
+            const node = /** @type {Element} */ (
+                new DOMParser().parseFromString(
+                    `<field name="parent_id" widget="${key}" options="{'x': 1}"/>`,
+                    "text/xml",
+                ).documentElement
+            );
+            const fieldInfo = parseFieldNode(node, MODELS, "res.partner", "form");
+            expect(seen).toEqual([{ x: 1 }]);
+            expect(fieldInfo.viewMode).toBe("default");
+            expect(Object.keys(fieldInfo.views?.default.fields)).toEqual(["name"]);
+        } finally {
+            registry.category("fields").remove(key);
+        }
     });
 });
