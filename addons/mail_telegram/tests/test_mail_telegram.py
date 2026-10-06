@@ -133,6 +133,18 @@ class TestDelivery(MailTelegramCase):
         self.assertEqual(len(self._queued()), 1)
         self.assertFalse(self._outbound(other_chat))
 
+    def test_a_record_s_company_bot_carries_it_past_a_chosen_chat_elsewhere(self):
+        self.test_user._telegram_settings().telegram_notify_inbox = "always"
+        other_chat = self._other_company_chat()
+        self.test_user._update_telegram_notify_chat(other_chat)
+        self.record.company_id = self.test_bot.company_id
+
+        self._post_to_user()
+
+        self.assertEqual(len(self._queued()), 1)
+        self.assertFalse(self._outbound(other_chat))
+        self.assertTrue(self._queued()._still_wanted())
+
     def test_a_bot_of_a_company_the_user_is_not_in_tells_them_nothing(self):
         other_chat = self._other_company_chat(member=False)
 

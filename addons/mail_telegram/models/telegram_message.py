@@ -20,6 +20,12 @@ class TelegramMessage(models.Model):
         string="Only While Away",
         help="Sent only if its recipient is not online in Odoo when it is due.",
     )
+    mail_company_id = fields.Many2one(
+        comodel_name="res.company",
+        ondelete="cascade",
+        help="The company of the record the notification is about, whose bot "
+        "carries it.",
+    )
 
     @api.model
     def _gc_removable_domain(self, now) -> list:
@@ -38,7 +44,10 @@ class TelegramMessage(models.Model):
         user = self._get_recipient_user()
         # the destination is decided again when the message is due: a chat
         # disconnected, refused or replaced meanwhile gets nothing more
-        if not user or user._get_telegram_notify_chat() != self.chat_id:
+        if (
+            not user
+            or user._get_telegram_notify_chat(self.mail_company_id) != self.chat_id
+        ):
             return False
         if self.mail_away_only and user.im_status == "online":
             return False

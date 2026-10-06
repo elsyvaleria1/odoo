@@ -120,12 +120,16 @@ class ResUsers(models.Model):
             lambda chat: chat.bot_id._can_deliver_mail(chat.account_id, me)
         )
 
-    def _get_telegram_notify_chat(self):
+    def _get_telegram_notify_chat(self, company=None):
         """The one chat this user's notifications go to: the one they chose
         while it may still carry them, else the last one they used that does
-        not refuse the bot."""
+        not refuse the bot. About a record of `company`, only a chat with that
+        company's bot: a bot speaks for one company, or the reply lands where
+        the bot does not act."""
         self.check_singleton()
         chats = self._get_telegram_notify_chats()
+        if company:
+            chats = chats.filtered(lambda chat: chat.bot_id.company_id == company)
         chosen = self._telegram_settings().telegram_notify_chat_id
         if chosen and chosen.id in chats.ids:
             return chats.browse(chosen.id)

@@ -71,7 +71,9 @@ class MixinMailThread(models.AbstractModel):
             return
         if not operating(self.env["telegram.bot"])._get_notifying_bot_ids():
             return
-        company = self[:1]._mail_get_companies().get(self[:1].id)
+        company = (
+            self[:1]._mail_get_companies().get(self[:1].id) or self.env["res.company"]
+        )
         users = operating(self.env["res.users"])
         for recipient, kind in candidates:
             # a channel member is tagged by partner, without its user; the bot
@@ -85,18 +87,12 @@ class MixinMailThread(models.AbstractModel):
             when = self._telegram_preference(user, kind)
             if when == "never":
                 continue
-            chat = user._get_telegram_notify_chat()
-            # a bot speaks for one company: the record's, when it has one, or
-            # the reply lands where the bot does not act
-            if company and chat.bot_id.company_id != company:
-                chat = user._get_telegram_notify_chats().filtered(
-                    lambda chat: (
-                        chat.bot_id.company_id == company and not chat.bot_blocked
-                    )
-                )[:1]
+            chat = user._get_telegram_notify_chat(company)
             if not chat or chat.bot_blocked:
                 continue
-            self._telegram_queue(message, user, chat, away_only=when == "away")
+            self._telegram_queue(
+                message, user, chat, company=company, away_only=when == "away"
+            )
 
     def _telegram_notification_kind(self, recipient):
         """What a recipient's notification is, for its Telegram preference:
@@ -115,7 +111,7 @@ class MixinMailThread(models.AbstractModel):
             return "away" if channels in ("all", "mentions") else "never"
         return "away" if channels == "all" else "never"
 
-    def _telegram_queue(self, message, user, chat, *, away_only) -> None:
+    def _telegram_queue(self, message, user, chat, *, company, away_only) -> None:
         grace = max(0, user._telegram_settings().telegram_grace_seconds)
         eta = fields.Datetime.now() + timedelta(seconds=grace) if away_only else None
         this = self.with_context(lang=user.lang or self.env.lang)
@@ -124,6 +120,7 @@ class MixinMailThread(models.AbstractModel):
             "mail_message_id": message.id,
             "recipient_partner_id": user.partner_id.id,
             "mail_away_only": away_only,
+            "mail_company_id": company.id,
         }
         chat.bot_id._queue_text(chat, text, reply_markup=keyboard, eta=eta, **vals)
         for attachment in message.attachment_ids:
