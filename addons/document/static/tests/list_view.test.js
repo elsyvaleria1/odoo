@@ -14,6 +14,7 @@ import {
 } from "@web/../tests/web_test_helpers";
 import { router } from "@web/core/browser/router";
 import { user } from "@web/core/user";
+import { Deferred } from "@web/core/utils/concurrency";
 
 import {
     DocumentsModels,
@@ -26,6 +27,7 @@ import {
     basicDocumentsListArch,
     mountDocumentsListView,
 } from "./helpers/views/list.js";
+import { getEnrichedSearchArch } from "./helpers/views/search.js";
 
 describe.current.tags("desktop");
 
@@ -586,6 +588,41 @@ test("a search reloads the records, never the folder tree", async function () {
     ]);
     await animationFrame();
     expect.verifySteps(["records"]);
+});
+
+test("a search shows its records without waiting for a filter section's values", async function () {
+    let searchModel;
+    patchWithCleanup(DocumentsSearchModel.prototype, {
+        setup() {
+            super.setup(...arguments);
+            searchModel = this;
+        },
+    });
+    let held = null;
+    onRpc("search_panel_select_multi_range", async () => {
+        expect.step("filter values");
+        await held;
+    });
+    onRpc("document.document", "web_search_read", () => {
+        expect.step("records");
+    });
+    await makeDocumentsMockEnv({ serverData: getDocumentsTestServerModelsData() });
+    await mountDocumentsListView({
+        searchViewArch: getEnrichedSearchArch().replace(
+            'expand="1"/>',
+            'expand="1"/><field name="tag_ids" select="multi"/>',
+        ),
+    });
+    expect.verifySteps(["filter values", "records"]);
+
+    held = new Deferred();
+    searchModel.createNewFilters([
+        { description: "named Doc", domain: [["name", "ilike", "Doc"]] },
+    ]);
+    await animationFrame();
+    expect.verifySteps(["filter values", "records"]);
+    held.resolve();
+    await animationFrame();
 });
 
 test("moving a row into a folder of the same access asks for no confirmation", async function () {

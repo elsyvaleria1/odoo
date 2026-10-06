@@ -373,10 +373,15 @@ export class DocumentsSearchModel extends SearchModel {
     }
 
     /**
+     * The first load waits: the folder it opens decides the records' domain.
+     * A later search does not: the folder tree is expanded and never refetched,
+     * and a filter section's values follow the records a moment later, while
+     * the values already checked are in the domain the records are read with.
+     *
      * @override
      */
     _shouldWaitForData() {
-        return true;
+        return !this.searchPanelInfo.loaded;
     }
 
     _updateRouteState(state) {
