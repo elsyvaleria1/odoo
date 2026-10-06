@@ -1,4 +1,5 @@
 import odoo
+from odoo.tests import new_test_user
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
@@ -114,3 +115,26 @@ class TestPosLoadScoping(TestPoSCommon):
             {record["id"] for record in data["res.country"]},
             self._company_country_ids,
         )
+
+    def test_a_record_its_user_cannot_read_is_dropped_alone(self):
+        elsewhere = self.env["res.company"].create({"name": "Load scoping elsewhere"})
+        here, there = self.env["res.partner"].create(
+            [
+                {"name": "Here", "company_id": self.company.id},
+                {"name": "There", "company_id": elsewhere.id},
+            ]
+        )
+        user = new_test_user(
+            self.env,
+            login="pos_scoping",
+            groups="base.group_user,point_of_sale.group_pos_user",
+            company_id=self.company.id,
+        )
+        partners = (here | there).with_user(user)
+        self.assertFalse(there.with_user(user).has_access("read"))
+        for cached in (False, True):
+            with self.subTest(cached=cached):
+                self.env.invalidate_all()
+                if cached:
+                    (here | there).sudo().mapped("active")
+                self.assertEqual(partners._get_inactive_ids(self.config), [there.id])

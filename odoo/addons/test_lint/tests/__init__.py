@@ -59,6 +59,7 @@ from . import test_owl_templates
 from . import test_owl_template_members
 from . import test_access_migrations
 from . import test_access_rows
+from . import test_access_by_attribute_read
 from . import test_elevation
 from . import test_view_depends
 from . import test_view_totals

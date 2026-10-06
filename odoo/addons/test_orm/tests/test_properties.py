@@ -1923,6 +1923,53 @@ class PropertiesCase(TestPropertiesMixin):
 
         self.assertEqual(message["attributes"]["my_tags"], tags)
 
+    @users("test")
+    @mute_logger("odoo.addons.base.models.ir_access", "odoo.fields")
+    def test_a_hidden_target_stays_hidden_whatever_the_cache_holds(self):
+        tag, hidden = self.env["test_orm.multi.tag"].create(
+            [{"name": "Shown Tag"}, {"name": "Hidden Tag"}]
+        )
+        message = self.env["test_orm.message"].create(
+            {
+                "name": "Test Message",
+                "discussion": self.discussion_1.id,
+                "author": self.user.id,
+                "attributes": [
+                    {
+                        "name": "my_tag",
+                        "type": "many2one",
+                        "comodel": "test_orm.multi.tag",
+                        "value": hidden.id,
+                        "definition_changed": True,
+                    },
+                    {
+                        "name": "my_tags",
+                        "type": "many2many",
+                        "comodel": "test_orm.multi.tag",
+                        "value": [tag.id, hidden.id],
+                        "definition_changed": True,
+                    },
+                ],
+            }
+        )
+        make_guard_row(
+            self.env,
+            "test_orm.multi.tag",
+            str([("name", "!=", "Hidden Tag")]),
+            operation="cru",
+            name="test_rule_hidden_tag",
+        )
+        for cached in (False, True):
+            with self.subTest(cached=cached):
+                self.env.invalidate_all()
+                if cached:
+                    (tag | hidden).sudo().mapped("display_name")
+                attributes = message.read(["attributes"])[0]["attributes"]
+                self.assertEqual(attributes[0]["value"], (hidden.id, None))
+                self.assertEqual(
+                    attributes[1]["value"], [(tag.id, "Shown Tag"), (hidden.id, None)]
+                )
+
     def test_properties_field_performance(self):
         self.env.invalidate_all()
         with self.assertQueryCount(5):
@@ -2273,9 +2320,8 @@ class PropertiesCase(TestPropertiesMixin):
 
         def _mocked_check_access(records, operation):
             if records.env.su:
-                return
-            msg = ""
-            raise AccessError(msg)
+                return None
+            return records, lambda: AccessError("")
 
         message = self.message_1.with_user(self.test_user)
 
@@ -2294,7 +2340,7 @@ class PropertiesCase(TestPropertiesMixin):
         self.assertEqual(values["value"], (tag.id, "Test Tag"))
         self.env.invalidate_all()
         with patch(
-            "odoo.addons.test_orm.models.test_orm.TestOrmMultiTag.check_access",
+            "odoo.addons.test_orm.models.test_orm.TestOrmMultiTag._check_access",
             _mocked_check_access,
         ):
             values = message.read(["attributes"])[0]["attributes"][0]
@@ -2302,7 +2348,7 @@ class PropertiesCase(TestPropertiesMixin):
 
         self.env.invalidate_all()
         with patch(
-            "odoo.addons.test_orm.models.test_orm.TestOrmDiscussion.check_access",
+            "odoo.addons.test_orm.models.test_orm.TestOrmDiscussion._check_access",
             _mocked_check_access,
         ):
             values = message.read(["attributes"])[0]["attributes"][0]

@@ -11,7 +11,7 @@ import psycopg
 
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
-from odoo.exceptions import AccessError, MissingError
+from odoo.exceptions import AccessError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.models import add_field
@@ -141,12 +141,11 @@ class IrModelData(models.Model):
             (self - invalid_records).grouped("model").items()
         ):
             records = self.env[model].browse(model_data_records.mapped("res_id"))
-            for xid, target_record in zip(model_data_records, records, strict=True):
-                try:
-                    xid.display_name = target_record.display_name or xid.complete_name
-                except AccessError, MissingError:
+            names = records.exists()._visible_display_names()
+            for xid in model_data_records:
+                if not (name := names.get(xid.res_id)):
                     _debug.logic("display_name.fallback", xmlid=xid.id, model=model)
-                    xid.display_name = xid.complete_name
+                xid.display_name = name or xid.complete_name
 
     @api.model
     @tools.ormcache("xmlid", cache="xmlid")

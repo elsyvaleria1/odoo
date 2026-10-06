@@ -5323,7 +5323,7 @@ class MixinMailThread(models.AbstractModel):
                             else False,
                         )
                     ]
-            except MissingError, AccessError:
+            except MissingError:
                 pass
         return []
 

@@ -1,7 +1,6 @@
 from typing import Self
 
 from odoo import api, models
-from odoo.exceptions import AccessError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
@@ -111,11 +110,8 @@ class MixinPosLoad(models.AbstractModel):
     def _get_inactive_ids(self, config):
         if "active" not in self._fields:
             return []
-        try:
-            return (self - self.filtered("active")).ids
-        except AccessError:
-            _debug.logic("load_active_access_error", model=self._name, records=self)
-            return self.ids
+        # a record the session's user cannot read is not loaded as active
+        return (self - self._filtered_access("read").filtered("active")).ids
 
     @api.model
     def _load_pos_data_fields(self, config):

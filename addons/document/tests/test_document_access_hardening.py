@@ -266,6 +266,18 @@ class TestMembershipExpiryBindsTheMember(TransactionCaseDocuments):
             self.access.date_to, datetime.combine(later, datetime.max.time())
         )
 
+    def test_the_activities_a_writer_reads_are_decided_not_tried(self):
+        stranger = new_test_user(
+            self.env, login="hardening_stranger", groups="base.group_user"
+        )
+        self.assertFalse(self.activity.with_user(stranger).has_access("read"))
+        for cached in (False, True):
+            with self.subTest(cached=cached):
+                self.env.invalidate_all()
+                if cached:
+                    self.activity.sudo().mapped("date_deadline")
+                self.assertFalse(self.activity.with_user(stranger)._readable())
+
     def test_requestee_cannot_clear_their_own_expiry(self):
         document = self.document.with_user(self.requestee)
         with self.assertRaises(AccessError):

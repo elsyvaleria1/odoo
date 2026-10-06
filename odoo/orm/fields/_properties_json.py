@@ -1,7 +1,7 @@
 import typing
 import uuid
 
-from odoo.exceptions import AccessError, MissingError
+from odoo.exceptions import MissingError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import fast_clone
 from odoo.libs.utils import has_list_types, is_list_of
@@ -21,6 +21,15 @@ _debug = DebugLog("odoo.orm.fields.properties")
 
 
 NoneType = type(None)
+
+
+def _visible_names(records: typing.Any) -> dict[int, str | None]:
+    # the existence check costs a query, paid only when a target is gone
+    try:
+        names = records._visible_display_names()
+    except MissingError:
+        names = records.exists()._visible_display_names()
+    return typing.cast("dict[int, str | None]", names)
 
 
 class _PropertiesJsonMixin(_PropertiesMixinBase):
@@ -50,35 +59,22 @@ class _PropertiesJsonMixin(_PropertiesMixinBase):
                     and property_value
                     and isinstance(property_value, int)
                 ):
-                    try:
-                        display_name = (
-                            env[property_model].browse(property_value).display_name
-                        )
-                        property_definition[value_key] = (
-                            property_value,
-                            display_name,
-                        )
-                    except AccessError:
-                        property_definition[value_key] = (property_value, None)
-                    except MissingError:
-                        property_definition[value_key] = False
+                    names = _visible_names(env[property_model].browse(property_value))
+                    property_definition[value_key] = (
+                        (property_value, names[property_value])
+                        if property_value in names
+                        else False
+                    )
 
                 elif (
                     property_type == "many2many"
                     and property_value
                     and is_list_of(property_value, int)
                 ):
-                    property_definition[value_key] = []
-                    records = env[property_model].browse(property_value)
-                    for record in records:
-                        try:
-                            property_definition[value_key].append(
-                                (record.id, record.display_name)
-                            )
-                        except AccessError:
-                            property_definition[value_key].append((record.id, None))
-                        except MissingError:
-                            continue
+                    names = _visible_names(env[property_model].browse(property_value))
+                    property_definition[value_key] = [
+                        (id_, names[id_]) for id_ in property_value if id_ in names
+                    ]
 
     @classmethod
     def _remove_display_name(

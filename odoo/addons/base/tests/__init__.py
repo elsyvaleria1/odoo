@@ -158,6 +158,7 @@ from . import test_ir_access_reach
 from . import test_ir_access_flags
 from . import test_mixin_recurrence_rrule
 from . import test_access_verdicts
+from . import test_access_decisions
 from . import test_res_users_grant
 from . import test_res_users_eligibility
 from . import test_access_review

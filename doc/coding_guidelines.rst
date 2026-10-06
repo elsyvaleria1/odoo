@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.61
-:Date: 2026-10-05
+:Version: 7.62
+:Date: 2026-10-06
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -5224,6 +5224,13 @@ model no permission row names is readable by the superuser only.
 * **Ask the model, not the store**: ``records.has_access(op)``,
   ``records.check_access(op)``, ``records._filtered_access(op)``, and
   ``Model._access_domain(op)`` for the user's domain.
+* **Decide access; never read it off a field**
+  ``[test_lint access_by_attribute_read]``. A field read raises ``AccessError``
+  only when the value is fetched: once a sudo read or an access check has
+  cached it, the same read returns it, so a ``try`` around a read that branches
+  on ``AccessError`` takes a branch that depends on what ran before. Filter the
+  records with ``_filtered_access(op)``, ask one with ``has_access(op)``, and
+  show or withhold names with ``_visible_display_names()``.
 * **A migration that edits access edits** ``ir.access``
   ``[test_lint test_access_migrations]``.
 * **Write multi-company rules as
@@ -6158,6 +6165,10 @@ collisions, so an eighth fails and so does a renumbering.
    * - Version
      - Date
      - Summary
+   * - 7.62
+     - 2026-10-06
+     - §10.8: an access decision is made explicitly, never read off whether a
+       field read raises.
    * - 7.61
      - 2026-10-05
      - §6.0, "The floors", Appendix B, Appendix C: the

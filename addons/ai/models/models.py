@@ -42,22 +42,21 @@ class Model(models.AbstractModel):
 
             try:
                 # Handle relational fields
-                if field_type == "many2one":
-                    result[field_name] = (
-                        self._ai_truncate(field_value.display_name)
-                        if field_value
-                        else None
-                    )
-                elif field_type in ["one2many", "many2many"]:
+                if field_type in ("many2one", "one2many", "many2many"):
                     linked_records = self.env[field_value._name].browse(field_value.ids)
                     if (
                         len(linked_records) > 50
                     ):  # too many linked records flood the context, skip the field
                         continue
-                    result[field_name] = [
-                        self._ai_truncate(record.display_name)
-                        for record in linked_records
-                    ]
+                    names = linked_records._visible_display_names()
+                    if None in names.values():
+                        # a name the user may not see keeps the field out
+                        continue
+                    truncated = [self._ai_truncate(name) for name in names.values()]
+                    if field_type == "many2one":
+                        result[field_name] = truncated[0] if truncated else None
+                    else:
+                        result[field_name] = truncated
                 elif field_type == "binary":
                     continue  # we don't include binary fields in the record info JSON
                 # Handle basic field types (dates, etc.)

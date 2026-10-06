@@ -170,13 +170,9 @@ class MailActivity(models.Model):
         return write_result
 
     def _readable(self) -> Self:
-        try:
-            self.mapped("date_deadline")
-        except AccessError:
-            # a document request's requester reads its activity; one the
-            # writer may move but not read is no request of theirs to propagate
-            return self._filtered_access("read")
-        return self
+        # a document request's requester reads its activity; one the writer
+        # may move but not read is no request of theirs to propagate
+        return self._filtered_access("read")
 
     def _acquire_next_activity_values(self) -> ValuesType:
         vals = super()._acquire_next_activity_values()
