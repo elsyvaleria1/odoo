@@ -6,7 +6,7 @@ import {
     PdfPageStore,
 } from "@document/owl/components/pdf_manager/pdf_page_store";
 import { PdfPage } from "@document/owl/components/pdf_page/pdf_page";
-import { Component, onWillStart, proxy, t, toRaw, useProps } from "@odoo/owl";
+import { Component, markRaw, onWillStart, proxy, t, useProps } from "@odoo/owl";
 import { Dropdown } from "@web/components/dropdown";
 import { useDebugMode } from "@web/core/debug/debug_context";
 import { makeLogger } from "@web/core/debug/debug_logger";
@@ -77,25 +77,34 @@ export class PdfManager extends Component {
         this.dialog = useService("dialog");
         this.store = new PdfPageStore(proxy(makePdfPageStoreData()));
         this.state = proxy({
-            uploadingLock: false,
+            // files whose pages are not placed yet: what a split or a
+            // gather would leave out
+            loadingFiles: 0,
+            // a split on its way to the server
+            applying: false,
+            // by page id: { page, canvas } once its thumbnail is drawn, or
+            // { failed: true }; raw, pdf.js objects are not for proxying
             pageCanvases: {},
             viewedPage: undefined,
             viewedPageName: undefined,
             viewedPageIndex: undefined,
             archive: true,
-            fileName: "",
             edit: false,
             isSelecting: false,
             selectionRect: { left: 0, top: 0, width: 0, height: 0 },
         });
 
         this._exitSplitToolsClick = false;
+        // the one document's name, for the remaining pages' group
+        this._fileName = "";
         this._newFiles = {};
         // in the page viewer's content, which scrolls under the pointer
         this._selectionAnchor = { x: 0, y: 0 };
         this._selectionPointer = null;
         this._hasSplitPages = false;
-        this._pendingFileUploads = 0;
+        this._splittingOnBlankPages = false;
+        /** @type {Map<String, Promise<void>>} thumbnails being drawn, by page id */
+        this._thumbnailRenders = new Map();
         this._placementQueue = Promise.resolve();
         this._previewRequest = 0;
         this._splitDocumentIds = new Set();
@@ -103,7 +112,6 @@ export class PdfManager extends Component {
         this._onMouseDown = this._onMouseDown.bind(this);
         this._onMouseUp = this._onMouseUp.bind(this);
         this._onMouseMove = this._onMouseMove.bind(this);
-        this._onShiftDown = this._onShiftDown.bind(this);
         this._objectUrls = [];
         this._pdfDocuments = [];
         this._loadingTasks = new Set();
@@ -117,7 +125,7 @@ export class PdfManager extends Component {
             () => {
                 const _onOutsideClick = this._onOutsideClick.bind(this);
                 if (this.props.documents.length === 1) {
-                    this.state.fileName = this._removePdfExtension(
+                    this._fileName = this._removePdfExtension(
                         this.props.documents[0].name,
                     );
                 }
@@ -131,7 +139,6 @@ export class PdfManager extends Component {
                 document.addEventListener("mousedown", this._onMouseDown, true);
                 document.addEventListener("mouseup", this._onMouseUp, true);
                 document.addEventListener("mousemove", this._onMouseMove, true);
-                document.addEventListener("keydown", this._onShiftDown, true);
                 return () => {
                     this._isDestroyed = true;
                     for (const loadingTask of this._loadingTasks) {
@@ -142,7 +149,6 @@ export class PdfManager extends Component {
                     document.removeEventListener("mousedown", this._onMouseDown, true);
                     document.removeEventListener("mouseup", this._onMouseUp, true);
                     document.removeEventListener("mousemove", this._onMouseMove, true);
-                    document.removeEventListener("keydown", this._onShiftDown, true);
                     for (const objectUrl of this._objectUrls) {
                         URL.revokeObjectURL(objectUrl);
                     }
@@ -277,6 +283,15 @@ export class PdfManager extends Component {
         return this.store.selectedPageIds;
     }
     /**
+     * A split in flight, or files whose pages are not placed yet: nothing
+     * changes the pages meanwhile, by button or by shortcut.
+     *
+     * @returns {boolean}
+     */
+    get isBusy() {
+        return this.state.applying || this.state.loadingFiles > 0;
+    }
+    /**
      * @return {Boolean}
      */
     get isDebugMode() {
@@ -328,12 +343,15 @@ export class PdfManager extends Component {
      * @private
      */
     _splitSelectionHandler() {
-        if (this.state.viewedPage) {
+        if (this.state.viewedPage || this.isBusy) {
             return;
         }
         this.store.toggleSelectionSeparators();
     }
     async _splitWhitePagesHandler() {
+        if (this.isBusy) {
+            return;
+        }
         if (this.store.userGrouped) {
             this.dialog.add(ConfirmationDialog, {
                 title: _t("Split on blank pages"),
@@ -389,15 +407,18 @@ export class PdfManager extends Component {
         }
         let objectUrl;
         if (!url) {
-            if (!file && !documentId) {
-                return;
-            }
             url = objectUrl = URL.createObjectURL(file);
             this._objectUrls.push(url);
         }
         const displayName = name;
-        this._pendingFileUploads++;
-        this.state.uploadingLock = true;
+        let loading = true;
+        const stopLoading = () => {
+            if (loading) {
+                loading = false;
+                this.state.loadingFiles--;
+            }
+        };
+        this.state.loadingFiles++;
         const fileId = uniqueId("file");
         // files load together but take their place in the order they were
         // added: a small second document does not land above a large first
@@ -405,54 +426,36 @@ export class PdfManager extends Component {
         pdfLoaded.catch(() => {});
         const turn = this._placementQueue;
         let placed;
-        let placedPages = false;
         this._placementQueue = new Promise((resolve) => (placed = resolve));
         try {
             await turn;
             const pdf = await pdfLoaded;
-
-            if (file) {
-                this._newFiles[fileId] = { type: "file", file };
-            } else if (documentId) {
-                this._newFiles[fileId] = { type: "document", documentId };
-            }
-            if (this._newFiles[fileId]) {
-                this._newFiles[fileId].pdf = pdf;
-                this._newFiles[fileId].objectUrl = objectUrl;
-            }
-            name = this._removePdfExtension(name || _t("New File"));
-
-            const pageCount = pdf.numPages;
-            const { pageIds, newPages } = this.store.createPagesForFile({
+            this._newFiles[fileId] = {
+                ...(file ? { type: "file", file } : { type: "document", documentId }),
+                pdf,
+                objectUrl,
+            };
+            const { pageIds } = this.store.createPagesForFile({
                 fileId,
-                name,
-                pageCount,
+                name: this._removePdfExtension(name || _t("New File")),
+                pageCount: pdf.numPages,
                 groupPerPage: this.props.documents.length <= 1,
             });
-            for (const pageId of pageIds) {
-                this.state.pageCanvases[pageId] = {};
-            }
-            this._newFiles[fileId].pageIds = this._newFiles[fileId].selectedPageIds =
-                pageIds;
-            placedPages = true;
+            this._newFiles[fileId].pageIds = pageIds;
             placed();
-
+            // a split needs the pages, not their pictures
+            stopLoading();
             const end = log.perf("loadCanvases");
-            await this._loadCanvases({ fileId, newPages, pageCount, pdf });
-            end({ name: displayName, pageCount });
+            await this._loadCanvases(pageIds);
+            end({ name: displayName, pageCount: pageIds.length });
         } catch (error) {
             placed();
-            // the user removed the file while it loaded: _removeFile released it
-            if (placedPages && !this._newFiles[fileId]) {
-                return;
-            }
             log.logic("addFileFailed", {
                 name: displayName,
                 error: error?.name,
                 destroyed: this._isDestroyed,
             });
             if (this._newFiles[fileId]) {
-                // a file whose pages did not all load is dropped whole
                 this._removeFile(fileId);
             } else if (objectUrl) {
                 URL.revokeObjectURL(objectUrl);
@@ -471,10 +474,7 @@ export class PdfManager extends Component {
                 );
             }
         } finally {
-            this._pendingFileUploads--;
-            if (this._pendingFileUploads <= 0) {
-                this.state.uploadingLock = false;
-            }
+            stopLoading();
         }
     }
     /**
@@ -502,7 +502,7 @@ export class PdfManager extends Component {
     _displayNumberDeletedPages(number) {
         this.notification.add(_t("%s page(s) deleted", number), { type: "success" });
     }
-    /** The pages a split takes: the selection, or else the focused page. */
+    /** The pages a split or a delete takes: the selection, or else the focused page. */
     get _pagesToProcess() {
         const selected = this.store.selectedPageIds;
         if (selected.length) {
@@ -511,16 +511,12 @@ export class PdfManager extends Component {
         return this.store.focusedPage ? [this.store.focusedPage] : [];
     }
     /**
-     * @private
-     * @param {number} [actionId]
-     */
-    /**
      * @param {number} [actionId]
      * @returns {Promise<boolean>} whether the split was committed
      */
     async _applyChanges(actionId) {
-        // the lock disables the buttons only from the next render
-        if (this._applying) {
+        // a shortcut or a second click comes before the render disabling the buttons
+        if (this.isBusy) {
             return false;
         }
         const processedPageIds = this._pagesToProcess;
@@ -531,8 +527,7 @@ export class PdfManager extends Component {
         const exit = this.store.ignoredPageIds.every((pageId) =>
             processedPageIds.includes(pageId),
         );
-        this._applying = true;
-        this.state.uploadingLock = true;
+        this.state.applying = true;
         try {
             let documentIds;
             try {
@@ -558,7 +553,7 @@ export class PdfManager extends Component {
                     }
                 }
                 for (const pageId of processedPageIds) {
-                    this._removePage(pageId, { fromFile: true });
+                    this._removePage(pageId);
                 }
             }
             try {
@@ -571,8 +566,7 @@ export class PdfManager extends Component {
             }
             return true;
         } finally {
-            this._applying = false;
-            this.state.uploadingLock = false;
+            this.state.applying = false;
         }
     }
 
@@ -648,33 +642,74 @@ export class PdfManager extends Component {
         await loadPDFJS();
     }
     /**
+     * Draws the thumbnails of a file's pages, in order, skipping the pages
+     * deleted meanwhile and stopping once the file itself is gone.
+     *
      * @private
-     * @param {Object} [param0]
-     * @param {Object} [param0.newPages]
-     * @param {number} [param0.pageCount]
-     * @param {PdfjsObject} [param0.pdf]
+     * @param {String[]} pageIds
      */
-    async _loadCanvases({ fileId, newPages, pageCount, pdf }) {
-        // pages can be deleted while they render, their whole file included
-        const fileGone = () => this._isDestroyed || !this._newFiles[fileId];
-        for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
-            if (fileGone()) {
+    async _loadCanvases(pageIds) {
+        for (const pageId of pageIds) {
+            if (this._isDestroyed) {
                 break;
             }
-            const pageId = newPages[pageNumber];
-            if (!this.store.getPage(pageId)) {
-                continue;
-            }
-            const page = await pdf.getPage(pageNumber);
-            const canvas = await this._renderCanvas(toRaw(page), {
-                width: 160,
-                height: 230,
-            });
-            if (fileGone() || !this.store.getPage(pageId)) {
-                continue;
-            }
-            this.state.pageCanvases[pageId] = { page, canvas };
+            await this._renderThumbnail(pageId);
         }
+    }
+    /**
+     * @private
+     * @param {String} pageId
+     * @returns {Promise<Object|undefined>} the pdf.js page, while the page
+     *      and its file are still here
+     */
+    async _getPdfPage(pageId) {
+        const storePage = this.store.getPage(pageId);
+        const file = storePage && this._newFiles[storePage.fileId];
+        if (!file || this._isDestroyed) {
+            return undefined;
+        }
+        return file.pdf.getPage(storePage.localPageNumber);
+    }
+    /**
+     * Draws a page's thumbnail once, whoever asks first: the loading of its
+     * file, or a blank-page split that cannot wait for it. A page that fails
+     * to draw is marked so, and stays: its file splits all the same.
+     *
+     * @private
+     * @param {String} pageId
+     * @returns {Promise<void>}
+     */
+    _renderThumbnail(pageId) {
+        if (this.state.pageCanvases[pageId] || !this.store.getPage(pageId)) {
+            return Promise.resolve();
+        }
+        if (!this._thumbnailRenders.has(pageId)) {
+            const render = (async () => {
+                try {
+                    const page = await this._getPdfPage(pageId);
+                    if (!page) {
+                        return;
+                    }
+                    const canvas = await this._renderCanvas(page, {
+                        width: 160,
+                        height: 230,
+                    });
+                    if (!this._isDestroyed && this.store.getPage(pageId)) {
+                        this.state.pageCanvases[pageId] = markRaw({ page, canvas });
+                    }
+                } catch (error) {
+                    // a file closed meanwhile rejects its pending pages
+                    if (!this._isDestroyed && this.store.getPage(pageId)) {
+                        log.logic("thumbnailFailed", { pageId, error: error?.name });
+                        this.state.pageCanvases[pageId] = markRaw({ failed: true });
+                    }
+                } finally {
+                    this._thumbnailRenders.delete(pageId);
+                }
+            })();
+            this._thumbnailRenders.set(pageId, render);
+        }
+        return this._thumbnailRenders.get(pageId);
     }
     /**
      * Blankness costs a text extraction and a pixel scan per page, and only
@@ -689,10 +724,16 @@ export class PdfManager extends Component {
             if (this._isDestroyed) {
                 break;
             }
+            if (this.store.getPage(pageId)?.isBlank !== undefined) {
+                continue;
+            }
+            // a page still waiting for its thumbnail is drawn now: left out,
+            // it would read as not blank
+            await this._renderThumbnail(pageId);
             const storePage = this.store.getPage(pageId);
             const { page, canvas } = this.state.pageCanvases[pageId] || {};
-            if (storePage && storePage.isBlank === undefined && page && canvas) {
-                storePage.isBlank = await this._isBlankPage(toRaw(page), canvas);
+            if (storePage && page && canvas) {
+                storePage.isBlank = await this._isBlankPage(page, canvas);
                 measured++;
             }
         }
@@ -800,28 +841,24 @@ export class PdfManager extends Component {
         return response.json();
     }
     /**
+     * Deletes a page, and its file with the file's last page.
+     *
      * @private
      * @param {String} pageId
-     * @param {Object} [param1]
-     * @param {boolean} [param1.fromFile]
      */
-    _removePage(pageId, { fromFile } = {}) {
+    _removePage(pageId) {
         const page = this.store.getPage(pageId);
         if (!page) {
             return;
         }
-        this.store.removePage(pageId);
-        if (fromFile && page.fileId && this._newFiles[page.fileId]) {
-            const selectedPageIds = this._newFiles[page.fileId].selectedPageIds;
-            this._newFiles[page.fileId].selectedPageIds = selectedPageIds.filter(
-                (number) => number !== pageId,
-            );
-            if (this._newFiles[page.fileId].selectedPageIds.length === 0) {
-                this._removeFile(page.fileId);
-            } else {
-                delete this.state.pageCanvases[pageId];
-            }
-            page.fileId = false;
+        this.store.deletePage(pageId);
+        delete this.state.pageCanvases[pageId];
+        const { fileId } = page;
+        const fileHasPages = Object.values(this.store.pages).some(
+            (other) => other.fileId === fileId,
+        );
+        if (!fileHasPages) {
+            this._removeFile(fileId);
         }
     }
     /**
@@ -874,18 +911,21 @@ export class PdfManager extends Component {
                     formerTargetCallback();
                 }
             },
-            close: () => {},
         });
     }
-    /**
-     * @private
-     */
     /** @returns {Promise<boolean>} whether the remaining pages were saved */
     async _exitByGatheringRemainingPages() {
+        // the pages of a file still loading would be left out, unsaid
+        if (this.isBusy) {
+            this._displayErrorNotification(
+                _t("Wait for the files to load before gathering the pages."),
+            );
+            return false;
+        }
         const grouping = this.store.snapshot();
         this.store.regroupAll({
-            name: this.state.fileName
-                ? _t("%s (remaining pages)", this.state.fileName)
+            name: this._fileName
+                ? _t("%s (remaining pages)", this._fileName)
                 : _t("Remaining Pages"),
             isSelected: true,
         });
@@ -922,29 +962,6 @@ export class PdfManager extends Component {
         }
     }
 
-    /**
-     * @private
-     * @param {Event} ev
-     */
-    _onShiftDown(ev) {
-        if (
-            ev.repeat ||
-            this.ui.activeElement !== this.root.el ||
-            document.activeElement.classList.contains("o_pdf_name_input")
-        ) {
-            return;
-        }
-        if (
-            ev.key === "Shift" &&
-            !ev.metaKey &&
-            !ev.ctrlKey &&
-            !ev.altKey &&
-            !this.state.viewedPage &&
-            this.store.focusedPage
-        ) {
-            this.store.toggleSelected(this.store.focusedPage);
-        }
-    }
     /**
      * @private
      * @param {String} direction
@@ -1030,7 +1047,10 @@ export class PdfManager extends Component {
             this.store.focusedPage = undefined;
             return;
         }
-        this._exitSplitTools();
+        // the Close button is disabled meanwhile: Escape is no way round it
+        if (!this.isBusy) {
+            this._exitSplitTools();
+        }
     }
 
     /**
@@ -1075,7 +1095,7 @@ export class PdfManager extends Component {
         if (!this.state.isSelecting) {
             return;
         }
-        this.store.focusedPage = false;
+        this.store.focusedPage = undefined;
         this._selectionPointer = ev;
         this._updateAreaSelection();
     }
@@ -1171,36 +1191,37 @@ export class PdfManager extends Component {
      * @public
      */
     async onArchive() {
-        let pagesToDelete = this.selectedPageIds;
-        if (
-            pagesToDelete.length === 0 &&
-            !this.store.focusedPage &&
-            !this.state.viewedPage
-        ) {
+        if (this.isBusy) {
+            return;
+        }
+        // a preview deletes the page it shows: the focus may already be on
+        // the next one, still rendering. Otherwise the pages a split would take.
+        const shownPage = this.state.viewedPage;
+        const pagesToDelete = shownPage ? [shownPage] : this._pagesToProcess;
+        if (!pagesToDelete.length) {
             this._displayErrorNotification(_t("No document has been selected"));
             return;
         }
-        const sortedPagesIds = this.sortedPagesIds;
         let messageInput = _t(
-            "Are you sure that you want to delete the selected page(s)",
+            "Are you sure that you want to delete the focused page ?",
         );
-        let nextFocusedPageId = this.store.focusedPage;
-        // a preview deletes the page it shows: the focus may already be on
-        // the next one, still rendering
-        const shownPage = this.state.viewedPage;
-        if (
-            shownPage ||
-            pagesToDelete.length === 0 ||
-            (this.store.focusedPage && !pagesToDelete.includes(this.store.focusedPage))
-        ) {
-            const pageId = shownPage || this.store.focusedPage;
-            pagesToDelete = [pageId];
-            messageInput = shownPage
-                ? _t("Are you sure that you want to delete this page ?")
-                : _t("Are you sure that you want to delete the focused page ?");
-            const pageIndex = sortedPagesIds.indexOf(pageId);
+        if (shownPage) {
+            messageInput = _t("Are you sure that you want to delete this page ?");
+        } else if (this.selectedPageIds.length) {
+            messageInput = _t(
+                "Are you sure that you want to delete the selected page(s)",
+            );
+        }
+        const deleted = new Set(pagesToDelete);
+        const focused = shownPage || this.store.focusedPage;
+        let nextFocusedPageId = focused;
+        if (focused && deleted.has(focused)) {
+            const sortedPageIds = this.sortedPagesIds;
+            const index = sortedPageIds.indexOf(focused);
+            const kept = (pageId) => !deleted.has(pageId);
             nextFocusedPageId =
-                sortedPagesIds[pageIndex + 1] ?? sortedPagesIds[pageIndex - 1];
+                sortedPageIds.slice(index + 1).find(kept) ??
+                sortedPageIds.slice(0, index).reverse().find(kept);
         }
         this.dialog.add(ConfirmationDialog, {
             body: messageInput,
@@ -1210,8 +1231,9 @@ export class PdfManager extends Component {
                     remaining: this.store.numberOfPages - pagesToDelete.length,
                 }));
                 for (const pageId of pagesToDelete) {
-                    this._removePage(pageId, { fromFile: true });
+                    this._removePage(pageId);
                 }
+                this._displayNumberDeletedPages(pagesToDelete.length);
                 if (this.store.numberOfPages === 0) {
                     // a document some pages were split from stays as the
                     // split left it (archived or not, as the user chose)
@@ -1221,8 +1243,8 @@ export class PdfManager extends Component {
                             .filter((id) => !this._splitDocumentIds.has(id)),
                     });
                     await this.props.close();
+                    return;
                 }
-                this._displayNumberDeletedPages(pagesToDelete.length);
                 if (shownPage && nextFocusedPageId) {
                     await this.onClickPage(nextFocusedPageId);
                 } else {
@@ -1241,11 +1263,11 @@ export class PdfManager extends Component {
         if (!ev.target.files.length) {
             return;
         }
-        this.state.fileName = "";
-        const files = ev.target.files;
-        for (const file of files) {
-            await this._addFile(file.name, { file });
-        }
+        this._fileName = "";
+        // loaded together: the placement queue keeps them in the order picked
+        await Promise.all(
+            [...ev.target.files].map((file) => this._addFile(file.name, { file })),
+        );
         ev.target.value = null;
     }
     /**
@@ -1286,6 +1308,10 @@ export class PdfManager extends Component {
         }
         ev.stopPropagation();
         ev.preventDefault();
+        // the documents a split in flight creates are selected once it answers
+        if (this.state.applying) {
+            return;
+        }
         this._exitSplitTools(() => {
             this._exitSplitToolsClick = true;
             ev.target.click();
@@ -1298,10 +1324,6 @@ export class PdfManager extends Component {
      */
     async onClickPage(pageId) {
         this.store.focusedPage = pageId;
-        const page = this.state.pageCanvases[pageId]?.page;
-        if (!page) {
-            return;
-        }
         // the page shown is the last one asked for, and none once Escape
         // closed the preview meanwhile (_onPushExit bumps the request)
         const request = ++this._previewRequest;
@@ -1310,10 +1332,22 @@ export class PdfManager extends Component {
         const width = this.pagePreview.el.clientWidth - (30 * window.innerWidth) / 100;
         let canvas;
         try {
-            canvas = await this._renderCanvas(toRaw(page), {
+            // from the pdf, not the thumbnail: a page still waiting for its
+            // thumbnail previews all the same
+            const page = await this._getPdfPage(pageId);
+            if (!page) {
+                return;
+            }
+            canvas = await this._renderCanvas(page, {
                 width: width,
                 height: width * ratio,
             });
+        } catch (error) {
+            if (request === this._previewRequest && !this._isDestroyed) {
+                log.logic("previewFailed", { pageId, error: error?.name });
+                this._displayErrorNotification(_t("This page cannot be shown."));
+            }
+            return;
         } finally {
             if (request === this._previewRequest) {
                 this._previewPending = false;
@@ -1390,7 +1424,9 @@ export class PdfManager extends Component {
      * @param {String} groupId
      */
     onClickPageSeparator(pageId, groupId) {
-        this.store.toggleSeparator(pageId, groupId);
+        if (!this.isBusy) {
+            this.store.toggleSeparator(pageId, groupId);
+        }
     }
     /**
      * @public
@@ -1402,10 +1438,12 @@ export class PdfManager extends Component {
     }
     /**
      * @public
-     * @param {String} ev.detail.targetPageId
-     * @param {String} ev.detail.pageId
+     * @param {String} targetPageId the page dropped on
+     * @param {String} pageId the page dragged
      */
     onPageDrop(targetPageId, pageId) {
-        this.store.movePage(pageId, targetPageId);
+        if (!this.isBusy) {
+            this.store.movePage(pageId, targetPageId);
+        }
     }
 }

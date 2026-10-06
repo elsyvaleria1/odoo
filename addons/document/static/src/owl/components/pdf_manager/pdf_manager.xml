@@ -17,10 +17,9 @@
                             <input class="ms-2 form-check-input mt-0" id="pdf_archive" type="checkbox" name="archive" t-att-checked="this.state.archive" t-att-disabled="this.state.viewedPage"/>
                         </span>
                         <button class="btn btn-danger me-2 o_pdf_manager_button text-uppercase"
-                            t-att-class="{'o_pdf_manager_button': !this.ui.isSmall}"
                             aria-label="Move to trash"
                             title="Move to trash"
-                            t-att-disabled="this.state.uploadingLock || this.state.viewedPage"
+                            t-att-disabled="this.isBusy || this.state.viewedPage"
                             t-on-click.stop="this.onArchive">Delete
                         </button>
                     </span>
@@ -107,17 +106,17 @@
         <button class="btn btn-primary o_pdf_manager_button"
             t-att-class="{'dropdown-item': isMobile, 'm-0': isMobile, 'h-auto': isMobile}"
             title="Split selected pages"
-            t-att-disabled="this.state.uploadingLock || this.state.viewedPage"
+            t-att-disabled="this.isBusy || this.state.viewedPage"
             t-on-click.stop="this.onClickSplit"
             data-hotkey="s"
         >
             Split
-            <span t-if="this.state.uploadingLock" class="fa-solid fa-circle-notch fa-spin"/>
+            <span t-if="this.isBusy" class="fa-solid fa-circle-notch fa-spin"/>
         </button>
         <button class="btn btn-secondary o_pdf_manager_button text-uppercase"
             t-att-class="{'dropdown-item': isMobile, 'm-0': isMobile, 'h-auto': isMobile}"
             title="Close split tools"
-            t-att-disabled="this.state.uploadingLock || this.state.viewedPage"
+            t-att-disabled="this.isBusy || this.state.viewedPage"
             t-on-click.stop="this.onClickExit"
         >
             Close
@@ -125,7 +124,7 @@
         <button class="btn btn-secondary o_pdf_manager_button text-uppercase"
             t-att-class="{'dropdown-item': isMobile, 'm-0': isMobile, 'h-auto': isMobile}"
             title="Add new file"
-            t-att-disabled="this.state.uploadingLock || this.state.viewedPage"
+            t-att-disabled="this.isBusy || this.state.viewedPage"
             t-on-click.stop="this.onClickGlobalAdd"
             data-hotkey="f"
         >
@@ -138,7 +137,7 @@
                 t-on-click.stop="(ev) => this.onClickEmbeddedAction(embeddedAction.id)"
                 t-out="embeddedAction.name"
                 t-att-data-hotkey="hotkey"
-                t-att-disabled="this.state.uploadingLock || this.state.viewedPage"/>
+                t-att-disabled="this.isBusy || this.state.viewedPage"/>
         </t>
     </t>
 

@@ -267,35 +267,32 @@ export class PdfPageStore {
         if (!allPageIds.length) {
             return;
         }
-        let precedingPageIsBlank = false;
-        let docCount = 1;
         this.clearGroups();
-        this.createGroup({
-            pageIds: allPageIds,
-            name: this.data.pages[allPageIds[0]].isBlank
-                ? blankName
-                : subDocName(docCount++),
-        });
+        // one pass: each run of blank or non-blank pages is a group, a page
+        // not measured counting as not blank
+        let docCount = 1;
+        let run = [];
+        let runIsBlank = false;
+        const closeRun = () => {
+            if (run.length) {
+                this.createGroup({
+                    name: runIsBlank ? blankName : subDocName(docCount++),
+                    pageIds: run,
+                });
+            }
+        };
         for (const pageId of allPageIds) {
             const page = this.data.pages[pageId];
-            const splitHere = (name) => {
-                const groupPageIds = this.data.groupData[page.groupId].pageIds;
-                this.createGroup({
-                    name,
-                    pageIds: groupPageIds.slice(groupPageIds.indexOf(pageId)),
-                });
-            };
-            if (page.isBlank && !precedingPageIsBlank) {
-                splitHere(blankName);
-            } else if (!page.isBlank && precedingPageIsBlank) {
-                splitHere(subDocName(docCount++));
+            const isBlank = Boolean(page.isBlank);
+            if (run.length && isBlank !== runIsBlank) {
+                closeRun();
+                run = [];
             }
-            page.isSelected = !page.isBlank;
-            precedingPageIsBlank = page.isBlank;
+            runIsBlank = isBlank;
+            run.push(pageId);
+            page.isSelected = !isBlank;
         }
-        for (const groupId of [...this.data.groupIds]) {
-            this._removeGroupIfEmpty(groupId);
-        }
+        closeRun();
     }
     /**
      * @param {String} groupId
@@ -376,11 +373,9 @@ export class PdfPageStore {
         if (!targetGroup || !this.data.pages[pageId]) {
             return false;
         }
-        let index = targetGroup.pageIds.indexOf(targetPageId);
-        const sourceIndex = targetGroup.pageIds.indexOf(pageId);
-        if (sourceIndex !== -1 && sourceIndex < index) {
-            index -= 1;
-        }
+        // the dragged page takes the target's place: forward in the group it
+        // lands after it (the last place included), otherwise before it
+        const index = targetGroup.pageIds.indexOf(targetPageId);
         return this.addPage(pageId, targetPage.groupId, { index });
     }
     /**

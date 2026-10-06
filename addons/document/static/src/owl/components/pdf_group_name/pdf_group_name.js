@@ -1,6 +1,7 @@
 /** @odoo-module native */
 import { Component, t, useProps } from "@odoo/owl";
 import { elementRef } from "@web/core/utils/element_ref";
+import { useAutofocus } from "@web/core/utils/hooks";
 
 export class PdfGroupName extends Component {
     static props = {
@@ -16,6 +17,8 @@ export class PdfGroupName extends Component {
 
     setup() {
         this.nameInputRef = elementRef();
+        // an autofocus attribute is ignored on an element inserted after load
+        useAutofocus({ ref: this.nameInputRef, selectAll: true });
     }
 
     /**

@@ -331,13 +331,24 @@ describe("regression: same-group drag lands on the target's index", () => {
         const [p1, p2, p3, p4, p5, p6] = store.sortedPageIds;
 
         store.movePage(p1, p4);
-        expect(store.sortedPageIds).toEqual([p2, p3, p1, p4, p5, p6]);
+        expect(store.sortedPageIds).toEqual([p2, p3, p4, p1, p5, p6], {
+            message: "forward: the page takes the target's index, landing after it",
+        });
         expect(() => store.checkInvariants()).not.toThrow();
 
         store.movePage(p1, p2);
-        expect(store.sortedPageIds).toEqual([p1, p2, p3, p4, p5, p6]);
+        expect(store.sortedPageIds).toEqual([p1, p2, p3, p4, p5, p6], {
+            message: "backward: the page takes the target's index, landing before it",
+        });
         expect(store.numberOfPages).toBe(6);
         expect(() => store.checkInvariants()).not.toThrow();
+    });
+
+    test("a page dropped on a group's last page becomes its last", () => {
+        const store = buildStore({ pageCount: 4, groupPerPage: false });
+        const [p1, p2, p3, p4] = store.sortedPageIds;
+        store.movePage(p1, p4);
+        expect(store.sortedPageIds).toEqual([p2, p3, p4, p1]);
     });
 
     test("a cross-group drop lands on the target's index untouched", () => {
@@ -469,6 +480,25 @@ describe("group operations", () => {
         expect(store.selectedPageIds).toHaveLength(4, {
             message: "the blank pages are deselected",
         });
+        expect(() => store.checkInvariants()).not.toThrow();
+    });
+
+    test("splitOnBlankPages places each page once, whatever the runs", () => {
+        const store = buildStore({ pageCount: 40, groupPerPage: false });
+        store.sortedPageIds.forEach((pageId, index) => {
+            store.getPage(pageId).isBlank = index % 2 === 1;
+        });
+        let placements = 0;
+        const addPage = store.addPage.bind(store);
+        store.addPage = (...args) => {
+            placements++;
+            return addPage(...args);
+        };
+        store.splitOnBlankPages({ blankName: "b", subDocName: (n) => `s${n}` });
+        expect(placements).toBe(40, {
+            message: "one pass: a split no longer moves the whole tail at each run",
+        });
+        expect(store.groupIds).toHaveLength(40);
         expect(() => store.checkInvariants()).not.toThrow();
     });
 

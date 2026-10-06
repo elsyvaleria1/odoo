@@ -11,7 +11,7 @@ import {
 import { PdfManager } from "@document/owl/components/pdf_manager/pdf_manager";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import { describe, destroy, expect, test } from "@odoo/hoot";
-import { click, press, queryAll, queryOne } from "@odoo/hoot-dom";
+import { click, keyDown, keyUp, press, queryAll, queryOne } from "@odoo/hoot-dom";
 import { animationFrame, Deferred, mockFetch } from "@odoo/hoot-mock";
 import { onPatched } from "@odoo/owl";
 import { contains } from "@web/../tests/web_test_helpers";
@@ -402,17 +402,14 @@ test(`Pdf Manager: deleting after a partial split does not crash`, async () => {
     await animationFrame();
     expect.verifySteps(["pdf_split:200"]);
 
-    expect(manager.store.pages[committedPageId]).toBeOfType("object", {
-        message: "the committed page survives, its file is not fully consumed",
+    expect(manager.store.pages[committedPageId]).toBe(undefined, {
+        message: "a committed page is gone, not left behind detached",
     });
-    expect(manager.store.pages[committedPageId].groupId).toBe(false);
     expect(manager.store.focusedPage).toBe(undefined, {
         message: "the focus is released when the focused page is committed",
     });
 
-    expect(() =>
-        manager._removePage(committedPageId, { fromFile: true }),
-    ).not.toThrow();
+    expect(() => manager._removePage(committedPageId)).not.toThrow();
     expect(listedPageIds(manager)).toHaveLength(9, {
         message: "3 pages of yop + the 6 untouched pages of blip",
     });
@@ -431,8 +428,8 @@ test(`Pdf Manager: a PDF that fails to load releases the toolbar`, async () => {
     const manager = await mountPdfManager();
     await animationFrame();
 
-    expect(manager.state.uploadingLock).toBe(false, {
-        message: "the upload lock is released even though the PDF never loaded",
+    expect(manager.isBusy).toBe(false, {
+        message: "the manager is released even though the PDF never loaded",
     });
     expect(".o_notification").toHaveCount(2, {
         message: "one notification per failed file",
@@ -467,11 +464,11 @@ test(`Pdf Manager: forward drag inside a group lands on the target index`, async
         null,
         { dataTransfer: new DataTransfer() },
     );
-    expect(listedPageIds(manager).slice(0, 6)).toEqual([p2, p3, p1, p4, p5, p6], {
-        message: "the dragged page takes the target's place, it does not land after it",
+    expect(listedPageIds(manager).slice(0, 6)).toEqual([p2, p3, p4, p1, p5, p6], {
+        message: "the dragged page takes the target's place",
     });
 
-    await contains(".o_documents_pdf_canvas_wrapper:eq(2)").dragAndDrop(
+    await contains(".o_documents_pdf_canvas_wrapper:eq(3)").dragAndDrop(
         ".o_documents_pdf_canvas_wrapper:eq(0)",
         null,
         { dataTransfer: new DataTransfer() },
@@ -493,7 +490,7 @@ test(`Pdf Manager: pdf documents and object URLs are released`, async () => {
 
     const extraFileId = Object.keys(manager._newFiles).at(-1);
     for (const pageId of [...manager._newFiles[extraFileId].pageIds]) {
-        manager._removePage(pageId, { fromFile: true });
+        manager._removePage(pageId);
     }
     expect(pdfTracker.destroyedPdfs).toHaveLength(1, {
         message: "the consumed file's pdf.js document is destroyed right away",
@@ -681,15 +678,19 @@ test(`Pdf Manager: answering a dialog opened over the manager keeps the selectio
     expect(manager.store.selectedPageIds).toEqual(selected);
 });
 
-test(`Pdf Manager: a file whose pages fail to render is dropped whole`, async () => {
+test(`Pdf Manager: a page whose thumbnail fails stays, marked, and its file splits`, async () => {
     PdfManagerForTest.renderError = new Error("render failed");
     const manager = await mountPdfManager();
     await animationFrame();
-    expect(listedPageIds(manager)).toHaveLength(0, {
-        message: "no half-loaded page is left to split",
+    await animationFrame();
+    expect(listedPageIds(manager)).toHaveLength(12, {
+        message: "one page that cannot be drawn does not drop its file",
     });
-    expect(pdfTracker.destroyedPdfs).toHaveLength(2);
-    expect(".o_notification:contains(Could not open)").toHaveCount(2);
+    expect(".o_pdf_page_failed").toHaveCount(2, {
+        message: "page 3 of each file says it cannot be shown",
+    });
+    expect(pdfTracker.destroyedPdfs).toHaveLength(0);
+    expect(".o_notification:contains(Could not open)").toHaveCount(0);
 });
 
 test(`Pdf Manager: closing while a pdf loads cancels the load quietly`, async () => {
@@ -924,7 +925,7 @@ test(`Pdf Manager: deleting a file while its pages render leaves nothing behind`
     const [firstFileId] = Object.keys(manager._newFiles);
     const pageIds = [...manager._newFiles[firstFileId].pageIds];
     for (const pageId of pageIds) {
-        manager._removePage(pageId, { fromFile: true });
+        manager._removePage(pageId);
     }
     rendering.resolve();
     await animationFrame();
@@ -1152,4 +1153,219 @@ test(`Pdf Manager: a landscape turn adds to the page's own /Rotate`, async () =>
     expect(rotations.at(-1)).toBe(0, {
         message: "90 + 270: the page drawn upright, not turned from scratch",
     });
+});
+
+/** A manager whose thumbnails (160 wide) wait for `gate.current`. */
+function slowThumbnailManager(gate, pages = () => true) {
+    return class SlowThumbnailPdfManager extends PdfManagerForTest {
+        async _renderCanvas(page, size) {
+            if (size.width <= 160 && pages(page.number)) {
+                await gate.current;
+            }
+            return super._renderCanvas(page, size);
+        }
+    };
+}
+
+const ONE_DOCUMENT = {
+    documents: [
+        {
+            id: 1,
+            name: "yop",
+            mimetype: "application/pdf",
+            available_embedded_actions_ids: [],
+            folder_id: { id: 1 },
+            tag_ids: { currentIds: [] },
+            owner_id: { id: 1 },
+            partner_id: { id: 1 },
+        },
+    ],
+};
+
+test(`Pdf Manager: Shift alone selects nothing`, async () => {
+    const manager = await mountPdfManager();
+    manager.store.selectAll(false);
+    manager.store.focusedPage = manager.store.sortedPageIds[1];
+    await animationFrame();
+    await keyDown("Shift");
+    await keyUp("Shift");
+    await animationFrame();
+    expect(manager.store.selectedPageIds).toEqual([], {
+        message: "Shift is a modifier: a chord starting with it is not a toggle first",
+    });
+});
+
+test(`Pdf Manager: ctrl+shift+→ unselects a run that is all selected`, async () => {
+    const manager = await mountPdfManager();
+    const run = [...manager.store.groupData[manager.store.groupIds[0]].pageIds];
+    manager.store.selectAll(false);
+    for (const pageId of run.slice(1)) {
+        manager.store.setSelected(pageId, true);
+    }
+    manager.store.focusedPage = run[1];
+    await animationFrame();
+    await press(["Shift", "Control", "ArrowRight"]);
+    await animationFrame();
+    expect(manager.store.selectedPageIds).toEqual([]);
+});
+
+test(`Pdf Manager: nothing changes the pages while a split is on its way`, async () => {
+    const manager = await mountPdfManager();
+    const response = new Deferred();
+    mockFetch((input) => {
+        if (String(input).includes("/documents/pdf_split")) {
+            expect.step("pdf_split");
+            return response;
+        }
+    });
+    manager.store.selectAll(false);
+    manager.store.setSelected(manager.store.sortedPageIds[0], true);
+    manager.store.focusedPage = manager.store.sortedPageIds[0];
+    manager.onClickSplit();
+    await animationFrame();
+    expect.verifySteps(["pdf_split"]);
+    const before = listedPageIds(manager);
+
+    await press("delete");
+    await press(["alt", "backspace"]);
+    await press(["shift", "s"]);
+    manager.onClickPageSeparator(before[2], manager.store.getPage(before[2]).groupId);
+    manager.onPageDrop(before[3], before[4]);
+    await animationFrame();
+    expect(".modal-footer").toHaveCount(0, {
+        message: "no delete, no blank-page split asked",
+    });
+    expect(listedPageIds(manager)).toEqual(before);
+
+    response.resolve(
+        new Response(JSON.stringify([101]), {
+            headers: { "Content-Type": "application/json" },
+        }),
+    );
+    await animationFrame();
+    expect(manager.isBusy).toBe(false);
+});
+
+test(`Pdf Manager: a blank-page split measures the pages whose thumbnails have not come`, async () => {
+    PdfManagerForTest.blankPages = [2, 5];
+    const gate = { current: new Deferred() };
+    const manager = await mountPdfManager(
+        ONE_DOCUMENT,
+        slowThumbnailManager(gate, (number) => number >= 3),
+    );
+    await animationFrame();
+    const split = manager._splitWhitePages();
+    gate.current.resolve();
+    await split;
+    const groups = manager.store.groupIds.map((groupId) =>
+        manager.store.groupData[groupId].pageIds.map(
+            (pageId) => manager.store.getPage(pageId).localPageNumber,
+        ),
+    );
+    expect(groups).toEqual([[1], [2], [3, 4], [5], [6]]);
+});
+
+test(`Pdf Manager: Delete takes what Split takes, the selection before the focus`, async () => {
+    const manager = await mountPdfManager();
+    const all = manager.store.sortedPageIds;
+    manager.store.selectAll(false);
+    manager.store.setSelected(all[0], true);
+    manager.store.setSelected(all[1], true);
+    manager.store.focusedPage = all[3];
+    await animationFrame();
+    manager.onArchive();
+    await contains(".modal-footer .btn-primary").click();
+    await animationFrame();
+    expect(listedPageIds(manager)).toEqual(all.slice(2));
+    expect(manager.store.focusedPage).toBe(all[3], {
+        message: "a focus that was not deleted stays",
+    });
+});
+
+test(`Pdf Manager: a split need not wait for the thumbnails`, async () => {
+    const gate = { current: new Deferred() };
+    const manager = await mountPdfManager({}, slowThumbnailManager(gate));
+    await animationFrame();
+    expect(manager.isBusy).toBe(false, {
+        message: "the pages are placed: the split needs nothing more",
+    });
+    expect(".o_pdf_manager_button[disabled]").toHaveCount(0);
+    gate.current.resolve();
+});
+
+test(`Pdf Manager: a page previews before its thumbnail arrives`, async () => {
+    const gate = { current: new Deferred() };
+    const manager = await mountPdfManager({}, slowThumbnailManager(gate));
+    await animationFrame();
+    const [pageId] = manager.store.sortedPageIds;
+    expect(manager.state.pageCanvases[pageId]).toBe(undefined);
+    await manager.onClickPage(pageId);
+    expect(manager.state.viewedPage).toBe(pageId);
+    gate.current.resolve();
+});
+
+test(`Pdf Manager: a preview that cannot be drawn is said, not thrown`, async () => {
+    class FailingPreviewPdfManager extends PdfManagerForTest {
+        async _renderCanvas(page, size) {
+            if (size.width > 160) {
+                throw new Error("cannot draw");
+            }
+            return super._renderCanvas(page, size);
+        }
+    }
+    const manager = await mountPdfManager({}, FailingPreviewPdfManager);
+    await manager.onClickPage(manager.store.sortedPageIds[0]);
+    await animationFrame();
+    expect(manager.state.viewedPage).toBe(undefined);
+    expect(".o_notification:contains(cannot be shown)").toHaveCount(1);
+    expect(manager._previewPending).toBe(false);
+});
+
+test(`Pdf Manager: gathering the pages waits for the files still loading`, async () => {
+    const pending = new Deferred();
+    const manager = await mountPdfManager();
+    PdfManagerForTest.pendingLoad = () => ({ promise: pending, destroy() {} });
+    manager._addFile("late.pdf", { file: new File([""], "late.pdf") });
+    await animationFrame();
+    expect(manager.isBusy).toBe(true);
+    expect(await manager._exitByGatheringRemainingPages()).toBe(false);
+    await animationFrame();
+    expect(".o_notification:contains(Wait for the files to load)").toHaveCount(1);
+    pending.resolve(makeFakePdf("late"));
+    await animationFrame();
+    expect(manager.isBusy).toBe(false);
+});
+
+test(`Pdf Manager: files picked together load together, in the order picked`, async () => {
+    const manager = await mountPdfManager();
+    const first = new Deferred();
+    const opened = [];
+    PdfManagerForTest.pendingLoad = () => {
+        opened.push(opened.length);
+        return {
+            promise: opened.length === 1 ? first : Promise.resolve(makeFakePdf("b")),
+            destroy() {},
+        };
+    };
+    const input = queryOne(".o_input_file");
+    const files = [new File([""], "a.pdf"), new File([""], "b.pdf")];
+    Object.defineProperty(input, "files", { value: files, configurable: true });
+    const picking = manager.onFileInputChange({ target: input });
+    await animationFrame();
+    expect(opened).toEqual([0, 1], {
+        message: "the second file opens without waiting for the first",
+    });
+    first.resolve(makeFakePdf("a"));
+    await picking;
+    const names = manager.store.groupIds
+        .slice(-2)
+        .map((g) => manager.store.groupData[g].name);
+    expect(names).toEqual(["a", "b"], { message: "placed in the order picked" });
+});
+
+test(`Pdf Manager: renaming a group puts the cursor in its name`, async () => {
+    await mountPdfManager();
+    await contains(".o_pdf_name_display:eq(0)").click();
+    await animationFrame();
+    expect(".o_pdf_name_input").toBeFocused();
 });

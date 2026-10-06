@@ -34,6 +34,11 @@ export class PdfPage extends Component {
         return this.props.canvas ?? this.props.canvases?.[this.props.pageId]?.canvas;
     }
 
+    /** The thumbnail could not be drawn: the page splits all the same. */
+    get failed() {
+        return Boolean(this.props.canvases?.[this.props.pageId]?.failed);
+    }
+
     /**
      * @public
      * @param {DomElement} canvas

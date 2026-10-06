@@ -21,7 +21,8 @@
                 t-on-click.stop="this.onClickWrapper"
                 t-ref="this.canvasWrapperRef"
             >
-                <i t-if="!this.canvas" class="fa-solid fa-circle-notch fa-spin text-muted position-absolute top-50 start-50" title="Loading"/>
+                <i t-if="this.failed" class="o_pdf_page_failed fa-solid fa-triangle-exclamation text-warning position-absolute top-50 start-50" title="This page cannot be shown"/>
+                <i t-elif="!this.canvas" class="fa-solid fa-circle-notch fa-spin text-muted position-absolute top-50 start-50" title="Loading"/>
                 <div t-if="!this.props.isPreview" class="o_bottom_selection" t-on-click.stop="this.onClickSelect"/>
             </div>
             <div class="o_documents_pdf_selected_overlay position-absolute start-0 bottom-0 w-100 h-100 pe-none"/>
