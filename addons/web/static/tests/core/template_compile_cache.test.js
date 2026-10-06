@@ -138,6 +138,9 @@ test("a database that fails leaves a cache that only compiles", async () => {
         async write() {
             throw new Error("quota");
         },
+        async invalidateWhere() {
+            throw new Error("quota");
+        },
     };
     const cache = new TemplateCompileCache({ db, scope: "s" });
     await cache.ready;
