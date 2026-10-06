@@ -1,7 +1,8 @@
 // @ts-check
 /** @odoo-module native */
 
-import { loadJS } from "@web/core/assets";
+import { TemplateSet } from "@odoo/owl";
+import { assets, loadJS } from "@web/core/assets";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { templates } from "@web/core/templates";
@@ -11,6 +12,20 @@ import { session } from "@web/session";
 const log = makeAssetLog("precompiled_templates");
 
 const LOAD_WAIT_MS = 500;
+
+/**
+ * A template without its artifact compiles in the browser, which takes OWL's
+ * compiler: a page whose bundles are all eval-free does not import it, yet
+ * an internal user's frontend page (its editor bundles need eval) takes the
+ * bounded wait, and so may compile.
+ *
+ * @returns {Promise<unknown>}
+ */
+function ensureCompiler() {
+    return TemplateSet.compiler
+        ? Promise.resolve()
+        : assets.loadESMBundle(["@odoo/owl/compiler"]);
+}
 
 /**
  * The translations are compiled into the code, so the artifact is per
@@ -50,12 +65,14 @@ export const precompiledTemplatesService = {
         // in the browser throws, so it waits for every artifact, in dev mode too
         const strict = Boolean(session.await_precompiled_templates);
         if (!localization.translationsHash || (dev && !strict)) {
+            await ensureCompiler();
             return;
         }
         if (session.precompiled_templates === false) {
             // the server cannot build the artifact: asking would cost it a
             // request and this page the wait for a 404
             log("the server has no template precompiler, compiling in the browser");
+            await ensureCompiler();
             return;
         }
         // renderToString compiles outside dev mode on every page
@@ -76,9 +93,10 @@ export const precompiledTemplatesService = {
                             variant,
                             params,
                         ),
-                    ).catch((error) =>
-                        log("unavailable, compiling in the browser", bundle, error),
-                    ),
+                    ).catch((error) => {
+                        log("unavailable, compiling in the browser", bundle, error);
+                        return ensureCompiler();
+                    }),
                 ),
             ).then(() => {});
         templates.bundleListeners.add(
@@ -100,10 +118,15 @@ export const precompiledTemplatesService = {
         // a cached artifact arrives within the bound; one the server is still
         // compiling (the first page of a language after a deploy) does not
         // hold the boot: what renders before it compiles in the browser
-        await Promise.race([
-            loaded,
-            new Promise((resolve) => browser.setTimeout(resolve, LOAD_WAIT_MS)),
+        const arrived = await Promise.race([
+            loaded.then(() => true),
+            new Promise((resolve) =>
+                browser.setTimeout(() => resolve(false), LOAD_WAIT_MS),
+            ),
         ]);
+        if (!arrived) {
+            await ensureCompiler();
+        }
     },
 };
 
