@@ -443,11 +443,9 @@ export class PdfManager extends Component {
             });
             this._newFiles[fileId].pageIds = pageIds;
             placed();
-            // a split needs the pages, not their pictures
+            // a split needs the pages, not their pictures: each page asks
+            // for its thumbnail when it comes near the screen (PdfPage)
             stopLoading();
-            const end = log.perf("loadCanvases");
-            await this._loadCanvases(pageIds);
-            end({ name: displayName, pageCount: pageIds.length });
         } catch (error) {
             placed();
             log.logic("addFileFailed", {
@@ -642,21 +640,6 @@ export class PdfManager extends Component {
         await loadPDFJS();
     }
     /**
-     * Draws the thumbnails of a file's pages, in order, skipping the pages
-     * deleted meanwhile and stopping once the file itself is gone.
-     *
-     * @private
-     * @param {String[]} pageIds
-     */
-    async _loadCanvases(pageIds) {
-        for (const pageId of pageIds) {
-            if (this._isDestroyed) {
-                break;
-            }
-            await this._renderThumbnail(pageId);
-        }
-    }
-    /**
      * @private
      * @param {String} pageId
      * @returns {Promise<Object|undefined>} the pdf.js page, while the page
@@ -671,9 +654,9 @@ export class PdfManager extends Component {
         return file.pdf.getPage(storePage.localPageNumber);
     }
     /**
-     * Draws a page's thumbnail once, whoever asks first: the loading of its
-     * file, or a blank-page split that cannot wait for it. A page that fails
-     * to draw is marked so, and stays: its file splits all the same.
+     * Draws a page's thumbnail once, whoever asks first: the page coming near
+     * the screen, or a blank-page split that cannot wait for it. A page that
+     * fails to draw is marked so, and stays: its file splits all the same.
      *
      * @private
      * @param {String} pageId
@@ -690,10 +673,12 @@ export class PdfManager extends Component {
                     if (!page) {
                         return;
                     }
+                    const end = log.perf("thumbnail");
                     const canvas = await this._renderCanvas(page, {
                         width: 160,
                         height: 230,
                     });
+                    end({ pageId });
                     if (!this._isDestroyed && this.store.getPage(pageId)) {
                         this.state.pageCanvases[pageId] = markRaw({ page, canvas });
                     }

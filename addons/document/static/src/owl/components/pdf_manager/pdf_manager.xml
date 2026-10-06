@@ -75,6 +75,7 @@
                                         onPageClicked.bind="this.onClickPage"
                                         onPageDropped.bind="this.onPageDrop"
                                         onSelectClicked.bind="this.onSelectClicked"
+                                        onVisible.bind="this._renderThumbnail"
                                     />
                                     <div t-if="pageId_first" class="o_pdf_group_name_wrapper">
                                         <PdfGroupName groupId="groupId"

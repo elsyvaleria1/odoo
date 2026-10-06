@@ -1369,3 +1369,22 @@ test(`Pdf Manager: renaming a group puts the cursor in its name`, async () => {
     await animationFrame();
     expect(".o_pdf_name_input").toBeFocused();
 });
+
+test(`Pdf Manager: a long file draws only the pages near the screen`, async () => {
+    PdfManagerForTest.numPages = 80;
+    const manager = await mountPdfManager(ONE_DOCUMENT);
+    await animationFrame();
+    await animationFrame();
+    const drawn = () => Object.keys(manager.state.pageCanvases).length;
+    expect(drawn()).toBeGreaterThan(0);
+    expect(drawn()).toBeLessThan(80, {
+        message: "the pages nobody scrolled to are not drawn yet",
+    });
+    const last = manager.store.sortedPageIds.at(-1);
+    queryOne(`.o_pdf_page[data-id='${last}']`).scrollIntoView();
+    await animationFrame();
+    await animationFrame();
+    expect(manager.state.pageCanvases[last]?.canvas).toBeOfType("object", {
+        message: "scrolled to, the last page is drawn",
+    });
+});

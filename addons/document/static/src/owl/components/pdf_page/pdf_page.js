@@ -1,6 +1,10 @@
 /** @odoo-module native */
 import { Component, onMounted, onPatched, proxy, t, useProps } from "@odoo/owl";
 import { elementRef } from "@web/core/utils/element_ref";
+import { useLayoutEffect } from "@web/core/utils/layout_effect";
+
+/** How far off screen a page starts drawing: a screen ahead of the scroll. */
+const NEAR_SCREEN_MARGIN = "100% 0px";
 
 export class PdfPage extends Component {
     static props = {
@@ -13,6 +17,8 @@ export class PdfPage extends Component {
         onPageClicked: t.function().optional(),
         onPageDropped: t.function().optional(),
         onSelectClicked: t.function().optional(),
+        /** asked once, when the page first comes near the screen */
+        onVisible: t.function().optional(),
         toRender: t.boolean().optional(),
         pageId: t.string(),
     };
@@ -28,6 +34,27 @@ export class PdfPage extends Component {
 
         onMounted(() => this.renderPage(this.canvas));
         onPatched(() => this.renderPage(this.canvas));
+        // a page is drawn when it comes near: a long file opens at once, and
+        // keeps in memory only the pictures someone scrolled to
+        useLayoutEffect(
+            (el) => {
+                if (!el || !this.props.onVisible || this.canvas) {
+                    return;
+                }
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        if (entries.some((entry) => entry.isIntersecting)) {
+                            observer.disconnect();
+                            this.props.onVisible(this.props.pageId);
+                        }
+                    },
+                    { rootMargin: NEAR_SCREEN_MARGIN },
+                );
+                observer.observe(el);
+                return () => observer.disconnect();
+            },
+            () => [this.canvasWrapperRef.el],
+        );
     }
 
     get canvas() {
