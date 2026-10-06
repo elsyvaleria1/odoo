@@ -45,3 +45,4 @@ from .tours import *
 from . import test_document_labels
 from . import test_access_matrix
 from . import test_document_break_glass
+from . import test_document_file_size

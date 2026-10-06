@@ -6,6 +6,8 @@ from .trigram import (
 from .utils import (
     INT4_MAX,
     INT4_MIN,
+    INT8_MAX,
+    INT8_MIN,
     escape_psql,
     normalize_identifier,
     get_index_name,
@@ -16,6 +18,8 @@ from .utils import (
 __all__ = [
     "INT4_MAX",
     "INT4_MIN",
+    "INT8_MAX",
+    "INT8_MIN",
     "SQL",
     "escape_psql",
     "get_index_name",

@@ -32,7 +32,7 @@ def _is_exact_number(value: typing.Any) -> bool:
 class Integer(Field[int]):
     type = "integer"
     is_integer = True
-    _column_type = ("int4", "int4")
+    bigint: bool = False
     falsy_value = 0
     cache_is_record_value = True
     cache_truthiness_matches = True
@@ -43,6 +43,12 @@ class Integer(Field[int]):
 
     if not typing.TYPE_CHECKING:
         __get__ = _prepare_inline_get(0)
+
+    @property
+    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
+        return ("int8", "int8") if self.bigint else ("int4", "int4")
+
+    _related_bigint = property(attrgetter("bigint"))
 
     @override
     def _get_attrs(self, model_class: ModelClass, name: str) -> dict[str, typing.Any]:

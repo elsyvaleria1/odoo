@@ -186,6 +186,7 @@ SQL_ORDER_BY_TYPE = defaultdict(
     lambda: 16,
     {
         "int4": 1,
+        "int8": 1,
         "varchar": 2,
         "date": 3,
         "jsonb": 4,

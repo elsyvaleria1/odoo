@@ -184,6 +184,7 @@ class DocumentsDocument(models.Model):
     file_size = fields.Integer(
         compute="_compute_file_size",
         store=True,
+        bigint=True,
     )
     res_model = fields.Char(
         string="Resource Model",

@@ -14,7 +14,7 @@ from psycopg.errors import (
 )
 
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.sql import INT4_MAX, INT4_MIN, get_index_name
+from odoo.libs.sql import INT4_MAX, INT4_MIN, INT8_MAX, INT8_MIN, get_index_name
 
 from ..models.table_objects import Constraint
 from ._check_constraints import violates_check
@@ -125,19 +125,27 @@ def _check_m2m_foreign_keys(
         )
 
 
+_INTEGER_BOUNDS = {"int4": (INT4_MIN, INT4_MAX), "int8": (INT8_MIN, INT8_MAX)}
+
+
 def _check_column_values(model: ModelLike, rows: list[dict[str, typing.Any]]) -> None:
     # what the driver and the column type refuse before any table constraint
-    # is consulted: psycopg rejects a NUL in a text parameter, and an int4
-    # column rejects a value outside its range
+    # is consulted: psycopg rejects a NUL in a text parameter, and an int4 or
+    # int8 column rejects a value outside its range
     for field in model._fields.values():
         if not field.store or not field.column_type:
             continue
         kind = field.column_type[0]
-        if kind == "int4":
+        if kind in _INTEGER_BOUNDS:
+            low, high = _INTEGER_BOUNDS[kind]
             for row in rows:
                 value = row.get(field.name)
-                if type(value) is int and not INT4_MIN <= value <= INT4_MAX:
-                    raise NumericValueOutOfRange("integer out of range")
+                if type(value) is int and not low <= value <= high:
+                    raise NumericValueOutOfRange(
+                        "integer out of range"
+                        if kind == "int4"
+                        else "bigint out of range"
+                    )
         elif kind in ("varchar", "text"):
             for row in rows:
                 value = row.get(field.name)

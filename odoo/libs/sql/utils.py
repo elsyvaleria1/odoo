@@ -1,6 +1,8 @@
 __all__ = [
     "INT4_MAX",
     "INT4_MIN",
+    "INT8_MAX",
+    "INT8_MIN",
     "escape_psql",
     "get_index_name",
     "normalize_identifier",
@@ -12,6 +14,8 @@ from binascii import crc32
 
 INT4_MIN = -(2**31)
 INT4_MAX = 2**31 - 1
+INT8_MIN = -(2**63)
+INT8_MAX = 2**63 - 1
 
 
 def escape_psql(to_escape: str) -> str:

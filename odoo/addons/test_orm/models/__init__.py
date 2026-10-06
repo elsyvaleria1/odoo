@@ -1,5 +1,6 @@
 from . import (
     test_access_scope,
+    test_bigint,
     test_cache_coherence,
     test_callable_depends,
     test_compute_check,

@@ -192,6 +192,7 @@ class IrAttachment(models.Model):
     file_size = fields.Integer(
         copy=False,
         readonly=True,
+        bigint=True,
     )
     checksum = fields.Char(
         size=CONTENT_DIGEST_MAX_LEN,

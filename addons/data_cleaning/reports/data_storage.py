@@ -22,7 +22,10 @@ class IrAttachmentReport(models.Model):
         string="Record",
         readonly=True,
     )
-    size = fields.Integer(string="Total Size")
+    size = fields.Integer(
+        string="Total Size",
+        bigint=True,
+    )
     name = fields.Char(
         string="Resource Name",
         compute="_compute_name",

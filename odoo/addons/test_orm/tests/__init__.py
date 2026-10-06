@@ -72,3 +72,4 @@ from . import test_display_name_negation
 from . import test_field_ddl_transitions
 from . import test_predicate_access, test_x2many_archived_corecords
 from . import test_precompute_required
+from . import test_bigint
