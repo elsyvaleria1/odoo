@@ -871,11 +871,11 @@ class IrAttachment(models.Model):
 
     def _get_pdf_raw(self) -> bytes | None:
         self.check_singleton()
-        if self.type != "binary" or not (self.mimetype or "").startswith(
+        if self.type == "url" or not (self.mimetype or "").startswith(
             "application/pdf"
         ):
             return None
-        return self._with_bin_size_disabled().raw or None
+        return self._get_content() or None
 
     @api.model
     def _is_content_index_required(self, values: dict[str, Any]) -> bool:

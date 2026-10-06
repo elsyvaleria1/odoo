@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from odoo import fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.http import Stream, prepare_content_disposition_header
 
 _logger = logging.getLogger(__name__)
@@ -46,21 +46,29 @@ class IrAttachment(models.Model):
         ondelete={"cloud_storage": "set url"},
     )
 
-    def _to_http_stream(self):
-        if (
-            self.type == "cloud_storage"
-            and self.env["res.config.settings"]._get_cloud_storage_configuration()
-        ):
-            self.check_singleton()
-            info = self._generate_cloud_storage_download_info()
-            stream = CloudStorageStream(
-                self, type="url", url=info["url"], download_name=self.name
+    def _check_cloud_storage_configured(self):
+        if not self.env["res.config.settings"]._get_cloud_storage_configuration():
+            raise MissingError(
+                self.env._(
+                    "The content of attachment %(id)s is held by cloud storage, "
+                    "which this database has not configured.",
+                    id=self.id,
+                )
             )
-            if "time_to_expiry" in info:
-                # cache the redirection until 10 seconds before the expiry
-                stream.max_age = max(info["time_to_expiry"] - 10, 0)
-            return stream
-        return super()._to_http_stream()
+
+    def _to_http_stream(self):
+        if self.type != "cloud_storage":
+            return super()._to_http_stream()
+        self.check_singleton()
+        self._check_cloud_storage_configured()
+        info = self._generate_cloud_storage_download_info()
+        stream = CloudStorageStream(
+            self, type="url", url=info["url"], download_name=self.name
+        )
+        if "time_to_expiry" in info:
+            # cache the redirection until 10 seconds before the expiry
+            stream.max_age = max(info["time_to_expiry"] - 10, 0)
+        return stream
 
     def _post_add_create(self, **kwargs):
         super()._post_add_create(**kwargs)
@@ -94,6 +102,7 @@ class IrAttachment(models.Model):
         if self.type != "cloud_storage":
             return super()._get_content(size)
         self.check_singleton()
+        self._check_cloud_storage_configured()
         url = self._generate_cloud_storage_download_info()["url"]
         headers = {"Range": f"bytes=0-{size - 1}"} if size else {}
         response = self.env["ir.egress"].request(
@@ -110,6 +119,7 @@ class IrAttachment(models.Model):
     def _migrate_remote_to_local(self):
         if self.type != "cloud_storage":
             return super()._migrate_remote_to_local()
+        self._check_cloud_storage_configured()
         url = self._generate_cloud_storage_download_info()["url"]
         response = self.env["ir.egress"].request(
             "GET", url, purpose="cloud_storage", timeout=10, max_bytes=None
@@ -204,6 +214,7 @@ class IrAttachment(models.Model):
     def _get_zip_detached_reader(self):
         if self.type != "cloud_storage":
             return super()._get_zip_detached_reader()
+        self._check_cloud_storage_configured()
         url = self._generate_cloud_storage_download_info()["url"]
 
         def read_blocks(block_size):

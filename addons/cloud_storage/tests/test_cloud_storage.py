@@ -1,8 +1,9 @@
 import uuid
 from unittest.mock import patch
 
-from odoo.exceptions import UserError
+from odoo.exceptions import MissingError, UserError
 from odoo.tests import TransactionCase, tagged
+from odoo.tools.pdf import to_pdf_stream
 
 
 @tagged("post_install", "-at_install")
@@ -12,6 +13,37 @@ class TestCloudStorage(TransactionCase):
         super().setUpClass()
         cls.attachment = cls.env["ir.attachment"].create(
             {"name": "cloud.txt", "raw": b"payload"}
+        )
+
+    def _cloud_attachment(self, name, mimetype):
+        remote = self.env["ir.attachment"].create({"name": name, "mimetype": mimetype})
+        remote.write({"type": "cloud_storage", "url": "https://bucket/blob"})
+        return remote
+
+    def _configured(self, content):
+        def fake_request(egress, method, url, *, purpose, headers=None, **kwargs):
+            class Response:
+                def raise_for_status(self):
+                    return None
+
+            Response.content = content
+            return Response()
+
+        return (
+            patch.object(
+                type(self.env["res.config.settings"]),
+                "_get_cloud_storage_configuration",
+                lambda self: {"provider": "fake"},
+            ),
+            patch.object(
+                type(self.env["ir.attachment"]),
+                "_generate_cloud_storage_download_info",
+                lambda self, content_disposition=None: {
+                    "url": "https://bucket/blob?signed",
+                    "time_to_expiry": 300,
+                },
+            ),
+            patch.object(type(self.env["ir.egress"]), "request", fake_request),
         )
 
     def test_generate_url_is_abstract(self):
@@ -78,6 +110,11 @@ class TestCloudStorage(TransactionCase):
 
         with (
             patch.object(
+                type(self.env["res.config.settings"]),
+                "_get_cloud_storage_configuration",
+                lambda self: {"provider": "fake"},
+            ),
+            patch.object(
                 type(remote),
                 "_generate_cloud_storage_download_info",
                 lambda self: {"url": "https://bucket/blob", "time_to_expiry": 300},
@@ -110,3 +147,47 @@ class TestCloudStorage(TransactionCase):
         with patch.object(type(self.env["ir.egress"]), "request", explode):
             self.assertEqual(self.attachment._get_content(), b"payload")
             self.assertEqual(self.attachment._get_content(3), b"pay")
+
+    def test_unconfigured_cloud_content_is_missing_to_every_reader(self):
+        """Without a configured provider the blob is unreachable: each reader says so."""
+        remote = self._cloud_attachment("statement.pdf", "application/pdf")
+
+        def explode(*args, **kwargs):
+            raise AssertionError("an unconfigured provider must not be called")
+
+        with patch.object(type(self.env["ir.egress"]), "request", explode):
+            for reader in (
+                remote._to_http_stream,
+                remote._get_content,
+                remote._get_pdf_raw,
+                remote._migrate_remote_to_local,
+                remote._get_zip_detached_reader,
+                lambda: to_pdf_stream(remote),
+            ):
+                with self.subTest(reader=reader), self.assertRaises(MissingError):
+                    reader()
+
+    def test_unconfigured_cloud_content_is_never_redirected_to_its_blob(self):
+        """The unsigned blob URL is an identifier, not a download link."""
+        remote = self._cloud_attachment("statement.pdf", "application/pdf")
+        with self.assertRaises(MissingError):
+            remote._to_http_stream()
+        configured, signed, egress = self._configured(b"")
+        with configured, signed, egress:
+            stream = remote._to_http_stream()
+        self.assertEqual(stream.type, "url")
+        self.assertEqual(stream.url, "https://bucket/blob?signed")
+
+    def test_a_cloud_pdf_reaches_the_pdf_tools(self):
+        """A PDF the provider holds is read like a local one, page extraction included."""
+        pdf = (
+            b"%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+            b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+            b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 10 10]>>endobj\n"
+            b"trailer<</Root 1 0 R>>\n%%EOF"
+        )
+        remote = self._cloud_attachment("statement.pdf", "application/pdf")
+        configured, signed, egress = self._configured(pdf)
+        with configured, signed, egress:
+            self.assertEqual(remote._get_pdf_raw(), pdf)
+            self.assertEqual(to_pdf_stream(remote).getvalue(), pdf)
