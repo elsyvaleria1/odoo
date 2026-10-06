@@ -92,11 +92,11 @@ class TestDocumentsUploadRoute(HttpCase, TransactionCaseDocuments):
         )
         cls.doc_user.password = "doc_user_pwd"
 
-    def _upload(self, **fields):
+    def _upload(self, content=b"payload", **fields):
         return self.url_open(
             "/documents/upload/",
             data={"csrf_token": http.Request.csrf_token(self), **fields},
-            files={"ufile": ("hardening.txt", BytesIO(b"payload"), "text/plain")},
+            files={"ufile": ("hardening.txt", BytesIO(content), "text/plain")},
         )
 
     def test_root_upload_cannot_link_to_an_unwritable_record(self):
@@ -157,8 +157,10 @@ class TestDocumentsUploadRoute(HttpCase, TransactionCaseDocuments):
             ),
             RecordCapturer(self.env["document.document"], []) as capture,
         ):
+            # the browser posts an empty file and sends the bytes to the
+            # provider itself
             response = self._upload(
-                user_folder_id="MY", cloud_storage="1", file_size="12345"
+                content=b"", user_folder_id="MY", cloud_storage="1", file_size="12345"
             )
             response.raise_for_status()
         document = capture.records.check_singleton()
@@ -200,9 +202,13 @@ class TestDocumentsUploadRoute(HttpCase, TransactionCaseDocuments):
             mute_logger("odoo.http"),
         ):
             response = self._upload(
-                user_folder_id="MY", cloud_storage="1", file_size="-1000000000000"
+                content=b"",
+                user_folder_id="MY",
+                cloud_storage="1",
+                file_size="-1000000000000",
             )
         self.assertEqual(response.status_code, 400)
+        self.assertIn(b"file_size must not be negative", response.content)
 
     def test_upload_takes_only_the_user_s_own_companies(self):
         self.authenticate("plain_internal", "plain_internal")
