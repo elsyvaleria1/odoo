@@ -441,6 +441,15 @@ class DocumentsDocument(models.Model):
     )
 
     _res_model_res_id_idx = models.Index("(res_model, res_id)")
+    # the orders the views read pages in, so a page stops after the rows it
+    # shows pass the access rule instead of sorting every visible document:
+    # newest first (the kanban, "id" the ORM's tiebreak), folders first (the
+    # list), and newest first inside one folder
+    _create_date_order_idx = models.Index("(create_date DESC, id)")
+    _folder_first_order_idx = models.Index(
+        "((type = 'folder') DESC, create_date DESC, id DESC)"
+    )
+    _folder_create_date_order_idx = models.Index("(folder_id, create_date DESC, id)")
 
     _attachment_unique = models.Constraint(
         "unique (attachment_id)",
