@@ -18,19 +18,33 @@ class StockPicking(models.Model):
     )
     credit_verdict_message = fields.Text(compute="_compute_credit_verdict")
 
+    def _credit_order(self):
+        """The order this delivery ships, read whoever opens or validates it.
+
+        :rtype: sale.order
+        """
+        # a branch's warehouse keeper may also sell, as a seller reading only
+        # their own orders: a colleague's delivery weighs its credit all the same
+        self.check_singleton()
+        return self.with_privilege(
+            "account_credit.privilege_credit_delivery",
+            reason="a delivery weighs the credit of the order it ships",
+        ).sale_id
+
     def _is_credit_delivery(self) -> bool:
         self.check_singleton()
+        order = self._credit_order()
         return bool(
             self.picking_type_code == "outgoing"
-            and self.sale_id
-            and not self.sale_id._is_immediate_payment()
+            and order
+            and not order._is_immediate_payment()
         )
 
     def _credit_verdict(self):
         self.check_singleton()
         if not self._is_credit_delivery():
             return None
-        order = self.sale_id
+        order = self._credit_order()
         profile = (
             self.env["credit.profile"]
             .sudo()
@@ -63,7 +77,7 @@ class StockPicking(models.Model):
         for picking in self:
             if not picking._is_credit_delivery():
                 continue
-            order = picking.sale_id
+            order = picking._credit_order()
             profile = (
                 self.env["credit.profile"]
                 .sudo()

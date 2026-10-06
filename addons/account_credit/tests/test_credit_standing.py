@@ -137,3 +137,38 @@ class TestCreditStanding(AccountTestInvoicingCommon):
         self.assertTrue(picking.credit_verdict_outcome, "the policy judged it")
         picking.button_validate()
         self.assertEqual(picking.state, "done")
+
+    def test_a_branch_keeper_validates_a_colleagues_credit_delivery(self):
+        """A branch's warehouse keeper may sell too, as a seller reading their
+        own orders only: the delivery of a colleague's order still weighs its
+        credit, opened and validated, and the order stays out of their reach."""
+        keeper = new_test_user(
+            self.env,
+            login="credit_standing_keeper",
+            groups="sale.group_sale_salesman,stock.group_stock_user",
+            company_id=self.company.id,
+        )
+        out_type = (
+            self.env["stock.warehouse"]
+            .search([("company_id", "=", self.company.id)], limit=1)
+            .out_type_id
+        )
+        if "can_validate_user_ids" in out_type._fields:
+            out_type.sudo().can_validate_user_ids = [Command.link(keeper.id)]
+        order = self._credit_order(self.salesperson)
+        order.action_confirm()
+        self._give_standing(self.partner_b)
+        self.assertFalse(
+            order.with_user(keeper).has_access("read"),
+            "a colleague's order stays out of the keeper's reach",
+        )
+        picking = order.picking_ids.with_user(keeper)
+        # the keeper opens the delivery in a request of their own: nothing the
+        # salesperson read is cached, and a cached value is read unchecked
+        self.env.invalidate_all()
+        self.assertTrue(picking.credit_verdict_outcome, "the keeper opens it judged")
+        picking.move_ids.quantity = 1
+        picking.move_ids.picked = True
+        self.env.invalidate_all()
+        picking.button_validate()
+        self.assertEqual(picking.state, "done")

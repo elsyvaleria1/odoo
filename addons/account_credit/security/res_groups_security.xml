@@ -15,6 +15,14 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_credit_delivery" model="res.groups">
+        <field
+            name="name">Privilege: a delivery weighs the credit of the order it ships, whoever opens or validates it</field>
+        <field
+            name="comment">A delivery of a sale on credit shows and enforces the verdict on its customer's credit. A branch's warehouse keeper may also sell, as a seller reading only their own orders, and still opens and validates the deliveries of a colleague's orders. Whoever weighs a delivery reads the orders that ship through stock moves, and nothing else of sales.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="privilege_credit_limit" model="res.groups.privilege">
         <field name="name">Credit Limit</field>
         <field name="category_id" ref="base.module_category_accounting" />
