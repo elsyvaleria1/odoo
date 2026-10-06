@@ -7,6 +7,14 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_read_credit_file_scope" model="res.groups">
+        <field
+            name="name">Privilege: a partner's credit file holds the same documents whoever reads it</field>
+        <field
+            name="comment">A credit file is the documents filed under any company's credit folder plus those of a type a credit grade rule requires. The credit limit and document compliance are stored from it, so they may not depend on who recomputes them. Whoever reads a file reads every company's credit folder and the document types the grade rules require, and nothing else of credit.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="privilege_credit_limit" model="res.groups.privilege">
         <field name="name">Credit Limit</field>
         <field name="category_id" ref="base.module_category_accounting" />

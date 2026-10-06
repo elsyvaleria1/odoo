@@ -148,15 +148,12 @@ class Partner(models.Model):
         # credit consolidation res_company.credit_folder_id is a non-stored
         # related onto credit_config_id, and searching it compiles to an
         # `any!` subdomain that the view validator rejects outright.
-        roots = (
-            self.env["credit.config"]
-            .sudo()
-            .search([("credit_folder_id", "!=", False)])
-            .credit_folder_id
+        scope = self.env["credit.config"].with_privilege(
+            "account_credit.privilege_read_credit_file_scope",
+            reason="a credit file holds the same documents whoever reads it",
         )
-        required_types = (
-            self.env["credit.grade.rule"].sudo().search([]).document_type_id
-        )
+        roots = scope.search([("credit_folder_id", "!=", False)]).credit_folder_id
+        required_types = scope.env["credit.grade.rule"].search([]).document_type_id
         if not roots and not required_types:
             return Domain.FALSE
         # `child_of` on `folder_id` takes a single value -- see

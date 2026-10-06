@@ -5,7 +5,7 @@ from psycopg import IntegrityError
 from odoo import Command
 from odoo.exceptions import AccessError, ValidationError
 from odoo.fields import Date
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import TransactionCase, new_test_user, tagged
 from odoo.tools import mute_logger
 
 
@@ -349,6 +349,26 @@ class TestCreditFileOutsideCreditFolder(TransactionCase):
             }
         )
         self.assertIn(doc, self.partner.credit_document_ids)
+
+    def test_the_file_is_the_same_whoever_reads_it(self):
+        """The credit figures are stored from the file, so its scope ignores the reader."""
+        other_company = self.env["res.company"].create({"name": "Other Credit Co"})
+        outsider = new_test_user(
+            self.env, login="credit_file_outsider", groups="base.group_user"
+        )
+        elsewhere = new_test_user(
+            self.env,
+            login="credit_file_elsewhere",
+            groups="account_credit.group_credit_readonly",
+            company_id=other_company.id,
+        )
+        expected = self.partner._domain_credit_document_ids()
+        for user in (outsider, elsewhere):
+            with self.subTest(user=user.login):
+                self.assertEqual(
+                    self.partner.with_user(user)._domain_credit_document_ids(),
+                    expected,
+                )
 
 
 @tagged("post_install", "-at_install")
