@@ -1,6 +1,6 @@
 {
     "name": "Integration Transport",
-    "version": "19.0.1.37.0",
+    "version": "19.0.1.38.0",
     "oldest_upgradable_version": "19.0.1.35.0",
     "category": "Hidden",
     "sequence": 5,

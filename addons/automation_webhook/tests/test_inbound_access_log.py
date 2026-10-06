@@ -98,7 +98,7 @@ class TestInboundRefusals(TransactionCase):
         self.assertTrue(row.exists())
         self.assertTrue(row.channel_name, "the snapshot is what makes it readable")
 
-    def test_two_different_bad_tokens_are_two_facts(self):
+    def test_two_different_bad_tokens_are_two_credentials_on_one_row(self):
         endpoint = self._credentialed_endpoint("gate_two_tokens")
         endpoint._check_inbound_request(
             {"Authorization": "Bearer one"}, remote_addr="203.0.113.9"
@@ -106,9 +106,13 @@ class TestInboundRefusals(TransactionCase):
         endpoint._check_inbound_request(
             {"Authorization": "Bearer two"}, remote_addr="203.0.113.9"
         )
-        rows = self._refusals(endpoint)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(set(rows.mapped("refusal_reason")), {"authentication_failed"})
+        row = self._refusals(endpoint)
+        self.assertEqual(len(row), 1)
+        self.assertEqual(row.refusal_reason, "authentication_failed")
+        self.assertEqual(row.attempt_count, 2)
+        self.assertEqual(row.distinct_presented_count, 2)
+        self.assertNotIn("one", row.sudo().presented_fingerprints)
+        self.assertIn("2 credentials", row.display_name)
 
     def test_the_right_token_is_admitted_and_the_verdict_leaves_no_row(self):
         endpoint = self._credentialed_endpoint("gate_good_token")
@@ -188,15 +192,18 @@ class TestInboundRefusals(TransactionCase):
         self.assertEqual(sorted(rows.mapped("attempt_count")), [1, 2])
 
     @mute_logger(_GATE)
-    def test_a_distinguishable_refusal_does_not_collapse(self):
-        endpoint = self._credentialed_endpoint("gate_no_collapse")
+    def test_one_bad_token_repeated_is_one_credential(self):
+        endpoint = self._credentialed_endpoint("gate_one_token")
 
         for _ in range(3):
             endpoint._check_inbound_request(
                 {"Authorization": "Bearer nope"}, remote_addr="198.51.100.7"
             )
 
-        self.assertEqual(len(self._refusals(endpoint)), 3)
+        row = self._refusals(endpoint)
+        self.assertEqual(len(row), 1)
+        self.assertEqual(row.attempt_count, 3)
+        self.assertEqual(row.distinct_presented_count, 1)
 
     def test_a_bad_token_refusal_is_recorded_but_not_logged(self):
         endpoint = self._credentialed_endpoint("gate_quiet_refusal")

@@ -8,8 +8,19 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.json import loads as json_loads
 from odoo.tools import SQL
+from odoo.tools.security import hmac, register_signed_scope
 
 from odoo.addons.integration.tools import compute_payload_hash
+
+REFUSED_CREDENTIAL_SCOPE = register_signed_scope(
+    "integration.refused_credential",
+    purpose="a fingerprint of a credential a gate refused, so a collapsed "
+    "refusal tells one bad credential tried many times from many tried once, "
+    "without keeping any of them",
+    lifetime="undated: it lives as long as the refusal row it is counted on",
+)
+FINGERPRINT_LENGTH = 16
+FINGERPRINTS_MAX = 100
 
 _logger = logging.getLogger(__name__)
 
@@ -220,6 +231,18 @@ class IntegrationExchange(models.Model):
     last_seen_at = fields.Datetime(
         help="The last request a collapsed refusal row stands for.",
     )
+    distinct_presented_count = fields.Integer(
+        string="Different Credentials",
+        help="How many different credentials the requests this row stands for "
+        "presented, told apart by a keyed fingerprint. One means the same bad "
+        "credential again; many, a caller guessing. Stops counting at 100.",
+    )
+    presented_fingerprints = fields.Json(
+        copy=False,
+        classification="secret.credential",
+        help="Keyed fingerprints of the credentials presented: what tells a "
+        "new one from a repeat. Never the credential itself.",
+    )
     auth_mode = fields.Char(
         help="`enforce` or `audit`, as the gate ran for this call. An audit "
         "row was admitted with no valid credential.",
@@ -355,11 +378,17 @@ class IntegrationExchange(models.Model):
         "refusal_reason",
         "source_ip",
         "attempt_count",
+        "distinct_presented_count",
     )
     def _compute_display_name(self):
         for record in self:
             if record.state == "refused":
                 times = f" ×{record.attempt_count}" if record.attempt_count > 1 else ""
+                if record.distinct_presented_count > 1:
+                    many = record.distinct_presented_count
+                    times += (
+                        f", {many}{'+' if many >= FINGERPRINTS_MAX else ''} credentials"
+                    )
                 record.display_name = (
                     f"{record.channel_name or 'unknown'}: {record.refusal_reason} "
                     f"from {record.source_ip or 'unknown source'}{times}"
@@ -678,7 +707,14 @@ class IntegrationExchange(models.Model):
 
     # A refusal is the record of who was turned away; only its collapse
     # counters move, and only the retention sweep removes it.
-    _REFUSAL_COLLAPSE_FIELDS = frozenset({"attempt_count", "last_seen_at"})
+    _REFUSAL_COLLAPSE_FIELDS = frozenset(
+        {
+            "attempt_count",
+            "last_seen_at",
+            "distinct_presented_count",
+            "presented_fingerprints",
+        }
+    )
     _CLEANUP_CONTEXT_KEY = "_exchange_cleanup_bypass"
 
     REFUSED_CALLER_WINDOW_SECONDS = 3600
@@ -755,6 +791,7 @@ class IntegrationExchange(models.Model):
         window: int = 0,
         method: str | None = None,
         path: str | None = None,
+        fingerprint: str | None = None,
     ) -> bool:
         """Record a refusal; with a `window`, a repeat inside it collapses onto
         the standing row (counted per caller for a caller's own limit, not
@@ -787,6 +824,7 @@ class IntegrationExchange(models.Model):
                         {
                             "attempt_count": standing.attempt_count + 1,
                             "last_seen_at": now,
+                            **standing._count_presented(fingerprint),
                         }
                     )
                 return False
@@ -812,9 +850,32 @@ class IntegrationExchange(models.Model):
                 "request_method": (method or "").upper() or False,
                 "request_url": (path or "")[:2048] or False,
                 "signature_verified": False,
+                "presented_fingerprints": [fingerprint] if fingerprint else False,
+                "distinct_presented_count": 1 if fingerprint else 0,
             }
         )
         return True
+
+    def _count_presented(self, fingerprint: str | None) -> dict[str, Any]:
+        """Return the counter update a repeat presenting `fingerprint` makes:
+        a new credential is remembered and counted, until the bound."""
+        self.check_singleton()
+        seen = list(self.presented_fingerprints or [])
+        if not fingerprint or fingerprint in seen or len(seen) >= FINGERPRINTS_MAX:
+            return {}
+        seen.append(fingerprint)
+        return {"presented_fingerprints": seen, "distinct_presented_count": len(seen)}
+
+    @api.model
+    def _fingerprint_presented(self, channel, credential: str | None) -> str | None:
+        """Return a keyed fingerprint of a credential a gate refused, or None
+        when none was presented; bound to the gate, never reversible."""
+        if not credential:
+            return None
+        channel_ref = f"{channel._name},{channel.id}" if channel else ""
+        return hmac(self.env, REFUSED_CREDENTIAL_SCOPE, (channel_ref, credential))[
+            :FINGERPRINT_LENGTH
+        ]
 
     @api.autovacuum
     def _gc_old_logs(self):

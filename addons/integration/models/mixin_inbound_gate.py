@@ -739,7 +739,9 @@ class MixinInboundGate(models.AbstractModel):
 
     # A caller's own limit collapses per caller and is counted, and so does a
     # caller's failed authentication: unsigned or forged requests are free to
-    # send and would otherwise each add a row. A gate's standing fault
+    # send and would otherwise each add a row. What the collapse would lose,
+    # one bad credential repeated or many tried, the row keeps as a count of
+    # distinct fingerprints. A gate's standing fault
     # collapses per gate and is not counted, because counting is an UPDATE of
     # a row every concurrent request shares.
     _COALESCED_REFUSALS = {
@@ -783,7 +785,13 @@ class MixinInboundGate(models.AbstractModel):
     ) -> bool:
         collapse = self._COALESCED_REFUSALS.get(code, {})
         httprequest = request.httprequest if request else None
-        return self.env["integration.exchange"]._record_refusal(
+        Exchange = self.env["integration.exchange"]
+        fingerprint = (
+            Exchange._fingerprint_presented(self, self._presented_token(headers or {}))
+            if code == "authentication_failed"
+            else None
+        )
+        return Exchange._record_refusal(
             self,
             code,
             reason,
@@ -795,6 +803,7 @@ class MixinInboundGate(models.AbstractModel):
             window=self._get_inbound_coalesce_window(code) if collapse else 0,
             method=httprequest.method if httprequest else None,
             path=httprequest.path if httprequest else None,
+            fingerprint=fingerprint,
             **collapse,
         )
 

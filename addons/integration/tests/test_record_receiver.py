@@ -5,6 +5,7 @@ import zlib
 
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.integration.models.integration_exchange import FINGERPRINTS_MAX
 from odoo.addons.integration.models.mixin_inbound_gate import DEFAULT_MAX_PAYLOAD_SIZE
 
 
@@ -68,6 +69,65 @@ class TestRecordReceiver(TransactionCase):
         )
         self.assertEqual(
             sorted(rows.mapped("attempt_count")), [1, 3], "one row per caller, counted"
+        )
+        self.assertEqual(
+            rows.mapped("distinct_presented_count"),
+            [0, 0],
+            "a signature failure presents no credential to fingerprint",
+        )
+
+    def _refuse_token(self, receiver, token, address="203.0.113.11"):
+        receiver._store_inbound_refusal(
+            "authentication_failed",
+            401,
+            "bad token",
+            headers={"Authorization": f"Bearer {token}"},
+            remote_addr=address,
+            mode="enforce",
+        )
+
+    def _refusal_row(self, receiver):
+        self.env.flush_all()
+        return self.env["integration.exchange"].search(
+            [
+                ("state", "=", "refused"),
+                ("channel_id", "=", f"{receiver._name},{receiver.id}"),
+            ]
+        )
+
+    def test_a_collapsed_refusal_counts_the_different_credentials_tried(self):
+        receiver = self._for_record("Token flow", purpose="token_flow")
+        for token in ("alpha", "beta", "alpha", "gamma"):
+            self._refuse_token(receiver, token)
+
+        row = self._refusal_row(receiver)
+        self.assertEqual(row.attempt_count, 4)
+        self.assertEqual(row.distinct_presented_count, 3)
+        stored = row.sudo().presented_fingerprints
+        self.assertEqual(len(stored), 3)
+        for token in ("alpha", "beta", "gamma"):
+            self.assertNotIn(token, " ".join(stored), "a credential is never kept")
+
+    def test_the_credentials_counted_on_one_row_are_bounded(self):
+        receiver = self._for_record("Guessed flow", purpose="guessed_flow")
+        for index in range(FINGERPRINTS_MAX + 5):
+            self._refuse_token(receiver, f"guess-{index}")
+
+        row = self._refusal_row(receiver)
+        self.assertEqual(row.attempt_count, FINGERPRINTS_MAX + 5)
+        self.assertEqual(row.distinct_presented_count, FINGERPRINTS_MAX)
+        self.assertEqual(len(row.sudo().presented_fingerprints), FINGERPRINTS_MAX)
+        self.assertIn(f"{FINGERPRINTS_MAX}+ credentials", row.display_name)
+
+    def test_one_credential_on_two_gates_has_two_fingerprints(self):
+        first = self._for_record("First flow", purpose="first_flow")
+        second = self._for_record("Second flow", purpose="second_flow")
+        self._refuse_token(first, "same")
+        self._refuse_token(second, "same")
+
+        self.assertNotEqual(
+            self._refusal_row(first).sudo().presented_fingerprints,
+            self._refusal_row(second).sudo().presented_fingerprints,
         )
 
     def test_a_receiver_without_purpose_is_not_a_purposed_one(self):
