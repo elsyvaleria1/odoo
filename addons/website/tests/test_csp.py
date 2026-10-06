@@ -166,8 +166,12 @@ class TestWebsitePrecompiledTemplates(TransactionCase):
             modules = IrHttp._get_webclient_translation_modules()[0]
             translations_hash = IrHttp._get_web_translations_hash(modules, "en_US")
             args = (self.BUNDLE, checksum, "en_US", translations_hash)
-            self.assertFalse(IrQweb._get_or_create_precompiled_template_attachment(*args))
-            artifact = IrQweb._get_or_create_precompiled_template_attachment(*args, assets_params=params)
+            self.assertFalse(
+                IrQweb._get_or_create_precompiled_template_attachment(*args)
+            )
+            artifact = IrQweb._get_or_create_precompiled_template_attachment(
+                *args, assets_params=params
+            )
         self.assertIn('"website.FullscreenIndication": [', artifact.raw.decode())
 
     def test_a_website_without_assets_of_its_own_ships_the_same_bundle(self):
