@@ -16,6 +16,7 @@ class TestPreferencesTour(TelegramBotHttpCase):
             login="tg_prefs",
             groups="base.group_user",
             notification_type="inbox",
+            tz="America/Mexico_City",
         )
         chats = self.env["telegram.chat"]
         for tg_user_id, phone, days_ago in (
