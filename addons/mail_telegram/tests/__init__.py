@@ -5,3 +5,4 @@ from . import test_channel_type_policy
 from . import test_access_matrix
 from . import test_destination
 from . import test_execution_contexts
+from . import test_preferences_tour

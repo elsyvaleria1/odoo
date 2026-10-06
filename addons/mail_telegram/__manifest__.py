@@ -28,6 +28,13 @@
         ],
         "web.assets_unit_tests": [
             "mail_telegram/static/tests/**/*",
+            (
+                "remove",
+                "mail_telegram/static/tests/tours/**/*",
+            ),
+        ],
+        "web.assets_tests": [
+            "mail_telegram/static/tests/tours/**/*",
         ],
         "im_livechat.embed_assets_unit_tests": [
             "mail_telegram/static/tests/mock_server/**/*",

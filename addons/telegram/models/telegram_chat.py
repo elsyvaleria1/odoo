@@ -23,6 +23,12 @@ _NOTICE_WINDOW_SECONDS = 300
 class TelegramChat(models.Model):
     _name = "telegram.chat"
     _description = "Telegram Chat Session"
+    _rec_names_search = [
+        "title",
+        "account_id.name",
+        "account_id.phone",
+        "bot_id.bot_username",
+    ]
     _access_anchors = frozendict(
         {
             "partner": "account_id.partner_id",

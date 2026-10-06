@@ -234,3 +234,23 @@ class TestConnectBot(TelegramBotTestCase):
 
         self.assertIn(self.test_bot, offered)
         self.assertNotIn(other_bot, offered)
+
+
+class TestChatSearch(TelegramBotTestCase):
+    """A chat is found by what its name shows: the person, the number they
+    shared, the bot."""
+
+    def test_a_chat_is_found_by_its_number_and_its_bot(self):
+        self.test_bot.bot_username = "acme_bot"
+        self.test_account.sudo().phone = "+525598765432"
+        chats = self.env["telegram.chat"]
+
+        self.assertIn(
+            self.test_chat, chats.search([("display_name", "ilike", "98765")])
+        )
+        self.assertIn(
+            self.test_chat, chats.search([("display_name", "ilike", "acme_bot")])
+        )
+        self.assertNotIn(
+            self.test_chat, chats.search([("display_name", "ilike", "no-such-chat")])
+        )
