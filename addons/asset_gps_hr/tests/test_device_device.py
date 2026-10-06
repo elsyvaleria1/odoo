@@ -279,3 +279,20 @@ class TestRemoteDeviceSearchViewDefault(TransactionCase):
 
     def test_an_unrelated_term_finds_nothing(self):
         self.assertNotIn(self.device, self._default_field_search("Kenworth"))
+
+
+@tagged("post_install", "-at_install")
+class TestRemoteDeviceHrKanban(TransactionCase):
+    def test_the_operator_line_follows_the_asset_line(self):
+        arch = etree.fromstring(
+            self.env.ref(
+                "device_gps.view_device_device_kanban_gps_dashboard"
+            ).get_combined_arch()
+        )
+        (asset_line,) = arch.xpath("//div[@name='asset_line']")
+        operator_block = asset_line.getnext()
+
+        self.assertIsNotNone(operator_block)
+        self.assertEqual(
+            operator_block.get("t-if"), "record.asset_operator_id.raw_value"
+        )

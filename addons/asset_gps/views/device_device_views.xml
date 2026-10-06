@@ -9,18 +9,19 @@
             ref="device_gps.view_device_device_kanban_gps_dashboard" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='activity_state']" position="after">
-                <field name="asset_id" widget="many2many_tags" />
+                <field name="asset_id" />
             </xpath>
             <xpath
                 expr="//div[hasclass('o_kanban_card_header_title')]/div[hasclass('text-muted')]"
                 position="after">
-                <t t-if="record.asset_id.raw_value.length">
-                    <div class="text-muted small">
-                        <i class="fa-solid fa-truck" />
-                        <span class="ms-1">Asset: </span>
-                        <strong><field name="asset_id" widget="many2many_tags" /></strong>
-                    </div>
-                </t>
+                <div
+                    name="asset_line"
+                    class="text-muted small"
+                    t-if="record.asset_id.raw_value">
+                    <i class="fa-solid fa-truck" />
+                    <span class="ms-1">Asset: </span>
+                    <strong><field name="asset_id" /></strong>
+                </div>
             </xpath>
         </field>
     </record>

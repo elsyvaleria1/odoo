@@ -217,3 +217,37 @@ class TestGpsKanbanAnchors(TransactionCase):
             [],
             "Every GPS field the card pays to fetch must be shown by it.",
         )
+
+
+class TestGpsDeviceKanbanAsset(TransactionCase):
+    """The asset line on the GPS device dashboard card."""
+
+    def _card(self):
+        return etree.fromstring(
+            self.env.ref(
+                "device_gps.view_device_device_kanban_gps_dashboard"
+            ).get_combined_arch()
+        )
+
+    def test_the_asset_is_rendered_as_a_many2one(self):
+        """asset_id is a Many2one. An x2many widget such as many2many_tags
+        breaks the web client's arch parser on the whole kanban, so the GPS
+        Devices action would not open at all.
+        """
+        arch = self._card()
+        widgets = [
+            node.get("widget")
+            for node in arch.iter("field")
+            if node.get("name") == "asset_id"
+        ]
+
+        self.assertTrue(widgets, "the card shows the assigned asset")
+        self.assertEqual(set(widgets), {None})
+
+    def test_the_asset_line_shows_when_an_asset_is_assigned(self):
+        """A Many2one's raw value has no length; a `.length` guard hid the line
+        on every card."""
+        lines = self._card().xpath("//div[@name='asset_line']")
+
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(lines[0].get("t-if"), "record.asset_id.raw_value")

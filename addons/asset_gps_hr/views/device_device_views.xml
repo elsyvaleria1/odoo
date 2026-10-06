@@ -60,9 +60,7 @@
                 <field name="asset_operator_id" />
                 <field name="asset_license_plate" />
             </xpath>
-            <xpath
-                expr="//t[@t-if='record.asset_id.raw_value.length']"
-                position="after">
+            <xpath expr="//div[@name='asset_line']" position="after">
                 <t t-if="record.asset_operator_id.raw_value">
                     <div class="text-muted small">
                         <i class="fa-solid fa-user" />
