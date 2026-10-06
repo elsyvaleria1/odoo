@@ -1,5 +1,4 @@
 from odoo import fields, models
-from odoo.exceptions import AccessError
 
 
 class MailActivity(models.Model):
@@ -20,12 +19,9 @@ class MailActivity(models.Model):
         return result
 
     def unlink(self):
-        try:
-            lines = self.automation_runtime_line_id
-        except AccessError:
-            # whoever may unlink an activity need not read it; an approval's
-            # activity is its approver's, who reads it
-            lines = self._filtered_access("read").automation_runtime_line_id
+        # whoever may unlink an activity need not read it; an approval's
+        # activity is its approver's, who reads it
+        lines = self._filtered_access("read").automation_runtime_line_id
         result = super().unlink()
         lines.exists()._fail_missing_approval()
         return result

@@ -166,6 +166,7 @@ first. The doc is the design contract; the code implements it.
 | Node types | **done** — `action`, `wait`, `approval`, `input`, `subflow`; the rest were already sayable | — |
 | Node coordinates | **done** — `pos_x` / `pos_y` on `ir.actions.server` | — |
 | Visual layer | **done** — the Workflow page's canvas, JointJS | — |
+| Data flow between steps | **done** — step keys, `steps.<key>` checked against the graph, node forms, any ready step runnable | — |
 | Execution history | `automation.runtime` per DAG run; `last_run` only for the rest | Full history per trigger |
 
 ---
@@ -354,6 +355,89 @@ Goal: `automation.rule` form view shows the workflow as an interactive DAG.
    This is where "fail only the step that failed" shows: a failed run is one
    red step among grey ones still waiting, and **Retry Failed Step** on the
    form runs that step again once its cause is repaired.
+
+### Phase 5 — Data Flow Between Steps — DONE
+
+Goal: a step names the step whose result it uses, so a graph can run its
+branches in any order without a step picking up the wrong result.
+
+**What forced it.** The graph could already say "these two steps do not wait
+for each other", but no step could say *which* earlier result it works on. A
+reconciliation step found its invoice by walking its incoming edges and taking
+the first `account.move` it met (`_get_nearest_move`). On a chain that is the
+step just before it. On a join it is whichever edge was created first: with
+the bank-line registration and the invoice both feeding the reconciliation,
+the walk could return the bank line's own entry and reconcile the line against
+itself. Parallelism was sayable and unsafe, so every production flow stayed a
+chain.
+
+**How n8n answers it, and what was taken.** Every n8n node's output is kept on
+the execution; any node reads an upstream node *by name*
+(`$('Invoice').item.json.amount`), `$json`/`$input` is what came in, and
+`$prevNode` is the node that fed this one. Human input is a Wait or Form node:
+the execution is stored `waiting` and resumed by a webhook, and **the submitted
+form becomes that node's output**. Expressions are parsed to an AST and
+rewritten before a sandbox runs them. Taken: names over positions, a form's
+answers as that node's data, parse-before-run. Not taken: positional "two
+nodes back" or "next node" (a join has no single previous node, and a next
+node has not run), and a second sandbox — `safe_eval` already is one.
+
+1. **Step keys.** `ir.actions.server.step_key` is a Python identifier, unique
+   within its automation, derived from the name when none is given
+   (`_steps.make_step_key`) and backfilled by migration `1.15`. Names are
+   translatable and collide; a key is the stable handle code refers to.
+2. **What a step can read.** `automation.runtime.line._get_step_scope()` builds
+   the evaluation variables of a code step, and the same scope reaches an
+   `expression` edge:
+
+   | Variable | What it is |
+   |---|---|
+   | `steps` | Every step **upstream** of this one, by key: `steps.invoice.record`, `.output`, `.input`, `.state`, `.summary` |
+   | `predecessors` | The steps with an edge into this one, by key |
+   | `previous` | The single predecessor; with none or several it raises, naming them |
+   | `step` | This step itself, chiefly its own `input` |
+
+   **Upstream only, and that is the point.** A step that is not an ancestor may
+   or may not have run when this one runs, depending on which ready step
+   somebody pressed first; reading it would make a step's behaviour depend on
+   scheduling. n8n lets such a reference fail at run time; here it cannot be
+   saved. `output` is handed out as a copy, so code cannot rewrite another
+   step's result.
+3. **References are checked by parsing, not by running.** `_steps.collect_references`
+   walks the AST of a code step or an edge expression and returns the keys it
+   names (`steps.k`, `steps["k"]`, `"k" in steps`), whether it reads `previous`,
+   and whether it indexes `steps` with something computed, which no parse can
+   check. `automation.rule._get_step_reference_problems()` judges them against
+   the graph: the key exists, it is upstream, `previous` names exactly one step.
+   The parse is stored (`step_references`) when code is saved, so checking a run
+   reads no code and needs only the privilege `automation.privilege_start_run`.
+   Writing code or an expression that fails is refused. Changing the *graph*
+   is not refused — rewiring a flow passes through broken intermediate states —
+   but the automation form shows the problems and **no run starts** while any
+   is left.
+4. **Typed steps name their source.** `automation_account`'s reconcile,
+   apply-credit-note and change-partner steps, and a document dated from "the
+   latest document", take `workflow_source_step_id` ("Acts On"), held to the
+   same upstream rule. Left empty, the old walk still serves a chain, but a walk
+   that finds documents on two branches now **raises and asks for the step**
+   instead of picking one.
+5. **A form on any step.** `ir.actions.server.input_definition` is a
+   `PropertiesDefinition`; `automation.runtime.line.input_values` holds one
+   run's answers. A step reached with a question unanswered pauses and opens its
+   form; the answers are that step's `input` downstream. An Input step may ask
+   the form instead of — never together with — the run's own fields
+   (`input_field_ids`), which stay the way to fill what typed steps read from
+   the run, such as its partner. Properties rather than new columns: a question
+   is data on the step, typed (a partner picker, a date, a selection), and
+   adding one changes no schema.
+6. **Editing a flow updates the runs already going.** `_sync_to_definition` also
+   retires an edge the definition dropped and adds one it gained, into steps not
+   yet run, and the run and the automation each carry a button for it that runs
+   nothing. Without it, rewiring a flow stranded its runs on the old shape, and
+   the only remedy was cancelling and starting them again.
+7. **Any ready step can run.** `automation.runtime.line.action_run` runs the
+   step it is pressed on. **Next Step** still runs the first ready one, so a run
+   with two ready roots no longer forces the lower sequence first.
 
 ---
 

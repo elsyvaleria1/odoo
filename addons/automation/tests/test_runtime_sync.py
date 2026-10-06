@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
 from .test_queued_dispatch import QueuedCase
@@ -306,3 +307,86 @@ class TestCancelledReason(RunCompletionCase):
         self._line(runtime, after)._skip(reason="cancelled", message="Manually")
 
         self.assertEqual(self._line(runtime, after).skip_reason, "cancelled")
+
+
+class TestSyncTopology(RunCompletionCase):
+    def _started(self):
+        runtime = self.env["automation.runtime"].create(
+            {
+                "automation_id": self.automation.id,
+                "res_model": "res.partner",
+                "res_id": self.partner.id,
+            }
+        )
+        runtime.action_start()
+        return runtime
+
+    def test_a_removed_connection_frees_a_step_not_yet_run(self):
+        first = self._action("first", "record.write({'ref': 'first'})")
+        second = self._action("second", "record.write({'ref': 'second'})")
+        edge = link(self.env, first, second)
+        runtime = self._started()
+        self.assertEqual(self._line(runtime, second).state, "waiting")
+
+        edge.unlink()
+        runtime.action_sync_to_definition()
+
+        self.assertEqual(self._line(runtime, second).state, "ready")
+        self.assertFalse(self._line(runtime, second).edge_in_ids)
+        self.assertFalse(self.partner.ref, "updating a run executes nothing")
+
+    def test_a_new_connection_makes_a_ready_step_wait(self):
+        first = self._action("first")
+        second = self._action("second")
+        runtime = self._started()
+        self.assertEqual(self._line(runtime, second).state, "ready")
+
+        link(self.env, first, second)
+        runtime.action_sync_to_definition()
+
+        self.assertEqual(self._line(runtime, second).state, "waiting")
+        self.assertEqual(
+            self._line(runtime, second).edge_in_ids.source_line_id,
+            self._line(runtime, first),
+        )
+
+    def test_a_step_that_ran_keeps_its_connections(self):
+        first = self._action("first")
+        second = self._action("second")
+        third = self._action("third")
+        edge = link(self.env, first, second)
+        link(self.env, second, third)
+        runtime = self._started()
+        self._line(runtime, first).action_run()
+        self._line(runtime, second).action_run()
+
+        edge.unlink()
+        runtime.action_sync_to_definition()
+
+        self.assertEqual(len(self._line(runtime, second).edge_in_ids), 1)
+        self.assertEqual(self._line(runtime, third).state, "ready")
+
+    def test_the_automation_updates_only_its_running_runs(self):
+        first = self._action("first")
+        second = self._action("second")
+        edge = link(self.env, first, second)
+        running = self._started() | self._started()
+        finished = self._run()
+        self.assertEqual(self.automation.live_run_count, 2)
+
+        edge.unlink()
+        self.automation.action_sync_running_runs()
+
+        for runtime in running:
+            self.assertEqual(self._line(runtime, second).state, "ready")
+        self.assertEqual(finished.state, "done")
+        self.assertEqual(len(self._line(finished, second).edge_in_ids), 1)
+
+    def test_a_run_is_not_updated_onto_a_graph_with_reference_problems(self):
+        self._action("first")
+        runtime = self._started()
+
+        self._action("reader", "x = steps.nobody.output")
+
+        with self.assertRaisesRegex(UserError, "cannot start or update a run"):
+            runtime.action_sync_to_definition()

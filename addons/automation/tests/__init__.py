@@ -13,3 +13,4 @@ from . import test_registry_hooks
 from . import test_retry
 from . import test_input_step
 from . import test_step_output
+from . import test_step_references

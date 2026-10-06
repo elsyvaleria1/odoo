@@ -17,3 +17,9 @@ def add_input_fields(arch, fields) -> None:
             node.set("widget", "many2many_tags")
         if field.ttype in ("many2one", "many2many"):
             node.set("options", "{'no_create': True}")
+
+
+def add_input_form(arch) -> None:
+    group = arch.find(".//group[@name='input_fields']")
+    etree.SubElement(group, "field", name="action_id", invisible="1")
+    etree.SubElement(group, "field", name="input_values", nolabel="1", colspan="2")

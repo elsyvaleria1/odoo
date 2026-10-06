@@ -60,8 +60,16 @@
                     groups="base.group_user"
                     invisible="usage != 'automation' or not automation_rule_id">
 
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not step_reference_warning">
+                        <i class="fa-solid fa-triangle-exclamation" title="Warning" />
+                        <field name="step_reference_warning" />
+                    </div>
                     <group>
                         <group string="Step Type">
+                            <field name="step_key" />
                             <field name="node_type" />
                             <label for="wait_delay" invisible="node_type != 'wait'" />
                             <div invisible="node_type != 'wait'">
@@ -151,6 +159,15 @@
                         </group>
                     </group>
 
+                    <separator string="Form" class="mt-4" />
+                    <div class="text-muted small mb-2">
+                        Questions asked before the step runs. Each run keeps its
+                        answers, and later steps read them as
+                        <code>steps.&lt;key&gt;.input</code>.
+                    </div>
+                    <field name="input_form_node_id" invisible="1" />
+                    <field name="input_preview" nolabel="1" columns="1" />
+
                     <separator string="How Dependencies Work" class="mt-4" />
                     <div class="alert alert-info" role="alert">
                         <ul class="mb-0">
@@ -161,6 +178,7 @@
                             <li><strong>On Event / Without Event:</strong> waits for an event on the source, such as an email being opened, or for its absence during the delay</li>
                             <li><strong>Delay:</strong> the step becomes ready that long after the edge's condition holds</li>
                             <li><strong>A branch not taken</strong> is skipped, and so is everything only it leads to</li>
+                            <li><strong>Code reads other steps</strong> by key: <code>steps.&lt;key&gt;.record</code>, <code>.output</code>, <code>.input</code>, <code>.state</code>, only for steps upstream of it; <code>previous</code> is the single step before it, and <code>step.input</code> its own answers</li>
                             <li><strong>Execution state</strong> is tracked per-run in <code>automation.runtime.line</code></li>
                         </ul>
                     </div>

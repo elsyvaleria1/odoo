@@ -40,6 +40,17 @@ dropped at runtime, leaving the node `waiting` with nothing that could ever
 complete it. Correspondingly, `_create_action_lines` decides readiness from the
 *resolved* lines, never from the definition's edges.
 
+## A Step Reads Other Steps by Key, and Only Upstream
+
+Code names another step as `steps.<key>`, never by position: at a join there is
+no single previous step, which is why `previous` refuses rather than picks one.
+Only steps upstream of the reader are in its scope, so a reference never depends
+on which ready step somebody ran first. Do not widen the scope to "every step of
+the run", and do not resolve a document by walking edges and taking the first
+match: that is the edge-order dependence Phase 5 removed. A step type that names
+another step reports it through `_get_step_references()`, so one rule judges
+every kind of reference.
+
 ## What NOT to Add to `ir.actions.server`
 
 Do not add fields to `ir.actions.server` that track execution state.

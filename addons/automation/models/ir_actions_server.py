@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 from odoo import api, exceptions, fields, models
 from odoo.fields import Domain
@@ -6,8 +7,24 @@ from odoo.tools.date_utils import get_timedelta, time_unit_selection
 from odoo.tools.json import scriptsafe as json_scriptsafe
 
 from ._canvas import NODE_SIZE_DEFAULT, NODE_SIZE_MAX, NODE_SIZE_MIN
+from ._steps import (
+    RESERVED_KEYS,
+    STEP_KEY_MAX,
+    References,
+    collect_references,
+    is_valid_step_key,
+    make_step_key,
+)
 
 _logger = logging.getLogger(__name__)
+
+STEP_REFERENCE_DEPENDS = (
+    "automation_rule_id",
+    "edge_in_ids",
+    "edge_in_ids.source_node_id",
+    "step_key",
+    "step_references",
+)
 
 
 class IrActionsServer(models.Model):
@@ -145,6 +162,51 @@ class IrActionsServer(models.Model):
         help="The automation a Sub-workflow step runs and waits for",
     )
 
+    step_key = fields.Char(  # noqa: E8520 — names a step in code, not a credential
+        string="Key",
+        help="How the code of later steps names this one: steps.<key>. "
+        "Unique within the automation; derived from the name when left empty.",
+    )
+    input_definition = fields.PropertiesDefinition(
+        string="Form",
+        help="Questions this step asks before it runs. Each run keeps its own "
+        "answers, which later steps read as steps.<key>.input.",
+    )
+
+    input_form_node_id = fields.Many2one(
+        comodel_name="ir.actions.server",
+        copy=False,
+        readonly=True,
+        help="The step itself: what lets its own form preview edit the "
+        "questions in place, since a form's questions are edited from a "
+        "record that shows them",
+    )
+    input_preview = fields.Properties(
+        definition="input_form_node_id.input_definition",
+        string="Form Preview",
+        copy=False,
+        help="Add, reorder and edit the questions of this step's form here. "
+        "What is filled in is a sample and reaches no run.",
+    )
+    step_references = fields.Json(
+        compute="_compute_step_references",
+        store=True,
+        readonly=True,
+        discloses="base.internal",
+        help="The step keys this step names, parsed when its code is saved: "
+        "checking a run reads them here, so it needs no right to read code",
+    )
+    step_reference_warning = fields.Text(
+        compute="_compute_step_reference_warning",
+        help="What this step reads of other steps that the graph does not "
+        "guarantee has run; no run starts while it is set",
+    )
+
+    _step_key_uniq = models.UniqueIndex(
+        "(automation_rule_id, step_key) WHERE step_key IS NOT NULL",
+        "Another step of this automation already has this key.",
+    )
+
     @api.constrains("node_type", "subflow_automation_id", "automation_rule_id")
     def _check_subflow(self) -> None:
         for action in self.filtered(lambda node: node.node_type == "subflow"):
@@ -187,10 +249,11 @@ class IrActionsServer(models.Model):
                     )
                 )
 
-    @api.constrains("node_type", "input_field_ids")
+    @api.constrains("node_type", "input_field_ids", "input_definition")
     def _check_input_has_fields(self) -> None:
-        for action in self:
-            if action.node_type == "input" and not action.input_field_ids:
+        for action in self.filtered(lambda node: node.node_type == "input"):
+            asks_form = bool(action._get_form_questions())
+            if not action.input_field_ids and not asks_form:
                 raise exceptions.ValidationError(
                     self.env._(
                         "Step '%(action)s' asks for input but names no field to "
@@ -198,6 +261,233 @@ class IrActionsServer(models.Model):
                         action=action.name,
                     )
                 )
+            if action.input_field_ids and asks_form:
+                raise exceptions.ValidationError(
+                    self.env._(
+                        "Input step '%(action)s' asks both the run's fields and "
+                        "a form of its own. Ask one of them, or split it into "
+                        "two steps.",
+                        action=action.name,
+                    )
+                )
+
+    @api.constrains("step_key", "automation_rule_id")
+    def _check_step_key(self) -> None:
+        for action in self.filtered(lambda node: node.step_key):
+            if not is_valid_step_key(action.step_key):
+                raise exceptions.ValidationError(
+                    self.env._(
+                        "Step '%(action)s' has the key '%(key)s'. A key is "
+                        "lowercase letters, digits and single underscores, "
+                        "starts with a letter, is at most %(max)s characters "
+                        "and is not a Python keyword nor one of: %(reserved)s.",
+                        action=action.name,
+                        key=action.step_key or "",
+                        max=STEP_KEY_MAX,
+                        reserved=", ".join(sorted(RESERVED_KEYS)),
+                    )
+                )
+
+    @api.depends("automation_rule_id", "code", "state")
+    def _compute_step_references(self) -> None:
+        for action in self:
+            action.step_references = (
+                action._collect_step_references().to_json()
+                if action.automation_rule_id
+                else False
+            )
+
+    @api.depends(*STEP_REFERENCE_DEPENDS)
+    def _compute_step_reference_warning(self) -> None:
+        for action in self:
+            action.step_reference_warning = (
+                "\n".join(action._get_step_reference_problems())
+                if action.automation_rule_id
+                else False
+            )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        default_rule_id = self.env.context.get("default_automation_rule_id")
+        keyless = [
+            (vals, vals.get("automation_rule_id") or default_rule_id)
+            for vals in vals_list
+            if not vals.get("step_key")
+        ]
+        taken_by_rule: dict[int, set[str]] = defaultdict(set)
+        rule_ids = {rule_id for _vals, rule_id in keyless if rule_id}
+        if rule_ids:
+            for node in self.search_fetch(
+                [("automation_rule_id", "in", list(rule_ids))],
+                ["automation_rule_id", "step_key"],
+            ):
+                taken_by_rule[node.automation_rule_id.id].add(node.step_key)
+        for vals, rule_id in keyless:
+            if not rule_id:
+                continue
+            taken = taken_by_rule[rule_id]
+            vals["step_key"] = make_step_key(vals.get("name") or "", taken)
+            taken.add(vals["step_key"])
+        actions = super().create(vals_list)
+        for action in actions.filtered("automation_rule_id"):
+            action.input_form_node_id = action
+        return actions
+
+    def copy_data(self, default=None):
+        default = dict(default or {})
+        vals_list = super().copy_data(default)
+        if "step_key" in default:
+            return vals_list
+        for action, vals in zip(self, vals_list, strict=True):
+            if vals.get("automation_rule_id") == action.automation_rule_id.id:
+                vals.pop("step_key", None)
+        return vals_list
+
+    def write(self, vals):
+        if "step_key" in vals:
+            self._check_key_not_referenced(vals["step_key"])
+        result = super().write(vals)
+        if vals.get("automation_rule_id") or "step_key" in vals:
+            self._assign_missing_step_keys()
+        return result
+
+    def _assign_missing_step_keys(self) -> None:
+        """Key every step of an automation that has none, from its name: a step
+        attached to an automation after it was created arrives without one."""
+        keyless = self.filtered(
+            lambda node: node.automation_rule_id and not node.step_key
+        )
+        if not keyless:
+            return
+        taken: dict[int, set[str]] = defaultdict(set)
+        for node in self.search_fetch(
+            [("automation_rule_id", "in", keyless.automation_rule_id.ids)],
+            ["automation_rule_id", "step_key"],
+        ):
+            taken[node.automation_rule_id.id].add(node.step_key)
+        for action in keyless:
+            rule_taken = taken[action.automation_rule_id.id]
+            action.step_key = make_step_key(action.name or "", rule_taken)
+            rule_taken.add(action.step_key)
+
+    def unlink(self):
+        self.exists()._check_key_not_referenced(False)
+        return super().unlink()
+
+    def _check_key_not_referenced(self, new_key) -> None:
+        """Refuse to rename or remove a step whose key another step reads."""
+        for action in self.filtered(
+            lambda node: node.automation_rule_id and node.step_key != new_key,
+        ):
+            readers = [
+                reader.name
+                for reader in action.automation_rule_id.action_server_ids - self
+                if action.step_key in reader._get_step_references().keys
+            ] + [
+                edge.display_name
+                for edge in action.automation_rule_id.edge_ids
+                if edge.source_node_id not in self
+                and edge.target_node_id not in self
+                and action.step_key in edge._get_step_references().keys
+            ]
+            if readers:
+                raise exceptions.ValidationError(
+                    self.env._(
+                        "Step '%(action)s' is read as steps.%(key)s by: "
+                        "%(readers)s. Change them first.",
+                        action=action.name,
+                        key=action.step_key,
+                        readers=", ".join(readers),
+                    )
+                )
+
+    def _get_form_questions(self) -> list[dict]:
+        """Return the questions of this step's form, separators left out."""
+        self.check_singleton()
+        return [
+            question
+            for question in self.input_definition or []
+            if question.get("type") != "separator"
+        ]
+
+    def _get_upstream_nodes(self):
+        """Return every step of the automation this one transitively waits for."""
+        self.check_singleton()
+        upstream = self.browse()
+        frontier = self._get_predecessors()
+        while frontier:
+            upstream |= frontier
+            frontier = frontier._get_predecessors() - upstream
+        return upstream
+
+    def _collect_step_references(self) -> References:
+        """Return the step keys this step names, read without running it.
+
+        A module whose step type names another step adds that key here, so the
+        same upstream rule judges it, and adds what it reads to the depends of
+        `_compute_step_references`.
+        """
+        self.check_singleton()
+        if self.state != "code":
+            return References()
+        return collect_references(self.code)
+
+    def _get_step_references(self) -> References:
+        self.check_singleton()
+        return References.from_json(self.step_references)
+
+    def _get_step_reference_problems(self) -> list[str]:
+        self.check_singleton()
+        refs = self._get_step_references()
+        problems = []
+        predecessors = self._get_predecessors()
+        if refs.uses_previous and len(predecessors) != 1:
+            problems.append(
+                self.env._(
+                    "Step '%(action)s' reads `previous`, but %(count)s steps lead "
+                    "to it. Name the one it means with steps.<key>.",
+                    action=self.name,
+                    count=len(predecessors),
+                )
+            )
+        if not refs.keys:
+            return problems
+        siblings = {
+            node.step_key: node for node in self.automation_rule_id.action_server_ids
+        }
+        upstream_keys = set(self._get_upstream_nodes().mapped("step_key"))
+        for key in sorted(refs.keys - upstream_keys):
+            node = siblings.get(key)
+            if not node:
+                problems.append(
+                    self.env._(
+                        "Step '%(action)s' uses step '%(key)s', and no step of "
+                        "this automation has that key.",
+                        action=self.name,
+                        key=key,
+                    )
+                )
+            elif node == self:
+                problems.append(
+                    self.env._(
+                        "Step '%(action)s' uses steps.%(key)s, which is itself; "
+                        "a step reads its own answers as `step`.",
+                        action=self.name,
+                        key=key,
+                    )
+                )
+            else:
+                problems.append(
+                    self.env._(
+                        "Step '%(action)s' uses step '%(other)s' (%(key)s), which "
+                        "is not upstream of it, so it may not have run yet. "
+                        "Connect '%(other)s' before '%(action)s'.",
+                        action=self.name,
+                        other=node.name,
+                        key=key,
+                    )
+                )
+        return problems
 
     @api.constrains("pos_width", "pos_height")
     def _check_canvas_size(self) -> None:
@@ -279,6 +569,7 @@ class IrActionsServer(models.Model):
         return {
             "id": self.id,
             "name": self.name,
+            "step_key": self.step_key or "",
             "state": self.state,
             "node_type": self.node_type,
             "sequence": self.sequence,
@@ -362,6 +653,7 @@ class IrActionsServer(models.Model):
                 line = self.env["automation.runtime.line"].browse(line_id)
                 eval_context["runtime_line"] = line
                 eval_context["runtime"] = line.runtime_id
+                eval_context.update(line._get_step_scope())
             elif runtime_id := self.env.context.get("runtime_id"):
                 eval_context["runtime"] = self.env["automation.runtime"].browse(
                     runtime_id,

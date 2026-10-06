@@ -2,11 +2,12 @@ import logging
 from collections import defaultdict
 
 from odoo import api, fields, models
-from odoo.exceptions import AccessError, MissingError, UserError
+from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tools import frozendict
 
-from ._input import INPUT_CONTEXT_KEY, add_input_fields
+from ._input import INPUT_CONTEXT_KEY, add_input_fields, add_input_form
+from ._steps import NoPrevious, StepScope, StepView
 from .workflow_edge import EVENT_CONDITIONS, SETTLED_STATES
 
 _logger = logging.getLogger(__name__)
@@ -138,6 +139,13 @@ class AutomationRuntimeLine(models.Model):
         readonly=True,
         help="What the step reports it did, in words",
     )
+    input_values = fields.Properties(
+        definition="action_id.input_definition",
+        string="Answers",
+        copy=False,
+        help="This run's answers to the step's form; later steps read them as "
+        "steps.<key>.input",
+    )
 
     @api.model
     def _selection_created_record_models(self):
@@ -152,17 +160,44 @@ class AutomationRuntimeLine(models.Model):
             lambda field: field.name in self._fields and not self[field.name],
         )
 
+    def _get_unanswered_questions(self) -> list[str]:
+        """Return the labels of this step's form questions still unanswered.
+
+        A yes/no question is answered by being left unticked.
+        """
+        self.check_singleton()
+        answers = self.input_values
+        return [
+            question.get("string") or question["name"]
+            for question in self.action_id._get_form_questions()
+            if question.get("type") != "boolean"
+            and _is_blank(answers.get(question["name"]))
+        ]
+
+    def _asks_before_running(self) -> bool:
+        self.check_singleton()
+        return bool(self._get_missing_inputs() or self._get_unanswered_questions())
+
     def _awaits_input(self) -> bool:
         """Whether someone must fill in fields before this step goes on.
 
-        An Input step waits on its run's fields; an Action step paused itself
-        because fields of its own were empty when it was reached. Every other
-        pause waits on a clock, an approval or a sub-workflow.
+        An Input step waits on its run's fields or its form; any other step
+        paused itself because its own fields or form were empty when it was
+        reached. Every other pause waits on a clock, an approval or a
+        sub-workflow.
         """
         self.check_singleton()
-        return self.state == "paused" and self.action_id.node_type in (
-            "input",
-            "action",
+        if self.state != "paused":
+            return False
+        if self.action_id.node_type in ("input", "action"):
+            return True
+        return not (
+            self.date_resume
+            or self.activity_ids
+            or (
+                self.created_record_ref
+                and self.created_record_ref._name == "automation.runtime"
+            )
         )
 
     @api.model
@@ -178,9 +213,17 @@ class AutomationRuntimeLine(models.Model):
         )
 
     @api.model
+    def _input_line_has_form(self) -> bool:
+        line = self.browse(self.env.context.get(INPUT_CONTEXT_KEY)).exists()
+        return bool(line and line.action_id._get_form_questions())
+
+    @api.model
     def _get_view_cache_key(self, view_id=None, view_type="form", **options):
         key = super()._get_view_cache_key(view_id, view_type, **options)
-        return key + (tuple(self._get_input_fields().mapped("name")),)
+        return key + (
+            tuple(self._get_input_fields().mapped("name")),
+            self._input_line_has_form(),
+        )
 
     @api.model
     def _get_view(self, view_id=None, view_type="form", **options):
@@ -191,6 +234,8 @@ class AutomationRuntimeLine(models.Model):
         )
         if view_type == "form" and view == input_view:
             add_input_fields(arch, self._get_input_fields())
+            if self._input_line_has_form():
+                add_input_form(arch)
         return arch, view
 
     def _get_input_action(self) -> dict:
@@ -215,26 +260,40 @@ class AutomationRuntimeLine(models.Model):
 
     def action_submit_input(self) -> dict:
         self.check_singleton()
-        if not (self._awaits_input() and self.action_id.node_type == "action"):
+        if not self._awaits_input() or (
+            self.action_id.node_type == "input" and self.action_id.input_field_ids
+        ):
             raise UserError(
                 self.env._(
                     "This step of '%(run)s' is no longer waiting for input.",
                     run=self.runtime_id.name,
                 ),
             )
-        missing = self._get_missing_inputs()
+        missing = [
+            *self._get_missing_inputs().mapped("field_description"),
+            *self._get_unanswered_questions(),
+        ]
         if missing:
             raise UserError(
                 self.env._(
                     "'%(step)s' still needs: %(fields)s",
                     step=self.name,
-                    fields=", ".join(missing.mapped("field_description")),
+                    fields=", ".join(missing),
                 ),
             )
         runtime = self.runtime_id
-        self.state = "ready"
         if runtime.state == "waiting_resume":
             runtime.state = "in_progress"
+        if self.action_id.node_type == "input":
+            self.action_resume()
+            runtime._log_run_message(
+                body=self.env._("'%(step)s' received its input.", step=self.name),
+                subject=self.env._("Input Received"),
+            )
+            runtime._advance()
+            runtime._notify_workflow_change()
+            return {"type": "ir.actions.act_window_close"}
+        self.state = "ready"
         # The dialog was part of pressing Next Step on this step: it runs this
         # step, as Next Step would have, and no more.
         result = runtime._run_line(self)
@@ -245,6 +304,82 @@ class AutomationRuntimeLine(models.Model):
     def _set_output(self, output: dict, summary: str = "") -> None:
         """Record what the step did: data for the flow, and a line for people."""
         self.write({"output": output, "output_summary": summary or False})
+
+    def action_run(self) -> dict | None:
+        """Run this ready step now, whichever other steps are ready too."""
+        self.check_singleton()
+        runtime = self.runtime_id
+        if self.state != "ready" or runtime.state not in (
+            "in_progress",
+            "waiting_resume",
+        ):
+            raise UserError(
+                self.env._(
+                    "'%(step)s' is not ready to run in '%(run)s'.",
+                    step=self.name,
+                    run=runtime.name,
+                ),
+            )
+        if runtime.state == "waiting_resume":
+            runtime.state = "in_progress"
+        result = runtime._run_line(self)
+        return result if isinstance(result, dict) else None
+
+    def _get_upstream_lines(self):
+        """Return every step of the run this one transitively waits for."""
+        self.check_singleton()
+        upstream = self.browse()
+        frontier = self._get_predecessors()
+        while frontier:
+            upstream |= frontier
+            frontier = frontier._get_predecessors() - upstream
+        return upstream
+
+    def _get_step_views(self, lines) -> dict[str, StepView]:
+        return {
+            line.action_id.step_key: StepView(line)
+            for line in lines
+            if line.action_id.step_key
+        }
+
+    def _get_step_scope(self) -> dict:
+        """Return the variables a code step evaluates with: what it may read
+        of the other steps of its run, which is what runs before it."""
+        self.check_singleton()
+        views = self._get_step_views(self._get_upstream_lines())
+        predecessors = self._get_predecessors()
+        direct = {
+            key: view
+            for key, view in views.items()
+            if key in set(predecessors.action_id.mapped("step_key"))
+        }
+        if len(direct) == 1:
+            previous = next(iter(direct.values()))
+        else:
+            previous = NoPrevious(
+                self.env._(
+                    "'%(step)s' has %(count)s preceding steps (%(keys)s), so "
+                    "`previous` names none of them: use steps.<key>.",
+                    step=self.name,
+                    count=len(predecessors),
+                    keys=", ".join(sorted(direct)) or self.env._("none"),
+                )
+            )
+        return {
+            "steps": StepScope(views, self.name),
+            "predecessors": StepScope(direct, self.name),
+            "previous": previous,
+            "step": StepView(self),
+        }
+
+    def _get_readable_steps(self) -> StepScope:
+        """Return this step and everything upstream of it, as an edge leaving
+        it reads them."""
+        self.check_singleton()
+        return StepScope(
+            self._get_step_views(self | self._get_upstream_lines()),
+            self.name,
+        )
 
     def _predecessors_satisfied(self) -> bool:
         self.check_singleton()
@@ -589,6 +724,12 @@ class AutomationRuntimeLine(models.Model):
             self.runtime_id._finish_if_settled()
             return False
 
+        if self.action_id.node_type != "input" and self._asks_before_running():
+            self.write(
+                {"state": "paused", "date_resume": False, "error_message": False}
+            )
+            return self.runtime_id._get_input_action(self)
+
         if self.action_id.node_type == "wait":
             return self.action_pause()
 
@@ -600,12 +741,6 @@ class AutomationRuntimeLine(models.Model):
 
         if self.action_id.node_type == "subflow":
             return self.action_start_subflow()
-
-        if self._get_missing_inputs():
-            self.write(
-                {"state": "paused", "date_resume": False, "error_message": False}
-            )
-            return self.runtime_id._get_input_action(self)
 
         self.write({"state": "in_progress"})
 
@@ -670,13 +805,10 @@ class AutomationRuntimeLine(models.Model):
 
     def _get_created_record_label(self) -> str:
         self.check_singleton()
-        record = self.created_record_ref
+        record = self.created_record_ref and self.created_record_ref.exists()
         if not record:
             return ""
-        try:
-            return record.display_name or ""
-        except AccessError, MissingError:
-            return ""
+        return record._visible_display_names().get(record.id) or ""
 
     def _prepare_workflow_node(self) -> dict:
         self.check_singleton()
@@ -704,3 +836,9 @@ class AutomationRuntimeLine(models.Model):
             "view_mode": "form",
             "res_id": self.created_record_ref.id,
         }
+
+
+def _is_blank(value) -> bool:
+    if isinstance(value, models.BaseModel):
+        return not value
+    return value is None or value is False or value in ("", [])

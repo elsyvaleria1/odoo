@@ -355,6 +355,7 @@ class AutomationRuntime(models.Model):
                         "Automation '%s' has no server actions configured", rule.name
                     ),
                 )
+            rule._check_runnable_references()
             runtimes.state = "in_progress"
             lines = runtimes._materialize(actions)
             lines.filtered(lambda line: not line.edge_in_ids)._settle_readiness()
@@ -634,7 +635,7 @@ class AutomationRuntime(models.Model):
         """Open the dialog `line` waits on: the run's fields for an Input step,
         the step's own fields for a step that needs them before it runs."""
         self.check_singleton()
-        if line.action_id.node_type != "input":
+        if line.action_id.node_type != "input" or not line.action_id.input_field_ids:
             return line._get_input_action()
         return {
             "type": "ir.actions.act_window",
@@ -757,6 +758,7 @@ class AutomationRuntime(models.Model):
                     self.automation_id.name,
                 ),
             )
+        self.automation_id._check_runnable_references()
         lines = self._materialize(actions)
         for line in lines.filtered(lambda line: not line.edge_in_ids):
             line._settle_readiness()
@@ -818,12 +820,17 @@ class AutomationRuntime(models.Model):
             added |= runtimes._materialize(missing)
         return added
 
-    def _sync_to_definition(self) -> None:
+    def action_sync_to_definition(self) -> None:
+        """Bring this run up to its automation's current graph, running nothing."""
+        self._sync_to_definition(advance=False)
+
+    def _sync_to_definition(self, advance=True) -> None:
         runs = self.filtered(
             lambda run: run.state in ("in_progress", "waiting_resume"),
         )
         if not runs:
             return
+        runs.automation_id._check_runnable_references()
         added = self.env["automation.runtime.line"]
         changed = self.env["automation.runtime.line"]
         for rule, rule_runs in runs.grouped("automation_id").items():
@@ -832,6 +839,7 @@ class AutomationRuntime(models.Model):
                 (edge.source_node_id.id, edge.target_node_id.id): edge
                 for edge in rule.edge_ids
             }
+            changed |= rule_runs._sync_topology(definition)
             edges_by_vals = defaultdict(self.env["automation.runtime.edge"].browse)
             pending_edges = rule_runs.edge_ids.filtered(
                 lambda edge: (
@@ -861,13 +869,69 @@ class AutomationRuntime(models.Model):
             for vals, runtime_edges in edges_by_vals.items():
                 runtime_edges.write(dict(vals))
                 changed |= runtime_edges.target_line_id
+        changed.filtered(lambda line: line.state == "ready").write(
+            {"state": "waiting", "date_ready": False, "date_resume": False}
+        )
         runs.line_ids.filtered(
             lambda line: (
                 line.state in ("waiting", "scheduled")
                 or (line.state == "ready" and (line in added or line in changed))
             ),
         )._settle_readiness()
-        runs._advance()
+        if advance:
+            runs._advance()
+        else:
+            runs._finish_if_settled()
+        runs._notify_workflow_change()
+
+    def _sync_topology(self, definition) -> models.Model:
+        """Make the edges into steps not yet run match `definition`.
+
+        An edge the automation no longer has is retired and one it gained is
+        added, but only into a step still waiting, scheduled or ready: a step
+        that ran keeps the edges it ran under. Returns the steps whose incoming
+        edges changed.
+        """
+        open_states = ("waiting", "scheduled", "ready")
+        Edge = self.env["automation.runtime.edge"]
+        retired = self.edge_ids.filtered(
+            lambda edge: (
+                edge.target_line_id.state in open_states
+                and (
+                    edge.source_line_id.action_id.id,
+                    edge.target_line_id.action_id.id,
+                )
+                not in definition
+            ),
+        )
+        changed = retired.target_line_id
+        retired.unlink()
+        new_vals = []
+        for runtime in self:
+            line_by_action = {line.action_id.id: line for line in runtime.line_ids}
+            linked = {
+                (edge.source_line_id.action_id.id, edge.target_line_id.action_id.id)
+                for edge in runtime.edge_ids
+            }
+            for (source_id, target_id), edge in definition.items():
+                source = line_by_action.get(source_id)
+                target = line_by_action.get(target_id)
+                if (
+                    (source_id, target_id) in linked
+                    or not source
+                    or not target
+                    or target.state not in open_states
+                ):
+                    continue
+                new_vals.append(
+                    {
+                        "runtime_id": runtime.id,
+                        "source_line_id": source.id,
+                        "target_line_id": target.id,
+                        **edge._runtime_copy_vals(),
+                    }
+                )
+        return changed | Edge.create(new_vals).target_line_id
 
     def _get_target_record(self):
         self.check_singleton()

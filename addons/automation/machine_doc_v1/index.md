@@ -32,7 +32,8 @@ its Diagram page, read-only and drawn from the run's snapshot.
 | `models/ir_websocket.py` | Turns the canvas's requested string channel into a record channel the user may read |
 | `models/automation_canvas_viewport.py` | Where each reader last left the canvas of each automation |
 | `models/_canvas.py` | The canvas geometry contract both of those read; not a model |
-| `models/_input.py` | Fills an input dialog's fields from the step that waits; not a model |
+| `models/_input.py` | Fills an input dialog's fields, and its form, from the step that waits; not a model |
+| `models/_steps.py` | Step keys, the AST reference walk, and the read-only step views code is handed; not a model |
 | `static/src/workflow_canvas.js` | The Workflow page's canvas: draws the DAG, drags nodes, draws edges |
 | `static/src/workflow_graph.js` | Its pure parts — the connection guard and the class/label maps |
 | `tests/test_automation.py` | Core trigger tests (`@tagged post_install`) |
@@ -49,6 +50,7 @@ its Diagram page, read-only and drawn from the run's snapshot.
 | `tests/test_retry.py` | A failed run fails one step and keeps the rest, retry, cancelling a failed run, the run's own graph |
 | `tests/test_step_output.py` | What a step reports: the line's output and summary, an edge branching on `output`, the run diagram showing it |
 | `tests/test_input_step.py` | The Input node: the run waits for the fields it asks for, the dialog built from them, the run continuing once they are filled in; a step that needs fields of its own run step waits and asks for them |
+| `tests/test_step_references.py` | Step keys, parsing references, the problems the graph judges, the scope a step reads, forms on any step, running a chosen ready step |
 | `tests/test_workflow_canvas.py` | Canvas state: node size bounds, per-reader viewport, stored counts |
 
 ## Related Modules

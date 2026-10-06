@@ -30,6 +30,12 @@
             <form string="Workflow Step">
                 <header>
                     <button
+                        name="action_run"
+                        type="object"
+                        string="Run"
+                        invisible="state != 'ready'"
+                        class="btn-primary" />
+                    <button
                         name="action_mark_ready"
                         type="object"
                         string="Mark Ready"
@@ -106,6 +112,16 @@
                                 <field name="date_event" optional="show" />
                             </list>
                         </field>
+                    </group>
+                    <group string="Answers" invisible="not input_values">
+                        <field
+                            name="input_values"
+                            colspan="2"
+                            nolabel="1"
+                            columns="2" />
+                    </group>
+                    <group string="Result" invisible="not output_summary">
+                        <field name="output_summary" colspan="2" nolabel="1" />
                     </group>
                     <group string="Error Details" invisible="state != 'error'">
                         <field name="error_message" colspan="2" nolabel="1" />

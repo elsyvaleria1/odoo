@@ -14,4 +14,6 @@ automation_runtime_line_company_rule,Automation Runtime Line: multi-company,mode
 automation_runtime_edge_company_rule,Automation Runtime Edge: multi-company,model_automation_runtime_edge,base.group_everyone,guard,crud,company,,
 access_ir_actions_server_draw_run,ir.actions.server: a run's diagram reads its steps,base.model_ir_actions_server,privilege_draw_run,permission,r,,,"[('automation_rule_id', '!=', False)]"
 access_automation_rule_draw_run,automation.rule: a run's diagram reads its automation,model_automation_rule,privilege_draw_run,permission,r,,,
+access_ir_actions_server_start_run,ir.actions.server: starting a run checks its steps,base.model_ir_actions_server,privilege_start_run,permission,r,,,"[('automation_rule_id', '!=', False)]"
+access_automation_rule_start_run,automation.rule: starting a run checks its automation,model_automation_rule,privilege_start_run,permission,r,,,
 automation_canvas_viewport_own_rule,Workflow Canvas Viewport: own rows only,model_automation_canvas_viewport,base.group_everyone,guard,crud,own,,

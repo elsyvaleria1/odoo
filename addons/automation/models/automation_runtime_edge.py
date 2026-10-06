@@ -111,6 +111,7 @@ class AutomationRuntimeEdge(models.Model):
             "record": runtime._get_target_record(),
             "state": self.source_line_id.state,
             "output": self.source_line_id.output or {},
+            "steps": self.source_line_id._get_readable_steps(),
         }
         try:
             return bool(safe_eval(self.condition_expr or "False", context))

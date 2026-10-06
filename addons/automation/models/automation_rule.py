@@ -202,6 +202,22 @@ class AutomationRule(models.Model):
         copy=False,
         help="Typed dependencies between this automation's steps",
     )
+    live_runtime_ids = fields.One2many(
+        comodel_name="automation.runtime",
+        inverse_name="automation_id",
+        string="Running Runs",
+        domain=[("state", "in", ("in_progress", "waiting_resume"))],
+    )
+    live_run_count = fields.Count(
+        count_of="live_runtime_ids",
+        string="Running",
+        help="Runs of this automation still in progress or waiting",
+    )
+    step_reference_warning = fields.Text(
+        compute="_compute_step_reference_warning",
+        help="Steps that read other steps the graph does not guarantee have "
+        "run; no run starts while it is set",
+    )
     step_count = fields.Count(
         count_of="action_server_ids",
         string="Steps",
@@ -527,6 +543,70 @@ class AutomationRule(models.Model):
         for old_automation, new_automation in zip(self, new_automations, strict=True):
             old_automation._copy_actions_to(new_automation)
         return new_automations
+
+    def _get_step_reference_problems(self) -> list[str]:
+        """Every read of one step by another that the graph does not guarantee.
+
+        Not a constraint: rewiring a flow passes through states like these, so
+        they are shown on the automation and refused only when a run starts.
+        """
+        self.check_singleton()
+        problems = []
+        for action in self.action_server_ids.sorted("sequence"):
+            problems += action._get_step_reference_problems()
+        for edge in self.edge_ids:
+            problems += edge._get_step_reference_problems()
+        return problems
+
+    @api.depends(
+        "action_server_ids",
+        "action_server_ids.write_date",
+        "edge_ids",
+        "edge_ids.write_date",
+    )
+    def _compute_step_reference_warning(self) -> None:
+        for automation in self:
+            automation.step_reference_warning = (
+                "\n".join(automation._get_step_reference_problems()) or False
+            )
+
+    def action_view_running_runs(self) -> dict:
+        self.check_singleton()
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Running Runs"),
+            "res_model": "automation.runtime",
+            "view_mode": "list,form",
+            "domain": [("id", "in", self.live_runtime_ids.ids)],
+            "context": {"create": False},
+        }
+
+    def action_sync_running_runs(self) -> None:
+        """Bring every run still going up to this automation's graph, running
+        nothing."""
+        self.env["automation.runtime"].search(
+            [
+                ("automation_id", "in", self.ids),
+                ("state", "in", ("in_progress", "waiting_resume")),
+            ]
+        )._sync_to_definition(advance=False)
+
+    def _check_runnable_references(self) -> None:
+        checked = self.with_privilege(
+            "automation.privilege_start_run",
+            reason="starting a run checks what its steps read of each other",
+        )
+        for automation in checked:
+            problems = automation._get_step_reference_problems()
+            if problems:
+                raise exceptions.UserError(
+                    self.env._(
+                        "Automation '%(name)s' cannot start or update a run while "
+                        "its steps read steps that may not have run:\n\n%(problems)s",
+                        name=automation.name,
+                        problems="\n".join(f"• {problem}" for problem in problems),
+                    )
+                )
 
     def _is_runtime_backed(self) -> bool:
         self.check_singleton()

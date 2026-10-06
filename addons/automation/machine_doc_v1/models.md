@@ -14,6 +14,7 @@ and the set of `ir.actions.server` nodes that form the DAG.
 | `filter_pre_domain` | Char | Pre-condition: record state *before* write |
 | `filter_domain` | Char | Post-condition: record state *after* event |
 | `action_server_ids` | One2many `ir.actions.server` | DAG nodes |
+| `step_reference_warning` | Text (computed) | Every read of one step by another the graph does not guarantee (`_get_step_reference_problems()`); no run starts while it is set |
 | `trigger_field_ids` | Many2many `ir.model.fields` | Write-trigger field watch list |
 | `on_change_field_ids` | Many2many `ir.model.fields` | Onchange field watch list |
 | `trg_date_id` | Many2one `ir.model.fields` | Date field for time triggers |
@@ -91,7 +92,12 @@ server action model AND the workflow node definition.
 | `approval_user_ids` / `approval_note` | Many2many `res.users` / Char | Who must approve, and what the activity asks |
 | `subflow_automation_id` | Many2one `automation.rule` | What a Sub-workflow step runs; a cycle is refused |
 | `line_input_field_ids` | Many2many `ir.model.fields` | Fields of the step's own run step (`automation.runtime.line`) that must be filled before it runs; `_get_line_input_fields()` is the hook a module extends with what its step types need. A step reached with one empty pauses and asks, and Continue runs that step only |
-| `input_field_ids` | Many2many `ir.model.fields` | The stored, writable fields of `automation.runtime` an Input step asks someone to fill in; at least one |
+| `input_field_ids` | Many2many `ir.model.fields` | The stored, writable fields of `automation.runtime` an Input step asks someone to fill in. An Input step asks these **or** its form, never both |
+| `step_key` | Char | How code names this step: `steps.<key>`. A Python identifier without `__`, not a keyword, not `get`/`items`/`keys`/`values`; unique per automation (`_step_key_uniq`); derived from the name on create (`_steps.make_step_key`). A copied step gets a new key, a step copied into another automation keeps its own |
+| `input_definition` | PropertiesDefinition | The step's form: questions asked before it runs, on any node type |
+| `input_form_node_id` / `input_preview` | Many2one self / Properties | The step itself, and a Properties field defined by its own `input_definition`: the native editor only edits a definition from a record that shows it, so the node form edits its questions through this preview. Values typed there reach no run |
+| `step_references` | Json (computed, stored) | The keys the step's code names, `previous`, and whether it indexes `steps` dynamically, parsed by `_collect_step_references()` when the code is saved. Checking a run reads this, never `code`, which only `base.group_system` may read |
+| `step_reference_warning` | Text (computed) | This step's reference problems, shown on its form |
 | `wait_delay` / `wait_unit` | Integer / Selection | How long a `wait` node pauses the run; a non-positive delay is refused |
 | `start_delay` / `start_delay_unit` | Integer / Selection | For a step with no incoming edge only: how long after its line was created (the run's start, or the sync that added it) it becomes ready; the line is `scheduled` until then |
 | `validity_delay` / `validity_unit` | Integer / Selection | How long after its line became ready (`date_ready`) the step may still run; a line reached later is skipped with the reason in `error_message`. Zero never expires; a negative value is refused |
@@ -325,7 +331,8 @@ draft → in_progress ⇄ waiting_resume
 ```
 
 `action_start()`: creates `automation.runtime.line` records from the
-automation's `action_server_ids`, sets first-in-sequence to `ready`.
+automation's `action_server_ids` and settles every line with no incoming edge,
+so a graph with several roots starts with several ready lines.
 
 `action_next_step()`: executes next `ready` line, auto-marks `done` if all
 lines complete.
@@ -401,6 +408,7 @@ Fully isolated per-execution — no shared state with the definition.
 | `edge_in_ids` / `edge_out_ids` | One2many `automation.runtime.edge` | DAG dependency at execution level |
 
 | `created_record_ref` | Reference | Record created by this step |
+| `input_values` | Properties, defined by `action_id.input_definition` | This run's answers to the step's form; downstream they are `steps.<key>.input` |
 | `output` / `output_summary` | Json / Char | What the step reports it did: data an edge leaving it reads as `output`, and one line for people (the step list's Result, the run diagram). Written by `_set_output`; the engine never interprets it |
 
 ### DAG Resolution
@@ -546,12 +554,25 @@ waiting up to date with an edited definition, without rewriting history:
 
 - a node the run has no line for gets one, with its edges (`_materialize`, which
   `_create_action_lines` also uses);
+- `_sync_topology`: an edge the automation no longer has is retired, and one it
+  gained is added, when its target is still `waiting`, `scheduled` or `ready`; a
+  `ready` step whose incoming edges changed goes back to `waiting` and is settled
+  again, so a step that lost its only predecessor becomes ready and one that
+  gained an unfinished predecessor waits. A step that ran keeps its edges;
 - a runtime edge whose target is still `waiting` or `scheduled` takes the
   definition's condition, event and delay again (`workflow.edge._runtime_copy_vals`);
   an edge into a step already ready, running or settled keeps what it ran under;
 - every waiting or scheduled line is re-settled, so a longer delay reschedules it
   and a new branch whose source already settled runs;
-- a finished run is left alone.
+- a finished run is left alone;
+- the graph's reference problems refuse the sync, as they refuse a start.
+
+A person updates through `automation.runtime.action_sync_to_definition` (the
+run's **Update to Current Workflow**) or `automation.rule.action_sync_running_runs`
+(the automation's **Update Running Runs**, shown while `live_run_count` is not
+zero). Both pass `advance=False`: updating a run a person steps through executes
+nothing, it only settles readiness and finishes a run left with nothing to do.
+Internal callers (a campaign's Update) keep `advance=True`.
 
 `_add_steps(actions)` is the narrower form: it gives running runs lines for those
 nodes only, and settles them. A campaign uses it when a child activity is added,
@@ -581,3 +602,74 @@ run in the chatter or in the query log:
 
 A line that becomes ready from a due time already past keeps that due time in
 `date_resume`, so "when was this step due" survives until it runs.
+
+## Data flow between steps (Phase 5)
+
+`_steps.py` holds the parts that need no ORM: `make_step_key`,
+`collect_references` (an AST walk), `StepView`, `StepScope` and `NoPrevious`.
+
+### What a step is handed
+
+`automation.runtime.line._get_step_scope()` is merged into a code step's
+evaluation context by `ir.actions.server._prepare_eval_context`:
+
+| Name | Value |
+|---|---|
+| `steps` | `StepScope` of every line upstream of this one (transitive predecessors over the **run's** edges), by key |
+| `predecessors` | `StepScope` of the lines with an edge into this one |
+| `previous` | the one predecessor's `StepView`, or a falsy `NoPrevious` whose every attribute read raises naming the predecessors |
+| `step` | this line's own `StepView` |
+
+An `expression` edge gets `steps` too: `automation.runtime.line._get_readable_steps()`,
+the source and everything upstream of it. A `StepView` carries `key`, `name`,
+`state`, `summary`, `output` (a deep copy), `record` (`created_record_ref`) and
+`input` (the answers). An unknown key raises `StepReferenceError` (a
+`LookupError`) or `AttributeError`, listing the keys that were in reach.
+
+### What is checked, and when
+
+`ir.actions.server._collect_step_references()` parses a `References`: the keys
+code names, whether it reads `previous`, whether it indexes `steps` with a
+computed value. It is the extension point: `automation_account` adds the key of
+`workflow_source_step_id` (and the field to the compute's depends). The result
+is stored in `step_references` (and `workflow.edge.step_references` for an
+expression), which `_get_step_references()` reads back. `_get_step_reference_problems()` on the node, the
+edge and the rule judge them against the definition graph:
+
+| Problem | Where |
+|---|---|
+| a key no step of the automation has | node, edge |
+| a key that is not upstream (for an edge: neither its source nor upstream of it) | node, edge |
+| the node's own key | node |
+| `previous` with other than one incoming edge, or on an edge | node, edge |
+
+Only key syntax is a constraint. The rest are shown (`step_reference_warning`)
+and enforced by `automation.rule._check_runnable_references()`, under the
+privilege `automation.privilege_start_run` (read on the automation and its
+steps: whoever starts a run need not be able to read them, and the answer must
+not depend on who asks), which
+`automation.runtime._create_action_lines` and `_launch_queued` call: copying an
+automation creates its steps before their edges, and rewiring passes through
+states like these, so refusing the write would refuse both. Renaming or
+removing a step whose key another step or edge names **is** refused
+(`ir.actions.server._check_key_not_referenced`), unless the reader goes with it.
+
+### Forms
+
+A step reached with `_get_missing_inputs()` (fields) or
+`_get_unanswered_questions()` (form) non-empty pauses before its node type acts
+and opens `view_automation_runtime_line_form_input`, to which
+`automation.runtime.line._get_view` adds the fields and, for a form,
+`input_values`. Every question but a yes/no one must be answered.
+`_awaits_input()` tells an input pause from the others by elimination: a Wait
+pause carries `date_resume`, an Approval its activities, a Sub-workflow its child
+run. Submitting runs the step (an Action, Wait, Approval or Sub-workflow step
+then does what its type does) or, for an Input step, settles it and advances the
+run. An Input step whose questions are on the run (`input_field_ids`) keeps the
+run's own dialog.
+
+### Running a chosen step
+
+`automation.runtime.line.action_run()` runs one ready line of a live run through
+`automation.runtime._run_line`, as Next Step does for the first ready line; the
+run form's step list and the step's form both offer it.

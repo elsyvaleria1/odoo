@@ -8,4 +8,11 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_start_run" model="res.groups">
+        <field name="name">Start Workflow Run</field>
+        <field
+            name="comment">Starting a run checks that its steps read only steps that run before them, which reads the automation and its steps, whoever starts the run.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

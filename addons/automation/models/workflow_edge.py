@@ -1,6 +1,8 @@
 from odoo import api, exceptions, fields, models
 from odoo.tools.date_utils import time_unit_selection
 
+from ._steps import References, collect_references
+
 CONDITION_SELECTION = [
     ("on_success", "On Success"),
     ("on_error", "On Error"),
@@ -77,6 +79,12 @@ class WorkflowEdge(models.Model):
         required=True,
     )
     label = fields.Char(help="Shown on the edge when the workflow is drawn")
+    step_references = fields.Json(
+        compute="_compute_step_references",
+        store=True,
+        readonly=True,
+        help="The step keys the condition names, parsed when it is saved",
+    )
 
     display_name = fields.Char(compute="_compute_display_name")
 
@@ -190,6 +198,46 @@ class WorkflowEdge(models.Model):
                         target=edge.target_node_id.name,
                     ),
                 )
+
+    @api.depends("condition", "condition_expr")
+    def _compute_step_references(self) -> None:
+        for edge in self:
+            edge.step_references = (
+                collect_references(edge.condition_expr, mode="eval").to_json()
+                if edge.condition == "expression"
+                else False
+            )
+
+    def _get_step_references(self) -> References:
+        self.check_singleton()
+        return References.from_json(self.step_references)
+
+    def _get_step_reference_problems(self) -> list[str]:
+        """What the expression reads that is neither its source nor upstream of it."""
+        self.check_singleton()
+        refs = self._get_step_references()
+        source = self.source_node_id
+        problems = []
+        if refs.uses_previous:
+            problems.append(
+                self.env._(
+                    "The condition of %(edge)s reads `previous`; an edge reads "
+                    "the step it leaves as `output` and `state`, or by its key.",
+                    edge=self.display_name,
+                )
+            )
+        readable = {source.step_key, *source._get_upstream_nodes().mapped("step_key")}
+        problems += [
+            self.env._(
+                "The condition of %(edge)s uses step '%(key)s', which is neither "
+                "'%(source)s' nor upstream of it.",
+                edge=self.display_name,
+                key=key,
+                source=source.name,
+            )
+            for key in sorted(refs.keys - readable)
+        ]
+        return problems
 
     def _runtime_copy_vals(self) -> dict:
         self.check_singleton()

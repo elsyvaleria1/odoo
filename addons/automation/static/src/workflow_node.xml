@@ -9,6 +9,11 @@
                 <t t-out="this.step.label"/>
             </header>
             <div class="o_workflow_canvas_step_body flex-grow-1 px-2 py-1 small">
+                <div t-if="this.step.step_key"
+                    class="o_workflow_canvas_step_key text-muted font-monospace text-truncate"
+                    t-att-title="'steps.' + this.step.step_key">
+                    <t t-out="this.step.step_key"/>
+                </div>
                 <div t-if="this.typeLabel" class="text-muted text-capitalize">
                     <t t-out="this.typeLabel"/>
                 </div>

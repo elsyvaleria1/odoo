@@ -147,6 +147,12 @@
                         invisible="not awaiting_input"
                         class="btn-primary" />
                     <button
+                        name="action_sync_to_definition"
+                        type="object"
+                        string="Update to Current Workflow"
+                        help="Take the automation's current steps and connections; steps that already ran keep what they ran under, and nothing is executed"
+                        invisible="state not in ('in_progress', 'waiting_resume')" />
+                    <button
                         name="action_retry"
                         type="object"
                         string="Retry Failed Step"
@@ -234,6 +240,12 @@
                                     <field name="created_record_ref" />
                                     <field name="output_summary" optional="show" />
                                     <field name="error_message" optional="show" />
+                                    <button
+                                        name="action_run"
+                                        type="object"
+                                        string="Run"
+                                        icon="fa-play"
+                                        invisible="state != 'ready' or parent.state not in ('in_progress', 'waiting_resume')" />
                                     <button
                                         name="action_view_document"
                                         type="object"
