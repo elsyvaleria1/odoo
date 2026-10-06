@@ -223,8 +223,10 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
 
         # The employee can change the body of its appraisal
         request_as_employee.body = "Hello"
-        # As long as it doesn't contain sensitive placeholders
-        with self.assertRaisesRegex(AccessError, "Only administrators"):
+        # As long as it doesn't contain sensitive placeholders: template
+        # rendering is restricted (mail.restrict_template_rendering), so an
+        # employee is no template editor and is refused before the grammar
+        with self.assertRaisesRegex(AccessError, "Mail Template Editor"):
             request_as_employee.body = '<t t-out="object.sudo().name"/>'
         # The employee cannot change the template to an arbitrary template
         with self.assertRaisesRegex(
