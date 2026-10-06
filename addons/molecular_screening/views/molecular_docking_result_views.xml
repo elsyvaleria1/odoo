@@ -8,6 +8,14 @@
             <form>
                 <header>
                     <button
+                        name="%(molecular_docking_import_action)d"
+                        type="action"
+                        string="Import Results"
+                        class="btn-primary"
+                        context="{'default_job_id': id}"
+                        invisible="status == 'blocked'"
+                    />
+                    <button
                         name="action_refresh_gate"
                         type="object"
                         string="Re-read Gate"

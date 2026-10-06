@@ -4,6 +4,7 @@ from . import test_valence
 from . import test_chemistry
 from . import test_electronic
 from . import test_validation_gate
+from . import test_docking_import
 from . import test_molecule_editor
 from . import test_molecule_viewer
 from . import test_access_matrix

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="molecular_docking_import_view_form" model="ir.ui.view">
+        <field name="name">wizard.molecular.docking.import.form</field>
+        <field name="model">wizard.molecular.docking.import</field>
+        <field name="arch" type="xml">
+            <form string="Import Docking Results">
+                <group>
+                    <group>
+                        <field name="job_id" readonly="1" />
+                        <field name="sdf_file" filename="sdf_filename" />
+                        <field name="sdf_filename" invisible="1" />
+                    </group>
+                    <group>
+                        <field name="engine" />
+                        <field name="engine_ver" />
+                        <field name="score_tag" />
+                    </group>
+                </group>
+                <p class="text-muted">
+                    Each pose's title must be the title of the docked 3D structure or
+                    the name of its compound, and its first pose is taken as the best. Importing again replaces
+                    the poses of the compounds in the file.
+                </p>
+                <footer>
+                    <button name="action_import" type="object" string="Import" class="btn-primary" />
+                    <button string="Cancel" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="molecular_docking_import_action" model="ir.actions.act_window">
+        <field name="name">Import Docking Results</field>
+        <field name="res_model">wizard.molecular.docking.import</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
